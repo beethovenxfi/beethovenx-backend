@@ -30,6 +30,7 @@ export const schema = {
     COPPER_PROXY_ADDRESS: String,
     RPC_URL: String,
     YEARN_VAULTS_ENDPOINT: String,
+    OWLRACLE_API_KEY: String,
 };
 
 export const env: Env = load(schema, {
