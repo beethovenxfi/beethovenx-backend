@@ -3,7 +3,7 @@ import { Cache, CacheClass } from 'memory-cache';
 import { cache } from '../cache/cache';
 import { owlracleService, OwlracleResponse } from './lib/owlracle.service';
 
-const GAS_ESTIMATE_CACHE_KEY = 'beetsGasEstimate';
+const GAS_ESTIMATE_CACHE_KEY = 'gasEstimate';
 
 export class GasEstimateService {
     cache: CacheClass<string, any>;
