@@ -1,0 +1,19 @@
+extend type Query {
+    gasEstimates: GqlGasEstimatesData!
+}
+
+type GqlSpeed {
+    acceptance: Float!
+    gasPrice: Float!
+    estimatedFee: Float!
+}
+
+type GqlGasEstimatesData {
+    timestamp: String!
+    baseFee: Int
+    lastBlock: Int!
+    avgTime: Float!
+    avgTx: Float!
+    avgGas: Float!
+    speeds: [GqlSpeed!]!
+}
