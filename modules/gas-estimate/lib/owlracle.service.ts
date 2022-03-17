@@ -3,7 +3,7 @@ import _ from 'lodash';
 import { env } from '../../../app/env';
 
 interface OwlracleRequest {
-    apiKey: string;
+    apikey: string;
     blocks: number;
     percentile: number;
     accept: string;
@@ -17,7 +17,7 @@ interface Speed {
 }
 
 export interface OwlracleResponse {
-    timestamp: Date;
+    timestamp: string;
     baseFee: number;
     lastBlock: number;
     avgTime: number;
@@ -33,7 +33,7 @@ export class OwlracleService {
     constructor() {
         this.baseUrl = 'https://owlracle.info/ftm/gas';
         this.requestParams = {
-            apiKey: env.OWLRACLE_API_KEY,
+            apikey: env.OWLRACLE_API_KEY,
             blocks: 200,
             percentile: 0.3,
             accept: '35,60,90',
@@ -44,7 +44,6 @@ export class OwlracleService {
     public async getGasEstimates(): Promise<OwlracleResponse> {
         try {
             const response = await this.get(this.requestParams);
-            console.log('owlracle response: ', response);
             return response as OwlracleResponse;
         } catch (error) {
             console.error('Unable to fetch Owlracle gas estimates', error);
@@ -53,7 +52,7 @@ export class OwlracleService {
     }
 
     private async get<T>(params: any): Promise<T> {
-        const { data } = await axios.get(this.baseUrl, params);
+        const { data } = await axios.get(this.baseUrl, { params: { ...params } });
         return data;
     }
 }
