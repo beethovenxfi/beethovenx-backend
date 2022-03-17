@@ -117,9 +117,7 @@ export function scheduleCronJobs() {
     });
 
     //every 5 seconds
-    // cron.schedule('*/5 * * * * *', async () => {
-    // while testing every minute
-    cron.schedule('*/1 * * * *', async () => {
+    cron.schedule('*/5 * * * * *', async () => {
         try {
             await gasEstimateService.cacheGasEstimateData();
         } catch (e) {}
