@@ -36,7 +36,7 @@ export class OwlracleService {
             apikey: env.OWLRACLE_API_KEY,
             blocks: 200,
             percentile: 0.3,
-            accept: '35,60,90',
+            accept: '50,70,90',
             version: 2,
         };
     }
