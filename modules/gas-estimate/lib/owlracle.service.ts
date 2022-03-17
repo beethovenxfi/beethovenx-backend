@@ -43,8 +43,19 @@ export class OwlracleService {
 
     public async getGasEstimates(): Promise<OwlracleResponse> {
         try {
-            const response = await this.get(this.requestParams);
-            return response as OwlracleResponse;
+            const response = await this.get<OwlracleResponse>(this.requestParams);
+
+            // sort low to high on acceptance
+            const sortedSpeeds = response.speeds.sort((a, b) => {
+                if (a.acceptance < b.acceptance) return -1;
+                if (a.acceptance > b.acceptance) return 1;
+                return 0;
+            });
+            const sortedResponse = {
+                ...response,
+                speeds: [...sortedSpeeds],
+            };
+            return sortedResponse;
         } catch (error) {
             console.error('Unable to fetch Owlracle gas estimates', error);
             throw error;
