@@ -176,8 +176,6 @@ export class PortfolioDataService {
             console.log(`portfolio cache <${timestamp}>: saving beets bar`);
             await this.saveBeetsBar(blockNumber, beetsBar, beetsBarUsers);
 
-            console.log(`portfolio cache <${timestamp}>: saving latest block`);
-            await this.refreshLatestBlockCachedTimestamp();
             console.log(`portfolio cache <${timestamp}>: done`);
         } catch (e) {
             console.log(`error <${timestamp}>`, e);

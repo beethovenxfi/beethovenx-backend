@@ -157,6 +157,7 @@ class PortfolioService {
 
         if (blocks.length > 0) {
             await this.dataService.cachePortfolioHistory(address, blocks[0].timestamp, portfolioHistories);
+            await this.dataService.refreshLatestBlockCachedTimestamp();
         }
 
         return portfolioHistories;
