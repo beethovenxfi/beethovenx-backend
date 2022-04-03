@@ -1,6 +1,6 @@
 import { loadRestRoutes } from './app/loadRestRoutes';
 import { env } from './app/env';
-import createExpressApp, { json } from 'express';
+import createExpressApp from 'express';
 import { corsMiddleware } from './app/middleware/corsMiddleware';
 import { contextMiddleware } from './app/middleware/contextMiddleware';
 import { accountMiddleware } from './app/middleware/accountMiddleware';
@@ -13,14 +13,28 @@ import {
 } from 'apollo-server-core';
 import { schema } from './graphql_schema_generated';
 import { resolvers } from './app/resolvers';
-import { scheduleCronJobs } from './app/scheduleCronJobs';
-import { startWorker } from './app/worker';
+import { scheduleWorkerTasks } from './app/scheduleWorkerTasks';
 import { redis } from './modules/cache/redis';
-import { prisma } from './modules/prisma/prisma-client';
+import { scheduleMainTasks } from './app/scheduleMainTasks';
+import helmet from 'helmet';
 
 async function startServer() {
+    //need to open the redis connection prior to adding the rate limit middleware
+    await redis.connect();
+
     const app = createExpressApp();
-    app.use(json({ limit: '1mb' }));
+    app.use(helmet.dnsPrefetchControl());
+    app.use(helmet.expectCt());
+    app.use(helmet.frameguard());
+    app.use(helmet.hidePoweredBy());
+    app.use(helmet.hsts());
+    app.use(helmet.ieNoOpen());
+    app.use(helmet.noSniff());
+    app.use(helmet.originAgentCluster());
+    app.use(helmet.permittedCrossDomainPolicies());
+    app.use(helmet.referrerPolicy());
+    app.use(helmet.xssFilter());
+
     app.use(corsMiddleware);
     app.use(contextMiddleware);
     app.use(accountMiddleware);
@@ -38,7 +52,7 @@ async function startServer() {
             ApolloServerPluginLandingPageGraphQLPlayground(),
             ApolloServerPluginUsageReporting({
                 sendVariableValues: { all: true },
-                sendHeaders: { onlyNames: ['AccountAddress'] },
+                sendHeaders: { all: true },
             }),
         ],
         context: ({ req }) => req.context,
@@ -46,13 +60,17 @@ async function startServer() {
     await server.start();
     server.applyMiddleware({ app });
 
-    await redis.connect();
-
     await new Promise<void>((resolve) => httpServer.listen({ port: env.PORT }, resolve));
     console.log(`🚀 Server ready at http://localhost:${env.PORT}${server.graphqlPath}`);
 
     if (process.env.WORKER === 'true') {
-        scheduleCronJobs();
+        try {
+            scheduleWorkerTasks();
+        } catch (e) {
+            console.log(`Fatal error happened during cron scheduling.`, e);
+        }
+    } else {
+        scheduleMainTasks();
     }
 }
 

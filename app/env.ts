@@ -31,6 +31,7 @@ export const schema = {
     RPC_URL: String,
     YEARN_VAULTS_ENDPOINT: String,
     OWLRACLE_API_KEY: String,
+    MASTERCHEF_ADDRESS: String,
 };
 
 export const env: Env = load(schema, {
