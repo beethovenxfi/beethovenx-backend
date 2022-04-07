@@ -1,7 +1,8 @@
 import _ from 'lodash';
 import { Cache, CacheClass } from 'memory-cache';
+import { GqlGasEstimatesData } from '../../schema';
 import { cache } from '../cache/cache';
-import { owlracleService, OwlracleResponse } from './lib/owlracle.service';
+import { owlracleService } from './lib/owlracle.service';
 
 const GAS_ESTIMATE_CACHE_KEY = 'gasEstimate';
 
@@ -12,13 +13,13 @@ export class GasEstimateService {
         this.cache = new Cache<string, any>();
     }
 
-    public async getGasEstimateData(): Promise<OwlracleResponse> {
-        const memCached = this.cache.get(GAS_ESTIMATE_CACHE_KEY) as OwlracleResponse | null;
+    public async getGasEstimateData(): Promise<GqlGasEstimatesData> {
+        const memCached = this.cache.get(GAS_ESTIMATE_CACHE_KEY) as GqlGasEstimatesData | null;
         if (memCached) {
             return memCached;
         }
 
-        const cached = await cache.getObjectValue<OwlracleResponse>(GAS_ESTIMATE_CACHE_KEY);
+        const cached = await cache.getObjectValue<GqlGasEstimatesData>(GAS_ESTIMATE_CACHE_KEY);
         if (cached) {
             this.cache.put(GAS_ESTIMATE_CACHE_KEY, cached, 15000);
             return cached;
@@ -27,7 +28,7 @@ export class GasEstimateService {
         return this.cacheGasEstimateData();
     }
 
-    public async cacheGasEstimateData(): Promise<OwlracleResponse> {
+    public async cacheGasEstimateData(): Promise<GqlGasEstimatesData> {
         const gasEstimateData = await owlracleService.getGasEstimates();
         await cache.putObjectValue(GAS_ESTIMATE_CACHE_KEY, gasEstimateData);
 

@@ -11,6 +11,7 @@ import { sleep } from '../modules/util/promise';
 import { tokenService } from '../modules/token/token.service';
 import { beetsFarmService } from '../modules/beets/beets-farm.service';
 import { balancerSdk } from '../modules/balancer-sdk/src/balancer-sdk';
+import { gasEstimateService } from '../modules/gas-estimate/gas-estimate.service';
 
 export function scheduleWorkerTasks() {
     //every 20 seconds
@@ -223,6 +224,15 @@ export function scheduleWorkerTasks() {
             }
         } catch (e) {
             console.log(`Fatal error happened during daily caching.`, e);
+        }
+    });
+
+    //every 5 seconds
+    cron.schedule('*/5 * * * * *', async () => {
+        try {
+            await gasEstimateService.cacheGasEstimateData();
+        } catch (e) {
+            console.log(`Error happened during gas estimate caching.`, e);
         }
     });
 

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import _ from 'lodash';
 import { env } from '../../../app/env';
+import { GqlGasEstimatesData } from '../../../schema';
 
 interface OwlracleRequest {
     apikey: string;
@@ -9,23 +10,6 @@ interface OwlracleRequest {
     accept: string;
     version: number;
 }
-
-interface Speed {
-    acceptance: number;
-    gasPrice: number;
-    estimatedFee: number;
-}
-
-export interface OwlracleResponse {
-    timestamp: string;
-    baseFee: number;
-    lastBlock: number;
-    avgTime: number;
-    avgTx: number;
-    avgGas: number;
-    speeds: Speed[];
-}
-
 export class OwlracleService {
     private readonly baseUrl: string;
     private readonly requestParams: OwlracleRequest;
@@ -41,9 +25,9 @@ export class OwlracleService {
         };
     }
 
-    public async getGasEstimates(): Promise<OwlracleResponse> {
+    public async getGasEstimates(): Promise<GqlGasEstimatesData> {
         try {
-            const response = await this.get<OwlracleResponse>(this.requestParams);
+            const response = await this.get<GqlGasEstimatesData>(this.requestParams);
 
             // sort low to high on acceptance
             const sortedSpeeds = response.speeds.sort((a, b) => {
