@@ -1,6 +1,16 @@
+extend type Query {
+    beets: Beets!
+    users(first: Int = 20, skip: Int = 0, where: UsersWhere, orderBy: UsersOrderBy): [User!]!
+    user(id: ID!): User
+    farms(first: Int = 20, skip: Int = 0, where: FarmsWhere, orderBy: FarmsOrderBy): [Farm!]!
+    farm(id: ID!): Farm
+    tokens(first: Int = 20, skip: Int = 0, where: TokensWhere, orderBy: TokensOrderBy): [Token!]!
+    token(address: String!): Token
+}
+
 type Beets {
     liveData: LiveData!
-    users(first: Int = 20, skip: Int = 0, where: UsersWhere, orderBy: UsersOrderby): [User!]!
+    users(first: Int = 20, skip: Int = 0, where: UsersWhere, orderBy: UsersOrderBy): [User!]!
     farms(first: Int = 20, skip: Int = 0, where: FarmsWhere, orderBy: FarmsOrderBy): [Farm!]!
 }
 
@@ -19,6 +29,7 @@ type LiveData {
 
 type User {
     id: ID!
+    address: String!
     farms(where: UserFarmsWhere, orderBy: UserFarmsOrderBy): [Farm!]!
 }
 
@@ -38,7 +49,7 @@ type Farm {
     block: Int!
     lastRewardBlock: Int!
     timestamp: Int!
-    users(first: Int = 20, skip: Int = 0, where: UsersWhere, orderBy: UsersOrderby): [User!]!
+    users(first: Int = 20, skip: Int = 0, where: UsersWhere, orderBy: UsersOrderBy): [User!]!
     rewards(where: TokenRewardsWhere): [FarmReward!]!
 }
 
@@ -58,11 +69,27 @@ type Token {
     name: String!
     symbol: String!
     decimals: Int!
+    price: BigDecimal!
 }
 
 enum TokenUnit {
     BIG_DECIMAL
     BIG_INT
+}
+
+input TokensWhere {
+    address_in: [ID!]
+}
+
+enum TokensOrderBy {
+    ADDRESS_ASC
+    ADDRESS_DESC
+    NAME_ASC
+    NAME_DESC
+    SYMBOL_ASC
+    SYMBOL_DESC
+    PRICE_ASC
+    PRICE_DESC
 }
 
 input FarmsWhere {
@@ -95,12 +122,14 @@ enum UserFarmsOrderBy {
 }
 
 input UsersWhere {
+    id_in: [ID!]
+    address: String
     address_in: [String!]
     total_lp_lt: Int
     total_lp_gt: Int
 }
 
-enum UsersOrderby {
+enum UsersOrderBy {
     ADDRESS_ASC
     ADDRESS_DESC
     TOTAL_LP_VALUE_ASC
