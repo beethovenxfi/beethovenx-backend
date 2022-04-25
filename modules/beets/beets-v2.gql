@@ -1,5 +1,5 @@
 extend type Query {
-    beets: Beets!
+    protocol: Protocol!
     users(first: Int = 20, skip: Int = 0, where: UsersWhere, orderBy: UsersOrderBy): [User!]!
     user(id: ID!): User
     farms(first: Int = 20, skip: Int = 0, where: FarmsWhere, orderBy: FarmsOrderBy): [Farm!]!
@@ -8,7 +8,7 @@ extend type Query {
     token(address: String!): Token
 }
 
-type Beets {
+type Protocol {
     liveData: LiveData!
     users(first: Int = 20, skip: Int = 0, where: UsersWhere, orderBy: UsersOrderBy): [User!]!
     farms(first: Int = 20, skip: Int = 0, where: FarmsWhere, orderBy: FarmsOrderBy): [Farm!]!
