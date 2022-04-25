@@ -1,7 +1,7 @@
 type Beets {
     liveData: LiveData!
     users(first: Int = 20, skip: Int = 0, where: UsersWhere, orderBy: UsersOrderby): [User!]!
-    farms(first: Int = 20, skip: Int = 0, where: FarmsWhere, orderBy: FarmsOrderBy = POOL_ID_ASC): [Farm!]!
+    farms(first: Int = 20, skip: Int = 0, where: FarmsWhere, orderBy: FarmsOrderBy): [Farm!]!
 }
 
 type LiveData {
@@ -19,6 +19,14 @@ type LiveData {
 
 type User {
     id: ID!
+    farms(where: UserFarmsWhere, orderBy: UserFarmsOrderBy): [Farm!]!
+}
+
+type UserFarm {
+    user: User!
+    stakedAmount(uint: TokenUnit = BIG_DECIMAL): BigNumber!
+    harvestedRewards: [HarvestedFarmReward!]!
+    farm: Farm!
 }
 
 type Farm {
@@ -40,6 +48,11 @@ type FarmReward {
     token: Token!
 }
 
+type HarvestedFarmReward {
+    token: Token!
+    amount(uint: TokenUnit = BIG_DECIMAL): BigNumber!
+}
+
 type Token {
     address: ID!
     name: String!
@@ -57,6 +70,13 @@ input FarmsWhere {
     pair_in: [String!]
 }
 
+input UserFarmsWhere {
+    id_in: [ID!]
+    pair_in: [String!]
+    staked_amount_gt: BigNumber
+    staked_amount_lt: BigNumber
+}
+
 input TokenRewardsWhere {
     token_in: [String!]
 }
@@ -65,6 +85,13 @@ enum FarmsOrderBy {
     POOL_ID_ASC
     POOL_ID_DESC
     TVL
+}
+
+enum UserFarmsOrderBy {
+    POOL_ID_ASC
+    POOL_ID_DESC
+    STAKED_AMOUNT_ASC
+    STAKED_AMOUNT_DESC
 }
 
 input UsersWhere {
