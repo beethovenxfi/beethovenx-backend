@@ -1,0 +1,81 @@
+type Beets {
+    liveData: LiveData!
+    users(first: Int = 20, skip: Int = 0, where: UsersWhere, orderBy: UsersOrderby): [User!]!
+    farms(first: Int = 20, skip: Int = 0, where: FarmsWhere, orderBy: FarmsOrderBy = POOL_ID_ASC): [Farm!]!
+}
+
+type LiveData {
+    totalLiquidity: BigDecimal!
+    totalSwapVolume: BigDecimal!
+    totalSwapFee: BigDecimal!
+    poolCount: BigInt!
+    beetsPrice: BigDecimal!
+    fbeetsPrice: BigDecimal!
+    circulatingSupply: BigDecimal!
+    marketCap: BigDecimal!
+    swapFee24h: BigDecimal!
+    swapVolume24h: BigDecimal!
+}
+
+type User {
+    id: ID!
+}
+
+type Farm {
+    id: ID!
+    pair: Bytes!
+    allocPoint: Int!
+    totalAmountStaked(uint: TokenUnit = BIG_DECIMAL): BigNumber!
+    userCount: Int!
+    block: Int!
+    lastRewardBlock: Int!
+    timestamp: Int!
+    users(first: Int = 20, skip: Int = 0, where: UsersWhere, orderBy: UsersOrderby): [User!]!
+    rewards(where: TokenRewardsWhere): [FarmReward!]!
+}
+
+type FarmReward {
+    rewardPerSecond(uint: TokenUnit = BIG_DECIMAL): BigNumber!
+    rewardPerDay(uint: TokenUnit = BIG_DECIMAL): BigNumber!
+    token: Token!
+}
+
+type Token {
+    address: ID!
+    name: String!
+    symbol: String!
+    decimals: Int!
+}
+
+enum TokenUnit {
+    BIG_DECIMAL
+    BIG_INT
+}
+
+input FarmsWhere {
+    id_in: [ID!]
+    pair_in: [String!]
+}
+
+input TokenRewardsWhere {
+    token_in: [String!]
+}
+
+enum FarmsOrderBy {
+    POOL_ID_ASC
+    POOL_ID_DESC
+    TVL
+}
+
+input UsersWhere {
+    address_in: [String!]
+    total_lp_lt: Int
+    total_lp_gt: Int
+}
+
+enum UsersOrderby {
+    ADDRESS_ASC
+    ADDRESS_DESC
+    TOTAL_LP_VALUE_ASC
+    TOTAL_LP_VALUE_DESC
+}
