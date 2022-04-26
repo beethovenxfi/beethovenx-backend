@@ -1,5 +1,6 @@
 extend type Query {
     protocol: Protocol!
+    protocolInfo: ProtocolInfo!
     users(first: Int = 20, skip: Int = 0, where: UsersWhere, orderBy: UsersOrderBy): [User!]!
     user(id: ID!): User
     farms(first: Int = 20, skip: Int = 0, where: FarmsWhere, orderBy: FarmsOrderBy): [Farm!]!
@@ -9,12 +10,12 @@ extend type Query {
 }
 
 type Protocol {
-    liveData: LiveData!
+    protocolInfo: ProtocolInfo!
     users(first: Int = 20, skip: Int = 0, where: UsersWhere, orderBy: UsersOrderBy): [User!]!
     farms(first: Int = 20, skip: Int = 0, where: FarmsWhere, orderBy: FarmsOrderBy): [Farm!]!
 }
 
-type LiveData {
+type ProtocolInfo {
     totalLiquidity: BigDecimal!
     totalSwapVolume: BigDecimal!
     totalSwapFee: BigDecimal!
@@ -65,11 +66,17 @@ type HarvestedFarmReward {
 }
 
 type Token {
-    address: ID!
+    address: Bytes!
     name: String!
     symbol: String!
     decimals: Int!
+    price: TokenPrice!
+}
+
+type TokenPrice {
+    token: Bytes!
     price: BigDecimal!
+    timestamp: Int!
 }
 
 enum TokenUnit {
