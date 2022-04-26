@@ -32,6 +32,8 @@ type User {
     id: ID!
     address: String!
     farms(where: UserFarmsWhere, orderBy: UserFarmsOrderBy): [Farm!]!
+    timestamp: Int!
+    block: Int!
 }
 
 type UserFarm {
@@ -39,6 +41,8 @@ type UserFarm {
     stakedAmount(uint: TokenUnit = BIG_DECIMAL): BigNumber!
     harvestedRewards: [HarvestedFarmReward!]!
     farm: Farm!
+    timestamp: Int!
+    block: Int!
 }
 
 type Farm {
@@ -47,11 +51,11 @@ type Farm {
     allocPoint: Int!
     totalAmountStaked(uint: TokenUnit = BIG_DECIMAL): BigNumber!
     userCount: Int!
-    block: Int!
     lastRewardBlock: Int!
-    timestamp: Int!
     users(first: Int = 20, skip: Int = 0, where: UsersWhere, orderBy: UsersOrderBy): [User!]!
     rewards(where: TokenRewardsWhere): [FarmReward!]!
+    timestamp: Int!
+    block: Int!
 }
 
 type FarmReward {
@@ -63,6 +67,8 @@ type FarmReward {
 type HarvestedFarmReward {
     token: Token!
     amount(uint: TokenUnit = BIG_DECIMAL): BigNumber!
+    timestamp: Int!
+    block: Int!
 }
 
 type Token {
