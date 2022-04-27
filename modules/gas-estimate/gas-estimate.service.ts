@@ -13,13 +13,13 @@ export class GasEstimateService {
         this.cache = new Cache<string, any>();
     }
 
-    public async getGasEstimateData(): Promise<GqlGasEstimatesData> {
-        const memCached = this.cache.get(GAS_ESTIMATE_CACHE_KEY) as GqlGasEstimatesData | null;
+    public async getGasEstimateData(): Promise<GqlGasEstimatesData[]> {
+        const memCached = this.cache.get(GAS_ESTIMATE_CACHE_KEY) as GqlGasEstimatesData[] | null;
         if (memCached) {
             return memCached;
         }
 
-        const cached = await cache.getObjectValue<GqlGasEstimatesData>(GAS_ESTIMATE_CACHE_KEY);
+        const cached = await cache.getObjectValue<GqlGasEstimatesData[]>(GAS_ESTIMATE_CACHE_KEY);
         if (cached) {
             this.cache.put(GAS_ESTIMATE_CACHE_KEY, cached, 15000);
             return cached;
@@ -28,10 +28,9 @@ export class GasEstimateService {
         return this.cacheGasEstimateData();
     }
 
-    public async cacheGasEstimateData(): Promise<GqlGasEstimatesData> {
-        const gasEstimateData = await owlracleService.getGasEstimates();
+    public async cacheGasEstimateData(): Promise<GqlGasEstimatesData[]> {
+        const gasEstimateData = await Promise.all(owlracleService.getGasEstimates());
         await cache.putObjectValue(GAS_ESTIMATE_CACHE_KEY, gasEstimateData);
-
         return gasEstimateData;
     }
 }

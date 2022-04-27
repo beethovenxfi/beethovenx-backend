@@ -14,8 +14,13 @@ export class OwlracleService {
     private readonly baseUrl: string;
     private readonly requestParams: OwlracleRequest;
 
+    chains = [
+        { id: 250, name: 'ftm' },
+        //{ id: 137, name: 'poly' },
+    ];
+
     constructor() {
-        this.baseUrl = 'https://owlracle.info/ftm/gas';
+        this.baseUrl = 'https://owlracle.info/';
         this.requestParams = {
             apikey: env.OWLRACLE_API_KEY,
             blocks: 200,
@@ -25,9 +30,9 @@ export class OwlracleService {
         };
     }
 
-    public async getGasEstimates(): Promise<GqlGasEstimatesData> {
+    public async getGasEstimate(chain: any): Promise<GqlGasEstimatesData> {
         try {
-            const response = await this.get<GqlGasEstimatesData>(this.requestParams);
+            const response = await this.get<GqlGasEstimatesData>(chain.name, this.requestParams);
 
             // sort low to high on acceptance
             const sortedSpeeds = response.speeds.sort((a, b) => {
@@ -38,6 +43,7 @@ export class OwlracleService {
             const sortedResponse = {
                 ...response,
                 speeds: [...sortedSpeeds],
+                chainId: chain.id,
             };
             return sortedResponse;
         } catch (error) {
@@ -46,8 +52,12 @@ export class OwlracleService {
         }
     }
 
-    private async get<T>(params: any): Promise<T> {
-        const { data } = await axios.get(this.baseUrl, { params: { ...params } });
+    public getGasEstimates(): Promise<GqlGasEstimatesData>[] {
+        return this.chains.map(async (chain) => await this.getGasEstimate(chain));
+    }
+
+    private async get<T>(chainName: string, params: any): Promise<T> {
+        const { data } = await axios.get(`${this.baseUrl}${chainName}/gas`, { params: { ...params } });
         return data;
     }
 }

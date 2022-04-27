@@ -1,5 +1,5 @@
 extend type Query {
-    gasEstimates: GqlGasEstimatesData!
+    gasEstimates: [GqlGasEstimatesData!]!
 }
 
 type GqlSpeed {
@@ -16,4 +16,5 @@ type GqlGasEstimatesData {
     avgTx: Float!
     avgGas: Float!
     speeds: [GqlSpeed!]!
+    chainId: Int!
 }
