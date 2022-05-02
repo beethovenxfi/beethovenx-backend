@@ -1,0 +1,752 @@
+schema {
+  query: Query
+  subscription: Subscription
+}
+
+directive @entity on OBJECT
+
+directive @derivedFrom(field: String) on FIELD_DEFINITION
+
+directive @subgraphId(id: String) on OBJECT
+
+scalar MasterchefSubgraph_BigDecimal
+
+scalar BigInt
+
+input MasterchefSubgraph_Block_height {
+  hash: MasterchefSubgraph_Bytes
+  number: Int
+}
+
+scalar MasterchefSubgraph_Bytes
+
+type MasterchefSubgraph_HarvestAction {
+  id: ID!
+  user: MasterchefSubgraph_User
+  token: MasterchefSubgraph_Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
+  block: BigInt!
+}
+
+input MasterchefSubgraph_HarvestAction_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  user: String
+  user_not: String
+  user_gt: String
+  user_lt: String
+  user_gte: String
+  user_lte: String
+  user_in: [String!]
+  user_not_in: [String!]
+  user_contains: String
+  user_not_contains: String
+  user_starts_with: String
+  user_not_starts_with: String
+  user_ends_with: String
+  user_not_ends_with: String
+  token: MasterchefSubgraph_Bytes
+  token_not: MasterchefSubgraph_Bytes
+  token_in: [MasterchefSubgraph_Bytes!]
+  token_not_in: [MasterchefSubgraph_Bytes!]
+  token_contains: MasterchefSubgraph_Bytes
+  token_not_contains: MasterchefSubgraph_Bytes
+  amount: BigInt
+  amount_not: BigInt
+  amount_gt: BigInt
+  amount_lt: BigInt
+  amount_gte: BigInt
+  amount_lte: BigInt
+  amount_in: [BigInt!]
+  amount_not_in: [BigInt!]
+  timestamp: BigInt
+  timestamp_not: BigInt
+  timestamp_gt: BigInt
+  timestamp_lt: BigInt
+  timestamp_gte: BigInt
+  timestamp_lte: BigInt
+  timestamp_in: [BigInt!]
+  timestamp_not_in: [BigInt!]
+  block: BigInt
+  block_not: BigInt
+  block_gt: BigInt
+  block_lt: BigInt
+  block_gte: BigInt
+  block_lte: BigInt
+  block_in: [BigInt!]
+  block_not_in: [BigInt!]
+}
+
+enum MasterchefSubgraph_HarvestAction_orderBy {
+  id
+  user
+  token
+  amount
+  timestamp
+  block
+}
+
+type MasterchefSubgraph_MasterChef {
+  id: ID!
+  beets: MasterchefSubgraph_Bytes!
+  beetsPerBlock: BigInt!
+  totalAllocPoint: BigInt!
+  pools(skip: Int = 0, first: Int = 100, orderBy: MasterchefSubgraph_Pool_orderBy, orderDirection: MasterchefSubgraph_OrderDirection, where: MasterchefSubgraph_Pool_filter): [MasterchefSubgraph_Pool!]
+  poolCount: BigInt!
+  timestamp: BigInt!
+  block: BigInt!
+}
+
+input MasterchefSubgraph_MasterChef_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  beets: MasterchefSubgraph_Bytes
+  beets_not: MasterchefSubgraph_Bytes
+  beets_in: [MasterchefSubgraph_Bytes!]
+  beets_not_in: [MasterchefSubgraph_Bytes!]
+  beets_contains: MasterchefSubgraph_Bytes
+  beets_not_contains: MasterchefSubgraph_Bytes
+  beetsPerBlock: BigInt
+  beetsPerBlock_not: BigInt
+  beetsPerBlock_gt: BigInt
+  beetsPerBlock_lt: BigInt
+  beetsPerBlock_gte: BigInt
+  beetsPerBlock_lte: BigInt
+  beetsPerBlock_in: [BigInt!]
+  beetsPerBlock_not_in: [BigInt!]
+  totalAllocPoint: BigInt
+  totalAllocPoint_not: BigInt
+  totalAllocPoint_gt: BigInt
+  totalAllocPoint_lt: BigInt
+  totalAllocPoint_gte: BigInt
+  totalAllocPoint_lte: BigInt
+  totalAllocPoint_in: [BigInt!]
+  totalAllocPoint_not_in: [BigInt!]
+  poolCount: BigInt
+  poolCount_not: BigInt
+  poolCount_gt: BigInt
+  poolCount_lt: BigInt
+  poolCount_gte: BigInt
+  poolCount_lte: BigInt
+  poolCount_in: [BigInt!]
+  poolCount_not_in: [BigInt!]
+  timestamp: BigInt
+  timestamp_not: BigInt
+  timestamp_gt: BigInt
+  timestamp_lt: BigInt
+  timestamp_gte: BigInt
+  timestamp_lte: BigInt
+  timestamp_in: [BigInt!]
+  timestamp_not_in: [BigInt!]
+  block: BigInt
+  block_not: BigInt
+  block_gt: BigInt
+  block_lt: BigInt
+  block_gte: BigInt
+  block_lte: BigInt
+  block_in: [BigInt!]
+  block_not_in: [BigInt!]
+}
+
+enum MasterchefSubgraph_MasterChef_orderBy {
+  id
+  beets
+  beetsPerBlock
+  totalAllocPoint
+  pools
+  poolCount
+  timestamp
+  block
+}
+
+enum MasterchefSubgraph_OrderDirection {
+  asc
+  desc
+}
+
+type MasterchefSubgraph_Pool {
+  id: ID!
+  masterChef: MasterchefSubgraph_MasterChef!
+  pair: MasterchefSubgraph_Bytes!
+  rewarder: MasterchefSubgraph_Rewarder
+  allocPoint: BigInt!
+  lastRewardBlock: BigInt!
+  accBeetsPerShare: BigInt!
+  slpBalance: BigInt!
+  users(skip: Int = 0, first: Int = 100, orderBy: MasterchefSubgraph_User_orderBy, orderDirection: MasterchefSubgraph_OrderDirection, where: MasterchefSubgraph_User_filter): [MasterchefSubgraph_User!]!
+  userCount: BigInt!
+  timestamp: BigInt!
+  block: BigInt!
+}
+
+input MasterchefSubgraph_Pool_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  masterChef: String
+  masterChef_not: String
+  masterChef_gt: String
+  masterChef_lt: String
+  masterChef_gte: String
+  masterChef_lte: String
+  masterChef_in: [String!]
+  masterChef_not_in: [String!]
+  masterChef_contains: String
+  masterChef_not_contains: String
+  masterChef_starts_with: String
+  masterChef_not_starts_with: String
+  masterChef_ends_with: String
+  masterChef_not_ends_with: String
+  pair: MasterchefSubgraph_Bytes
+  pair_not: MasterchefSubgraph_Bytes
+  pair_in: [MasterchefSubgraph_Bytes!]
+  pair_not_in: [MasterchefSubgraph_Bytes!]
+  pair_contains: MasterchefSubgraph_Bytes
+  pair_not_contains: MasterchefSubgraph_Bytes
+  rewarder: String
+  rewarder_not: String
+  rewarder_gt: String
+  rewarder_lt: String
+  rewarder_gte: String
+  rewarder_lte: String
+  rewarder_in: [String!]
+  rewarder_not_in: [String!]
+  rewarder_contains: String
+  rewarder_not_contains: String
+  rewarder_starts_with: String
+  rewarder_not_starts_with: String
+  rewarder_ends_with: String
+  rewarder_not_ends_with: String
+  allocPoint: BigInt
+  allocPoint_not: BigInt
+  allocPoint_gt: BigInt
+  allocPoint_lt: BigInt
+  allocPoint_gte: BigInt
+  allocPoint_lte: BigInt
+  allocPoint_in: [BigInt!]
+  allocPoint_not_in: [BigInt!]
+  lastRewardBlock: BigInt
+  lastRewardBlock_not: BigInt
+  lastRewardBlock_gt: BigInt
+  lastRewardBlock_lt: BigInt
+  lastRewardBlock_gte: BigInt
+  lastRewardBlock_lte: BigInt
+  lastRewardBlock_in: [BigInt!]
+  lastRewardBlock_not_in: [BigInt!]
+  accBeetsPerShare: BigInt
+  accBeetsPerShare_not: BigInt
+  accBeetsPerShare_gt: BigInt
+  accBeetsPerShare_lt: BigInt
+  accBeetsPerShare_gte: BigInt
+  accBeetsPerShare_lte: BigInt
+  accBeetsPerShare_in: [BigInt!]
+  accBeetsPerShare_not_in: [BigInt!]
+  slpBalance: BigInt
+  slpBalance_not: BigInt
+  slpBalance_gt: BigInt
+  slpBalance_lt: BigInt
+  slpBalance_gte: BigInt
+  slpBalance_lte: BigInt
+  slpBalance_in: [BigInt!]
+  slpBalance_not_in: [BigInt!]
+  userCount: BigInt
+  userCount_not: BigInt
+  userCount_gt: BigInt
+  userCount_lt: BigInt
+  userCount_gte: BigInt
+  userCount_lte: BigInt
+  userCount_in: [BigInt!]
+  userCount_not_in: [BigInt!]
+  timestamp: BigInt
+  timestamp_not: BigInt
+  timestamp_gt: BigInt
+  timestamp_lt: BigInt
+  timestamp_gte: BigInt
+  timestamp_lte: BigInt
+  timestamp_in: [BigInt!]
+  timestamp_not_in: [BigInt!]
+  block: BigInt
+  block_not: BigInt
+  block_gt: BigInt
+  block_lt: BigInt
+  block_gte: BigInt
+  block_lte: BigInt
+  block_in: [BigInt!]
+  block_not_in: [BigInt!]
+}
+
+enum MasterchefSubgraph_Pool_orderBy {
+  id
+  masterChef
+  pair
+  rewarder
+  allocPoint
+  lastRewardBlock
+  accBeetsPerShare
+  slpBalance
+  users
+  userCount
+  timestamp
+  block
+}
+
+type Query {
+  MasterchefSubgraph_masterChef(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): MasterchefSubgraph_MasterChef
+  MasterchefSubgraph_masterChefs(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: MasterchefSubgraph_MasterChef_orderBy
+    orderDirection: MasterchefSubgraph_OrderDirection
+    where: MasterchefSubgraph_MasterChef_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): [MasterchefSubgraph_MasterChef!]!
+  MasterchefSubgraph_pool(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): MasterchefSubgraph_Pool
+  MasterchefSubgraph_pools(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: MasterchefSubgraph_Pool_orderBy
+    orderDirection: MasterchefSubgraph_OrderDirection
+    where: MasterchefSubgraph_Pool_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): [MasterchefSubgraph_Pool!]!
+  MasterchefSubgraph_rewardToken(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): MasterchefSubgraph_RewardToken
+  MasterchefSubgraph_rewardTokens(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: MasterchefSubgraph_RewardToken_orderBy
+    orderDirection: MasterchefSubgraph_OrderDirection
+    where: MasterchefSubgraph_RewardToken_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): [MasterchefSubgraph_RewardToken!]!
+  MasterchefSubgraph_rewarder(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): MasterchefSubgraph_Rewarder
+  MasterchefSubgraph_rewarders(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: MasterchefSubgraph_Rewarder_orderBy
+    orderDirection: MasterchefSubgraph_OrderDirection
+    where: MasterchefSubgraph_Rewarder_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): [MasterchefSubgraph_Rewarder!]!
+  MasterchefSubgraph_harvestAction(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): MasterchefSubgraph_HarvestAction
+  MasterchefSubgraph_harvestActions(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: MasterchefSubgraph_HarvestAction_orderBy
+    orderDirection: MasterchefSubgraph_OrderDirection
+    where: MasterchefSubgraph_HarvestAction_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): [MasterchefSubgraph_HarvestAction!]!
+  MasterchefSubgraph_user(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): MasterchefSubgraph_User
+  MasterchefSubgraph_users(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: MasterchefSubgraph_User_orderBy
+    orderDirection: MasterchefSubgraph_OrderDirection
+    where: MasterchefSubgraph_User_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): [MasterchefSubgraph_User!]!
+  """Access to subgraph metadata"""
+  MasterchefSubgraph__meta(block: MasterchefSubgraph_Block_height): MasterchefSubgraph__Meta_
+}
+
+type MasterchefSubgraph_RewardToken {
+  id: ID!
+  rewarder: MasterchefSubgraph_Rewarder
+  token: MasterchefSubgraph_Bytes!
+  decimals: Int!
+  symbol: String!
+  rewardPerSecond: BigInt!
+  timestamp: BigInt!
+  block: BigInt!
+}
+
+input MasterchefSubgraph_RewardToken_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  rewarder: String
+  rewarder_not: String
+  rewarder_gt: String
+  rewarder_lt: String
+  rewarder_gte: String
+  rewarder_lte: String
+  rewarder_in: [String!]
+  rewarder_not_in: [String!]
+  rewarder_contains: String
+  rewarder_not_contains: String
+  rewarder_starts_with: String
+  rewarder_not_starts_with: String
+  rewarder_ends_with: String
+  rewarder_not_ends_with: String
+  token: MasterchefSubgraph_Bytes
+  token_not: MasterchefSubgraph_Bytes
+  token_in: [MasterchefSubgraph_Bytes!]
+  token_not_in: [MasterchefSubgraph_Bytes!]
+  token_contains: MasterchefSubgraph_Bytes
+  token_not_contains: MasterchefSubgraph_Bytes
+  decimals: Int
+  decimals_not: Int
+  decimals_gt: Int
+  decimals_lt: Int
+  decimals_gte: Int
+  decimals_lte: Int
+  decimals_in: [Int!]
+  decimals_not_in: [Int!]
+  symbol: String
+  symbol_not: String
+  symbol_gt: String
+  symbol_lt: String
+  symbol_gte: String
+  symbol_lte: String
+  symbol_in: [String!]
+  symbol_not_in: [String!]
+  symbol_contains: String
+  symbol_not_contains: String
+  symbol_starts_with: String
+  symbol_not_starts_with: String
+  symbol_ends_with: String
+  symbol_not_ends_with: String
+  rewardPerSecond: BigInt
+  rewardPerSecond_not: BigInt
+  rewardPerSecond_gt: BigInt
+  rewardPerSecond_lt: BigInt
+  rewardPerSecond_gte: BigInt
+  rewardPerSecond_lte: BigInt
+  rewardPerSecond_in: [BigInt!]
+  rewardPerSecond_not_in: [BigInt!]
+  timestamp: BigInt
+  timestamp_not: BigInt
+  timestamp_gt: BigInt
+  timestamp_lt: BigInt
+  timestamp_gte: BigInt
+  timestamp_lte: BigInt
+  timestamp_in: [BigInt!]
+  timestamp_not_in: [BigInt!]
+  block: BigInt
+  block_not: BigInt
+  block_gt: BigInt
+  block_lt: BigInt
+  block_gte: BigInt
+  block_lte: BigInt
+  block_in: [BigInt!]
+  block_not_in: [BigInt!]
+}
+
+enum MasterchefSubgraph_RewardToken_orderBy {
+  id
+  rewarder
+  token
+  decimals
+  symbol
+  rewardPerSecond
+  timestamp
+  block
+}
+
+type MasterchefSubgraph_Rewarder {
+  id: ID!
+  rewardTokens(skip: Int = 0, first: Int = 100, orderBy: MasterchefSubgraph_RewardToken_orderBy, orderDirection: MasterchefSubgraph_OrderDirection, where: MasterchefSubgraph_RewardToken_filter): [MasterchefSubgraph_RewardToken!]!
+  timestamp: BigInt!
+  block: BigInt!
+}
+
+input MasterchefSubgraph_Rewarder_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  timestamp: BigInt
+  timestamp_not: BigInt
+  timestamp_gt: BigInt
+  timestamp_lt: BigInt
+  timestamp_gte: BigInt
+  timestamp_lte: BigInt
+  timestamp_in: [BigInt!]
+  timestamp_not_in: [BigInt!]
+  block: BigInt
+  block_not: BigInt
+  block_gt: BigInt
+  block_lt: BigInt
+  block_gte: BigInt
+  block_lte: BigInt
+  block_in: [BigInt!]
+  block_not_in: [BigInt!]
+}
+
+enum MasterchefSubgraph_Rewarder_orderBy {
+  id
+  rewardTokens
+  timestamp
+  block
+}
+
+type Subscription {
+  MasterchefSubgraph_masterChef(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): MasterchefSubgraph_MasterChef
+  MasterchefSubgraph_masterChefs(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: MasterchefSubgraph_MasterChef_orderBy
+    orderDirection: MasterchefSubgraph_OrderDirection
+    where: MasterchefSubgraph_MasterChef_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): [MasterchefSubgraph_MasterChef!]!
+  MasterchefSubgraph_pool(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): MasterchefSubgraph_Pool
+  MasterchefSubgraph_pools(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: MasterchefSubgraph_Pool_orderBy
+    orderDirection: MasterchefSubgraph_OrderDirection
+    where: MasterchefSubgraph_Pool_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): [MasterchefSubgraph_Pool!]!
+  MasterchefSubgraph_rewardToken(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): MasterchefSubgraph_RewardToken
+  MasterchefSubgraph_rewardTokens(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: MasterchefSubgraph_RewardToken_orderBy
+    orderDirection: MasterchefSubgraph_OrderDirection
+    where: MasterchefSubgraph_RewardToken_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): [MasterchefSubgraph_RewardToken!]!
+  MasterchefSubgraph_rewarder(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): MasterchefSubgraph_Rewarder
+  MasterchefSubgraph_rewarders(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: MasterchefSubgraph_Rewarder_orderBy
+    orderDirection: MasterchefSubgraph_OrderDirection
+    where: MasterchefSubgraph_Rewarder_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): [MasterchefSubgraph_Rewarder!]!
+  MasterchefSubgraph_harvestAction(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): MasterchefSubgraph_HarvestAction
+  MasterchefSubgraph_harvestActions(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: MasterchefSubgraph_HarvestAction_orderBy
+    orderDirection: MasterchefSubgraph_OrderDirection
+    where: MasterchefSubgraph_HarvestAction_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): [MasterchefSubgraph_HarvestAction!]!
+  MasterchefSubgraph_user(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): MasterchefSubgraph_User
+  MasterchefSubgraph_users(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: MasterchefSubgraph_User_orderBy
+    orderDirection: MasterchefSubgraph_OrderDirection
+    where: MasterchefSubgraph_User_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: MasterchefSubgraph_Block_height
+  ): [MasterchefSubgraph_User!]!
+  """Access to subgraph metadata"""
+  MasterchefSubgraph__meta(block: MasterchefSubgraph_Block_height): MasterchefSubgraph__Meta_
+}
+
+type MasterchefSubgraph_User {
+  id: ID!
+  address: MasterchefSubgraph_Bytes!
+  pool: MasterchefSubgraph_Pool
+  amount: BigInt!
+  rewardDebt: BigInt!
+  beetsHarvested: BigInt!
+  harvests(skip: Int = 0, first: Int = 100, orderBy: MasterchefSubgraph_HarvestAction_orderBy, orderDirection: MasterchefSubgraph_OrderDirection, where: MasterchefSubgraph_HarvestAction_filter): [MasterchefSubgraph_HarvestAction!]!
+  timestamp: BigInt!
+  block: BigInt!
+}
+
+input MasterchefSubgraph_User_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  address: MasterchefSubgraph_Bytes
+  address_not: MasterchefSubgraph_Bytes
+  address_in: [MasterchefSubgraph_Bytes!]
+  address_not_in: [MasterchefSubgraph_Bytes!]
+  address_contains: MasterchefSubgraph_Bytes
+  address_not_contains: MasterchefSubgraph_Bytes
+  pool: String
+  pool_not: String
+  pool_gt: String
+  pool_lt: String
+  pool_gte: String
+  pool_lte: String
+  pool_in: [String!]
+  pool_not_in: [String!]
+  pool_contains: String
+  pool_not_contains: String
+  pool_starts_with: String
+  pool_not_starts_with: String
+  pool_ends_with: String
+  pool_not_ends_with: String
+  amount: BigInt
+  amount_not: BigInt
+  amount_gt: BigInt
+  amount_lt: BigInt
+  amount_gte: BigInt
+  amount_lte: BigInt
+  amount_in: [BigInt!]
+  amount_not_in: [BigInt!]
+  rewardDebt: BigInt
+  rewardDebt_not: BigInt
+  rewardDebt_gt: BigInt
+  rewardDebt_lt: BigInt
+  rewardDebt_gte: BigInt
+  rewardDebt_lte: BigInt
+  rewardDebt_in: [BigInt!]
+  rewardDebt_not_in: [BigInt!]
+  beetsHarvested: BigInt
+  beetsHarvested_not: BigInt
+  beetsHarvested_gt: BigInt
+  beetsHarvested_lt: BigInt
+  beetsHarvested_gte: BigInt
+  beetsHarvested_lte: BigInt
+  beetsHarvested_in: [BigInt!]
+  beetsHarvested_not_in: [BigInt!]
+  timestamp: BigInt
+  timestamp_not: BigInt
+  timestamp_gt: BigInt
+  timestamp_lt: BigInt
+  timestamp_gte: BigInt
+  timestamp_lte: BigInt
+  timestamp_in: [BigInt!]
+  timestamp_not_in: [BigInt!]
+  block: BigInt
+  block_not: BigInt
+  block_gt: BigInt
+  block_lt: BigInt
+  block_gte: BigInt
+  block_lte: BigInt
+  block_in: [BigInt!]
+  block_not_in: [BigInt!]
+}
+
+enum MasterchefSubgraph_User_orderBy {
+  id
+  address
+  pool
+  amount
+  rewardDebt
+  beetsHarvested
+  harvests
+  timestamp
+  block
+}
+
+type MasterchefSubgraph__Block_ {
+  """The hash of the block"""
+  hash: MasterchefSubgraph_Bytes
+  """The block number"""
+  number: Int!
+}
+
+"""The type for the top-level _meta field"""
+type MasterchefSubgraph__Meta_ {
+  """
+  Information about a specific subgraph block. The hash of the block
+  will be null if the _meta field has a block constraint that asks for
+  a block number. It will be filled if the _meta field has no block constraint
+  and therefore asks for the latest  block
+  
+  """
+  block: MasterchefSubgraph__Block_!
+  """The deployment ID"""
+  deployment: String!
+  """If `true`, the subgraph encountered indexing errors at some past block"""
+  hasIndexingErrors: Boolean!
+}
+
+enum _SubgraphErrorPolicy_ {
+  """Data will be returned even if the subgraph has indexing errors"""
+  allow
+  """If the subgraph has indexing errors, data will be omitted. The default."""
+  deny
+}

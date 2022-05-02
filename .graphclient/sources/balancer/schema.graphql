@@ -1,0 +1,2827 @@
+schema {
+  query: Query
+  subscription: Subscription
+}
+
+directive @entity on OBJECT
+
+directive @derivedFrom(field: String) on FIELD_DEFINITION
+
+directive @subgraphId(id: String) on OBJECT
+
+type BalancerSubgraph_AmpUpdate {
+  id: ID!
+  poolId: BalancerSubgraph_Pool!
+  scheduledTimestamp: Int!
+  startTimestamp: Int!
+  endTimestamp: Int!
+  startAmp: BigInt!
+  endAmp: BigInt!
+}
+
+input BalancerSubgraph_AmpUpdate_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  poolId: String
+  poolId_not: String
+  poolId_gt: String
+  poolId_lt: String
+  poolId_gte: String
+  poolId_lte: String
+  poolId_in: [String!]
+  poolId_not_in: [String!]
+  poolId_contains: String
+  poolId_not_contains: String
+  poolId_starts_with: String
+  poolId_not_starts_with: String
+  poolId_ends_with: String
+  poolId_not_ends_with: String
+  scheduledTimestamp: Int
+  scheduledTimestamp_not: Int
+  scheduledTimestamp_gt: Int
+  scheduledTimestamp_lt: Int
+  scheduledTimestamp_gte: Int
+  scheduledTimestamp_lte: Int
+  scheduledTimestamp_in: [Int!]
+  scheduledTimestamp_not_in: [Int!]
+  startTimestamp: Int
+  startTimestamp_not: Int
+  startTimestamp_gt: Int
+  startTimestamp_lt: Int
+  startTimestamp_gte: Int
+  startTimestamp_lte: Int
+  startTimestamp_in: [Int!]
+  startTimestamp_not_in: [Int!]
+  endTimestamp: Int
+  endTimestamp_not: Int
+  endTimestamp_gt: Int
+  endTimestamp_lt: Int
+  endTimestamp_gte: Int
+  endTimestamp_lte: Int
+  endTimestamp_in: [Int!]
+  endTimestamp_not_in: [Int!]
+  startAmp: BigInt
+  startAmp_not: BigInt
+  startAmp_gt: BigInt
+  startAmp_lt: BigInt
+  startAmp_gte: BigInt
+  startAmp_lte: BigInt
+  startAmp_in: [BigInt!]
+  startAmp_not_in: [BigInt!]
+  endAmp: BigInt
+  endAmp_not: BigInt
+  endAmp_gt: BigInt
+  endAmp_lt: BigInt
+  endAmp_gte: BigInt
+  endAmp_lte: BigInt
+  endAmp_in: [BigInt!]
+  endAmp_not_in: [BigInt!]
+}
+
+enum BalancerSubgraph_AmpUpdate_orderBy {
+  id
+  poolId
+  scheduledTimestamp
+  startTimestamp
+  endTimestamp
+  startAmp
+  endAmp
+}
+
+type BalancerSubgraph_Balancer {
+  id: ID!
+  poolCount: Int!
+  pools(skip: Int = 0, first: Int = 100, orderBy: BalancerSubgraph_Pool_orderBy, orderDirection: BalancerSubgraph_OrderDirection, where: BalancerSubgraph_Pool_filter): [BalancerSubgraph_Pool!]
+  totalLiquidity: BalancerSubgraph_BigDecimal!
+  totalSwapCount: BigInt!
+  totalSwapVolume: BalancerSubgraph_BigDecimal!
+  totalSwapFee: BalancerSubgraph_BigDecimal!
+}
+
+type BalancerSubgraph_BalancerSnapshot {
+  id: ID!
+  vault: BalancerSubgraph_Balancer!
+  timestamp: Int!
+  poolCount: Int!
+  totalLiquidity: BalancerSubgraph_BigDecimal!
+  totalSwapCount: BigInt!
+  totalSwapVolume: BalancerSubgraph_BigDecimal!
+  totalSwapFee: BalancerSubgraph_BigDecimal!
+}
+
+input BalancerSubgraph_BalancerSnapshot_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  vault: String
+  vault_not: String
+  vault_gt: String
+  vault_lt: String
+  vault_gte: String
+  vault_lte: String
+  vault_in: [String!]
+  vault_not_in: [String!]
+  vault_contains: String
+  vault_not_contains: String
+  vault_starts_with: String
+  vault_not_starts_with: String
+  vault_ends_with: String
+  vault_not_ends_with: String
+  timestamp: Int
+  timestamp_not: Int
+  timestamp_gt: Int
+  timestamp_lt: Int
+  timestamp_gte: Int
+  timestamp_lte: Int
+  timestamp_in: [Int!]
+  timestamp_not_in: [Int!]
+  poolCount: Int
+  poolCount_not: Int
+  poolCount_gt: Int
+  poolCount_lt: Int
+  poolCount_gte: Int
+  poolCount_lte: Int
+  poolCount_in: [Int!]
+  poolCount_not_in: [Int!]
+  totalLiquidity: BalancerSubgraph_BigDecimal
+  totalLiquidity_not: BalancerSubgraph_BigDecimal
+  totalLiquidity_gt: BalancerSubgraph_BigDecimal
+  totalLiquidity_lt: BalancerSubgraph_BigDecimal
+  totalLiquidity_gte: BalancerSubgraph_BigDecimal
+  totalLiquidity_lte: BalancerSubgraph_BigDecimal
+  totalLiquidity_in: [BalancerSubgraph_BigDecimal!]
+  totalLiquidity_not_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapCount: BigInt
+  totalSwapCount_not: BigInt
+  totalSwapCount_gt: BigInt
+  totalSwapCount_lt: BigInt
+  totalSwapCount_gte: BigInt
+  totalSwapCount_lte: BigInt
+  totalSwapCount_in: [BigInt!]
+  totalSwapCount_not_in: [BigInt!]
+  totalSwapVolume: BalancerSubgraph_BigDecimal
+  totalSwapVolume_not: BalancerSubgraph_BigDecimal
+  totalSwapVolume_gt: BalancerSubgraph_BigDecimal
+  totalSwapVolume_lt: BalancerSubgraph_BigDecimal
+  totalSwapVolume_gte: BalancerSubgraph_BigDecimal
+  totalSwapVolume_lte: BalancerSubgraph_BigDecimal
+  totalSwapVolume_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapVolume_not_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapFee: BalancerSubgraph_BigDecimal
+  totalSwapFee_not: BalancerSubgraph_BigDecimal
+  totalSwapFee_gt: BalancerSubgraph_BigDecimal
+  totalSwapFee_lt: BalancerSubgraph_BigDecimal
+  totalSwapFee_gte: BalancerSubgraph_BigDecimal
+  totalSwapFee_lte: BalancerSubgraph_BigDecimal
+  totalSwapFee_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapFee_not_in: [BalancerSubgraph_BigDecimal!]
+}
+
+enum BalancerSubgraph_BalancerSnapshot_orderBy {
+  id
+  vault
+  timestamp
+  poolCount
+  totalLiquidity
+  totalSwapCount
+  totalSwapVolume
+  totalSwapFee
+}
+
+input BalancerSubgraph_Balancer_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  poolCount: Int
+  poolCount_not: Int
+  poolCount_gt: Int
+  poolCount_lt: Int
+  poolCount_gte: Int
+  poolCount_lte: Int
+  poolCount_in: [Int!]
+  poolCount_not_in: [Int!]
+  totalLiquidity: BalancerSubgraph_BigDecimal
+  totalLiquidity_not: BalancerSubgraph_BigDecimal
+  totalLiquidity_gt: BalancerSubgraph_BigDecimal
+  totalLiquidity_lt: BalancerSubgraph_BigDecimal
+  totalLiquidity_gte: BalancerSubgraph_BigDecimal
+  totalLiquidity_lte: BalancerSubgraph_BigDecimal
+  totalLiquidity_in: [BalancerSubgraph_BigDecimal!]
+  totalLiquidity_not_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapCount: BigInt
+  totalSwapCount_not: BigInt
+  totalSwapCount_gt: BigInt
+  totalSwapCount_lt: BigInt
+  totalSwapCount_gte: BigInt
+  totalSwapCount_lte: BigInt
+  totalSwapCount_in: [BigInt!]
+  totalSwapCount_not_in: [BigInt!]
+  totalSwapVolume: BalancerSubgraph_BigDecimal
+  totalSwapVolume_not: BalancerSubgraph_BigDecimal
+  totalSwapVolume_gt: BalancerSubgraph_BigDecimal
+  totalSwapVolume_lt: BalancerSubgraph_BigDecimal
+  totalSwapVolume_gte: BalancerSubgraph_BigDecimal
+  totalSwapVolume_lte: BalancerSubgraph_BigDecimal
+  totalSwapVolume_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapVolume_not_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapFee: BalancerSubgraph_BigDecimal
+  totalSwapFee_not: BalancerSubgraph_BigDecimal
+  totalSwapFee_gt: BalancerSubgraph_BigDecimal
+  totalSwapFee_lt: BalancerSubgraph_BigDecimal
+  totalSwapFee_gte: BalancerSubgraph_BigDecimal
+  totalSwapFee_lte: BalancerSubgraph_BigDecimal
+  totalSwapFee_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapFee_not_in: [BalancerSubgraph_BigDecimal!]
+}
+
+enum BalancerSubgraph_Balancer_orderBy {
+  id
+  poolCount
+  pools
+  totalLiquidity
+  totalSwapCount
+  totalSwapVolume
+  totalSwapFee
+}
+
+scalar BalancerSubgraph_BigDecimal
+
+scalar BigInt
+
+input BalancerSubgraph_Block_height {
+  hash: BalancerSubgraph_Bytes
+  number: Int
+}
+
+scalar BalancerSubgraph_Bytes
+
+type BalancerSubgraph_GradualWeightUpdate {
+  id: ID!
+  poolId: BalancerSubgraph_Pool!
+  scheduledTimestamp: Int!
+  startTimestamp: Int!
+  endTimestamp: Int!
+  startWeights: [BigInt!]!
+  endWeights: [BigInt!]!
+}
+
+input BalancerSubgraph_GradualWeightUpdate_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  poolId: String
+  poolId_not: String
+  poolId_gt: String
+  poolId_lt: String
+  poolId_gte: String
+  poolId_lte: String
+  poolId_in: [String!]
+  poolId_not_in: [String!]
+  poolId_contains: String
+  poolId_not_contains: String
+  poolId_starts_with: String
+  poolId_not_starts_with: String
+  poolId_ends_with: String
+  poolId_not_ends_with: String
+  scheduledTimestamp: Int
+  scheduledTimestamp_not: Int
+  scheduledTimestamp_gt: Int
+  scheduledTimestamp_lt: Int
+  scheduledTimestamp_gte: Int
+  scheduledTimestamp_lte: Int
+  scheduledTimestamp_in: [Int!]
+  scheduledTimestamp_not_in: [Int!]
+  startTimestamp: Int
+  startTimestamp_not: Int
+  startTimestamp_gt: Int
+  startTimestamp_lt: Int
+  startTimestamp_gte: Int
+  startTimestamp_lte: Int
+  startTimestamp_in: [Int!]
+  startTimestamp_not_in: [Int!]
+  endTimestamp: Int
+  endTimestamp_not: Int
+  endTimestamp_gt: Int
+  endTimestamp_lt: Int
+  endTimestamp_gte: Int
+  endTimestamp_lte: Int
+  endTimestamp_in: [Int!]
+  endTimestamp_not_in: [Int!]
+  startWeights: [BigInt!]
+  startWeights_not: [BigInt!]
+  startWeights_contains: [BigInt!]
+  startWeights_not_contains: [BigInt!]
+  endWeights: [BigInt!]
+  endWeights_not: [BigInt!]
+  endWeights_contains: [BigInt!]
+  endWeights_not_contains: [BigInt!]
+}
+
+enum BalancerSubgraph_GradualWeightUpdate_orderBy {
+  id
+  poolId
+  scheduledTimestamp
+  startTimestamp
+  endTimestamp
+  startWeights
+  endWeights
+}
+
+enum BalancerSubgraph_InvestType {
+  Join
+  Exit
+}
+
+type BalancerSubgraph_Investment {
+  id: ID!
+  assetManagerAddress: BalancerSubgraph_Bytes!
+  amount: BalancerSubgraph_BigDecimal!
+  poolTokenId: BalancerSubgraph_PoolToken!
+  timestamp: Int!
+}
+
+input BalancerSubgraph_Investment_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  assetManagerAddress: BalancerSubgraph_Bytes
+  assetManagerAddress_not: BalancerSubgraph_Bytes
+  assetManagerAddress_in: [BalancerSubgraph_Bytes!]
+  assetManagerAddress_not_in: [BalancerSubgraph_Bytes!]
+  assetManagerAddress_contains: BalancerSubgraph_Bytes
+  assetManagerAddress_not_contains: BalancerSubgraph_Bytes
+  amount: BalancerSubgraph_BigDecimal
+  amount_not: BalancerSubgraph_BigDecimal
+  amount_gt: BalancerSubgraph_BigDecimal
+  amount_lt: BalancerSubgraph_BigDecimal
+  amount_gte: BalancerSubgraph_BigDecimal
+  amount_lte: BalancerSubgraph_BigDecimal
+  amount_in: [BalancerSubgraph_BigDecimal!]
+  amount_not_in: [BalancerSubgraph_BigDecimal!]
+  poolTokenId: String
+  poolTokenId_not: String
+  poolTokenId_gt: String
+  poolTokenId_lt: String
+  poolTokenId_gte: String
+  poolTokenId_lte: String
+  poolTokenId_in: [String!]
+  poolTokenId_not_in: [String!]
+  poolTokenId_contains: String
+  poolTokenId_not_contains: String
+  poolTokenId_starts_with: String
+  poolTokenId_not_starts_with: String
+  poolTokenId_ends_with: String
+  poolTokenId_not_ends_with: String
+  timestamp: Int
+  timestamp_not: Int
+  timestamp_gt: Int
+  timestamp_lt: Int
+  timestamp_gte: Int
+  timestamp_lte: Int
+  timestamp_in: [Int!]
+  timestamp_not_in: [Int!]
+}
+
+enum BalancerSubgraph_Investment_orderBy {
+  id
+  assetManagerAddress
+  amount
+  poolTokenId
+  timestamp
+}
+
+type BalancerSubgraph_JoinExit {
+  id: ID!
+  type: BalancerSubgraph_InvestType!
+  sender: BalancerSubgraph_Bytes!
+  amounts: [BalancerSubgraph_BigDecimal!]!
+  pool: BalancerSubgraph_Pool!
+  user: BalancerSubgraph_User!
+  timestamp: Int!
+  valueUSD: BalancerSubgraph_BigDecimal!
+  tx: BalancerSubgraph_Bytes!
+}
+
+input BalancerSubgraph_JoinExit_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  type: BalancerSubgraph_InvestType
+  type_not: BalancerSubgraph_InvestType
+  sender: BalancerSubgraph_Bytes
+  sender_not: BalancerSubgraph_Bytes
+  sender_in: [BalancerSubgraph_Bytes!]
+  sender_not_in: [BalancerSubgraph_Bytes!]
+  sender_contains: BalancerSubgraph_Bytes
+  sender_not_contains: BalancerSubgraph_Bytes
+  amounts: [BalancerSubgraph_BigDecimal!]
+  amounts_not: [BalancerSubgraph_BigDecimal!]
+  amounts_contains: [BalancerSubgraph_BigDecimal!]
+  amounts_not_contains: [BalancerSubgraph_BigDecimal!]
+  pool: String
+  pool_not: String
+  pool_gt: String
+  pool_lt: String
+  pool_gte: String
+  pool_lte: String
+  pool_in: [String!]
+  pool_not_in: [String!]
+  pool_contains: String
+  pool_not_contains: String
+  pool_starts_with: String
+  pool_not_starts_with: String
+  pool_ends_with: String
+  pool_not_ends_with: String
+  user: String
+  user_not: String
+  user_gt: String
+  user_lt: String
+  user_gte: String
+  user_lte: String
+  user_in: [String!]
+  user_not_in: [String!]
+  user_contains: String
+  user_not_contains: String
+  user_starts_with: String
+  user_not_starts_with: String
+  user_ends_with: String
+  user_not_ends_with: String
+  timestamp: Int
+  timestamp_not: Int
+  timestamp_gt: Int
+  timestamp_lt: Int
+  timestamp_gte: Int
+  timestamp_lte: Int
+  timestamp_in: [Int!]
+  timestamp_not_in: [Int!]
+  valueUSD: BalancerSubgraph_BigDecimal
+  valueUSD_not: BalancerSubgraph_BigDecimal
+  valueUSD_gt: BalancerSubgraph_BigDecimal
+  valueUSD_lt: BalancerSubgraph_BigDecimal
+  valueUSD_gte: BalancerSubgraph_BigDecimal
+  valueUSD_lte: BalancerSubgraph_BigDecimal
+  valueUSD_in: [BalancerSubgraph_BigDecimal!]
+  valueUSD_not_in: [BalancerSubgraph_BigDecimal!]
+  tx: BalancerSubgraph_Bytes
+  tx_not: BalancerSubgraph_Bytes
+  tx_in: [BalancerSubgraph_Bytes!]
+  tx_not_in: [BalancerSubgraph_Bytes!]
+  tx_contains: BalancerSubgraph_Bytes
+  tx_not_contains: BalancerSubgraph_Bytes
+}
+
+enum BalancerSubgraph_JoinExit_orderBy {
+  id
+  type
+  sender
+  amounts
+  pool
+  user
+  timestamp
+  valueUSD
+  tx
+}
+
+type BalancerSubgraph_LatestPrice {
+  id: ID!
+  asset: BalancerSubgraph_Bytes!
+  pricingAsset: BalancerSubgraph_Bytes!
+  poolId: BalancerSubgraph_Pool!
+  price: BalancerSubgraph_BigDecimal!
+  priceUSD: BalancerSubgraph_BigDecimal!
+  block: BigInt!
+}
+
+input BalancerSubgraph_LatestPrice_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  asset: BalancerSubgraph_Bytes
+  asset_not: BalancerSubgraph_Bytes
+  asset_in: [BalancerSubgraph_Bytes!]
+  asset_not_in: [BalancerSubgraph_Bytes!]
+  asset_contains: BalancerSubgraph_Bytes
+  asset_not_contains: BalancerSubgraph_Bytes
+  pricingAsset: BalancerSubgraph_Bytes
+  pricingAsset_not: BalancerSubgraph_Bytes
+  pricingAsset_in: [BalancerSubgraph_Bytes!]
+  pricingAsset_not_in: [BalancerSubgraph_Bytes!]
+  pricingAsset_contains: BalancerSubgraph_Bytes
+  pricingAsset_not_contains: BalancerSubgraph_Bytes
+  poolId: String
+  poolId_not: String
+  poolId_gt: String
+  poolId_lt: String
+  poolId_gte: String
+  poolId_lte: String
+  poolId_in: [String!]
+  poolId_not_in: [String!]
+  poolId_contains: String
+  poolId_not_contains: String
+  poolId_starts_with: String
+  poolId_not_starts_with: String
+  poolId_ends_with: String
+  poolId_not_ends_with: String
+  price: BalancerSubgraph_BigDecimal
+  price_not: BalancerSubgraph_BigDecimal
+  price_gt: BalancerSubgraph_BigDecimal
+  price_lt: BalancerSubgraph_BigDecimal
+  price_gte: BalancerSubgraph_BigDecimal
+  price_lte: BalancerSubgraph_BigDecimal
+  price_in: [BalancerSubgraph_BigDecimal!]
+  price_not_in: [BalancerSubgraph_BigDecimal!]
+  priceUSD: BalancerSubgraph_BigDecimal
+  priceUSD_not: BalancerSubgraph_BigDecimal
+  priceUSD_gt: BalancerSubgraph_BigDecimal
+  priceUSD_lt: BalancerSubgraph_BigDecimal
+  priceUSD_gte: BalancerSubgraph_BigDecimal
+  priceUSD_lte: BalancerSubgraph_BigDecimal
+  priceUSD_in: [BalancerSubgraph_BigDecimal!]
+  priceUSD_not_in: [BalancerSubgraph_BigDecimal!]
+  block: BigInt
+  block_not: BigInt
+  block_gt: BigInt
+  block_lt: BigInt
+  block_gte: BigInt
+  block_lte: BigInt
+  block_in: [BigInt!]
+  block_not_in: [BigInt!]
+}
+
+enum BalancerSubgraph_LatestPrice_orderBy {
+  id
+  asset
+  pricingAsset
+  poolId
+  price
+  priceUSD
+  block
+}
+
+enum BalancerSubgraph_OrderDirection {
+  asc
+  desc
+}
+
+type BalancerSubgraph_Pool {
+  id: ID!
+  address: BalancerSubgraph_Bytes!
+  poolType: String
+  factory: BalancerSubgraph_Bytes
+  strategyType: Int!
+  symbol: String
+  name: String
+  swapEnabled: Boolean!
+  swapFee: BalancerSubgraph_BigDecimal!
+  owner: BalancerSubgraph_Bytes
+  totalWeight: BalancerSubgraph_BigDecimal
+  totalSwapVolume: BalancerSubgraph_BigDecimal!
+  totalSwapFee: BalancerSubgraph_BigDecimal!
+  totalLiquidity: BalancerSubgraph_BigDecimal!
+  totalShares: BalancerSubgraph_BigDecimal!
+  createTime: Int!
+  swapsCount: BigInt!
+  holdersCount: BigInt!
+  vaultID: BalancerSubgraph_Balancer!
+  tx: BalancerSubgraph_Bytes
+  tokensList: [BalancerSubgraph_Bytes!]!
+  tokens(skip: Int = 0, first: Int = 100, orderBy: BalancerSubgraph_PoolToken_orderBy, orderDirection: BalancerSubgraph_OrderDirection, where: BalancerSubgraph_PoolToken_filter): [BalancerSubgraph_PoolToken!]
+  swaps(skip: Int = 0, first: Int = 100, orderBy: BalancerSubgraph_Swap_orderBy, orderDirection: BalancerSubgraph_OrderDirection, where: BalancerSubgraph_Swap_filter): [BalancerSubgraph_Swap!]
+  shares(skip: Int = 0, first: Int = 100, orderBy: BalancerSubgraph_PoolShare_orderBy, orderDirection: BalancerSubgraph_OrderDirection, where: BalancerSubgraph_PoolShare_filter): [BalancerSubgraph_PoolShare!]
+  historicalValues(skip: Int = 0, first: Int = 100, orderBy: BalancerSubgraph_PoolHistoricalLiquidity_orderBy, orderDirection: BalancerSubgraph_OrderDirection, where: BalancerSubgraph_PoolHistoricalLiquidity_filter): [BalancerSubgraph_PoolHistoricalLiquidity!]
+  weightUpdates(skip: Int = 0, first: Int = 100, orderBy: BalancerSubgraph_GradualWeightUpdate_orderBy, orderDirection: BalancerSubgraph_OrderDirection, where: BalancerSubgraph_GradualWeightUpdate_filter): [BalancerSubgraph_GradualWeightUpdate!]
+  amp: BigInt
+  priceRateProviders(skip: Int = 0, first: Int = 100, orderBy: BalancerSubgraph_PriceRateProvider_orderBy, orderDirection: BalancerSubgraph_OrderDirection, where: BalancerSubgraph_PriceRateProvider_filter): [BalancerSubgraph_PriceRateProvider!]
+  principalToken: BalancerSubgraph_Bytes
+  baseToken: BalancerSubgraph_Bytes
+  expiryTime: BigInt
+  unitSeconds: BigInt
+  managementFee: BalancerSubgraph_BigDecimal
+  mainIndex: Int
+  wrappedIndex: Int
+  lowerTarget: BalancerSubgraph_BigDecimal
+  upperTarget: BalancerSubgraph_BigDecimal
+}
+
+type BalancerSubgraph_PoolHistoricalLiquidity {
+  id: ID!
+  poolId: BalancerSubgraph_Pool!
+  poolTotalShares: BalancerSubgraph_BigDecimal!
+  poolLiquidity: BalancerSubgraph_BigDecimal!
+  poolLiquidityUSD: BalancerSubgraph_BigDecimal!
+  poolShareValue: BalancerSubgraph_BigDecimal!
+  pricingAsset: BalancerSubgraph_Bytes!
+  block: BigInt!
+  timestamp: Int!
+}
+
+input BalancerSubgraph_PoolHistoricalLiquidity_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  poolId: String
+  poolId_not: String
+  poolId_gt: String
+  poolId_lt: String
+  poolId_gte: String
+  poolId_lte: String
+  poolId_in: [String!]
+  poolId_not_in: [String!]
+  poolId_contains: String
+  poolId_not_contains: String
+  poolId_starts_with: String
+  poolId_not_starts_with: String
+  poolId_ends_with: String
+  poolId_not_ends_with: String
+  poolTotalShares: BalancerSubgraph_BigDecimal
+  poolTotalShares_not: BalancerSubgraph_BigDecimal
+  poolTotalShares_gt: BalancerSubgraph_BigDecimal
+  poolTotalShares_lt: BalancerSubgraph_BigDecimal
+  poolTotalShares_gte: BalancerSubgraph_BigDecimal
+  poolTotalShares_lte: BalancerSubgraph_BigDecimal
+  poolTotalShares_in: [BalancerSubgraph_BigDecimal!]
+  poolTotalShares_not_in: [BalancerSubgraph_BigDecimal!]
+  poolLiquidity: BalancerSubgraph_BigDecimal
+  poolLiquidity_not: BalancerSubgraph_BigDecimal
+  poolLiquidity_gt: BalancerSubgraph_BigDecimal
+  poolLiquidity_lt: BalancerSubgraph_BigDecimal
+  poolLiquidity_gte: BalancerSubgraph_BigDecimal
+  poolLiquidity_lte: BalancerSubgraph_BigDecimal
+  poolLiquidity_in: [BalancerSubgraph_BigDecimal!]
+  poolLiquidity_not_in: [BalancerSubgraph_BigDecimal!]
+  poolLiquidityUSD: BalancerSubgraph_BigDecimal
+  poolLiquidityUSD_not: BalancerSubgraph_BigDecimal
+  poolLiquidityUSD_gt: BalancerSubgraph_BigDecimal
+  poolLiquidityUSD_lt: BalancerSubgraph_BigDecimal
+  poolLiquidityUSD_gte: BalancerSubgraph_BigDecimal
+  poolLiquidityUSD_lte: BalancerSubgraph_BigDecimal
+  poolLiquidityUSD_in: [BalancerSubgraph_BigDecimal!]
+  poolLiquidityUSD_not_in: [BalancerSubgraph_BigDecimal!]
+  poolShareValue: BalancerSubgraph_BigDecimal
+  poolShareValue_not: BalancerSubgraph_BigDecimal
+  poolShareValue_gt: BalancerSubgraph_BigDecimal
+  poolShareValue_lt: BalancerSubgraph_BigDecimal
+  poolShareValue_gte: BalancerSubgraph_BigDecimal
+  poolShareValue_lte: BalancerSubgraph_BigDecimal
+  poolShareValue_in: [BalancerSubgraph_BigDecimal!]
+  poolShareValue_not_in: [BalancerSubgraph_BigDecimal!]
+  pricingAsset: BalancerSubgraph_Bytes
+  pricingAsset_not: BalancerSubgraph_Bytes
+  pricingAsset_in: [BalancerSubgraph_Bytes!]
+  pricingAsset_not_in: [BalancerSubgraph_Bytes!]
+  pricingAsset_contains: BalancerSubgraph_Bytes
+  pricingAsset_not_contains: BalancerSubgraph_Bytes
+  block: BigInt
+  block_not: BigInt
+  block_gt: BigInt
+  block_lt: BigInt
+  block_gte: BigInt
+  block_lte: BigInt
+  block_in: [BigInt!]
+  block_not_in: [BigInt!]
+  timestamp: Int
+  timestamp_not: Int
+  timestamp_gt: Int
+  timestamp_lt: Int
+  timestamp_gte: Int
+  timestamp_lte: Int
+  timestamp_in: [Int!]
+  timestamp_not_in: [Int!]
+}
+
+enum BalancerSubgraph_PoolHistoricalLiquidity_orderBy {
+  id
+  poolId
+  poolTotalShares
+  poolLiquidity
+  poolLiquidityUSD
+  poolShareValue
+  pricingAsset
+  block
+  timestamp
+}
+
+type BalancerSubgraph_PoolShare {
+  id: ID!
+  userAddress: BalancerSubgraph_User!
+  poolId: BalancerSubgraph_Pool!
+  balance: BalancerSubgraph_BigDecimal!
+}
+
+input BalancerSubgraph_PoolShare_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  userAddress: String
+  userAddress_not: String
+  userAddress_gt: String
+  userAddress_lt: String
+  userAddress_gte: String
+  userAddress_lte: String
+  userAddress_in: [String!]
+  userAddress_not_in: [String!]
+  userAddress_contains: String
+  userAddress_not_contains: String
+  userAddress_starts_with: String
+  userAddress_not_starts_with: String
+  userAddress_ends_with: String
+  userAddress_not_ends_with: String
+  poolId: String
+  poolId_not: String
+  poolId_gt: String
+  poolId_lt: String
+  poolId_gte: String
+  poolId_lte: String
+  poolId_in: [String!]
+  poolId_not_in: [String!]
+  poolId_contains: String
+  poolId_not_contains: String
+  poolId_starts_with: String
+  poolId_not_starts_with: String
+  poolId_ends_with: String
+  poolId_not_ends_with: String
+  balance: BalancerSubgraph_BigDecimal
+  balance_not: BalancerSubgraph_BigDecimal
+  balance_gt: BalancerSubgraph_BigDecimal
+  balance_lt: BalancerSubgraph_BigDecimal
+  balance_gte: BalancerSubgraph_BigDecimal
+  balance_lte: BalancerSubgraph_BigDecimal
+  balance_in: [BalancerSubgraph_BigDecimal!]
+  balance_not_in: [BalancerSubgraph_BigDecimal!]
+}
+
+enum BalancerSubgraph_PoolShare_orderBy {
+  id
+  userAddress
+  poolId
+  balance
+}
+
+type BalancerSubgraph_PoolSnapshot {
+  id: ID!
+  pool: BalancerSubgraph_Pool!
+  amounts: [BalancerSubgraph_BigDecimal!]!
+  totalShares: BalancerSubgraph_BigDecimal!
+  swapVolume: BalancerSubgraph_BigDecimal!
+  swapFees: BalancerSubgraph_BigDecimal!
+  liquidity: BalancerSubgraph_BigDecimal!
+  timestamp: Int!
+  totalSwapVolume: BalancerSubgraph_BigDecimal!
+  totalSwapFee: BalancerSubgraph_BigDecimal!
+  totalLiquidity: BalancerSubgraph_BigDecimal!
+  swapsCount: BigInt!
+  holdersCount: BigInt!
+}
+
+input BalancerSubgraph_PoolSnapshot_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  pool: String
+  pool_not: String
+  pool_gt: String
+  pool_lt: String
+  pool_gte: String
+  pool_lte: String
+  pool_in: [String!]
+  pool_not_in: [String!]
+  pool_contains: String
+  pool_not_contains: String
+  pool_starts_with: String
+  pool_not_starts_with: String
+  pool_ends_with: String
+  pool_not_ends_with: String
+  amounts: [BalancerSubgraph_BigDecimal!]
+  amounts_not: [BalancerSubgraph_BigDecimal!]
+  amounts_contains: [BalancerSubgraph_BigDecimal!]
+  amounts_not_contains: [BalancerSubgraph_BigDecimal!]
+  totalShares: BalancerSubgraph_BigDecimal
+  totalShares_not: BalancerSubgraph_BigDecimal
+  totalShares_gt: BalancerSubgraph_BigDecimal
+  totalShares_lt: BalancerSubgraph_BigDecimal
+  totalShares_gte: BalancerSubgraph_BigDecimal
+  totalShares_lte: BalancerSubgraph_BigDecimal
+  totalShares_in: [BalancerSubgraph_BigDecimal!]
+  totalShares_not_in: [BalancerSubgraph_BigDecimal!]
+  swapVolume: BalancerSubgraph_BigDecimal
+  swapVolume_not: BalancerSubgraph_BigDecimal
+  swapVolume_gt: BalancerSubgraph_BigDecimal
+  swapVolume_lt: BalancerSubgraph_BigDecimal
+  swapVolume_gte: BalancerSubgraph_BigDecimal
+  swapVolume_lte: BalancerSubgraph_BigDecimal
+  swapVolume_in: [BalancerSubgraph_BigDecimal!]
+  swapVolume_not_in: [BalancerSubgraph_BigDecimal!]
+  swapFees: BalancerSubgraph_BigDecimal
+  swapFees_not: BalancerSubgraph_BigDecimal
+  swapFees_gt: BalancerSubgraph_BigDecimal
+  swapFees_lt: BalancerSubgraph_BigDecimal
+  swapFees_gte: BalancerSubgraph_BigDecimal
+  swapFees_lte: BalancerSubgraph_BigDecimal
+  swapFees_in: [BalancerSubgraph_BigDecimal!]
+  swapFees_not_in: [BalancerSubgraph_BigDecimal!]
+  liquidity: BalancerSubgraph_BigDecimal
+  liquidity_not: BalancerSubgraph_BigDecimal
+  liquidity_gt: BalancerSubgraph_BigDecimal
+  liquidity_lt: BalancerSubgraph_BigDecimal
+  liquidity_gte: BalancerSubgraph_BigDecimal
+  liquidity_lte: BalancerSubgraph_BigDecimal
+  liquidity_in: [BalancerSubgraph_BigDecimal!]
+  liquidity_not_in: [BalancerSubgraph_BigDecimal!]
+  timestamp: Int
+  timestamp_not: Int
+  timestamp_gt: Int
+  timestamp_lt: Int
+  timestamp_gte: Int
+  timestamp_lte: Int
+  timestamp_in: [Int!]
+  timestamp_not_in: [Int!]
+  totalSwapVolume: BalancerSubgraph_BigDecimal
+  totalSwapVolume_not: BalancerSubgraph_BigDecimal
+  totalSwapVolume_gt: BalancerSubgraph_BigDecimal
+  totalSwapVolume_lt: BalancerSubgraph_BigDecimal
+  totalSwapVolume_gte: BalancerSubgraph_BigDecimal
+  totalSwapVolume_lte: BalancerSubgraph_BigDecimal
+  totalSwapVolume_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapVolume_not_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapFee: BalancerSubgraph_BigDecimal
+  totalSwapFee_not: BalancerSubgraph_BigDecimal
+  totalSwapFee_gt: BalancerSubgraph_BigDecimal
+  totalSwapFee_lt: BalancerSubgraph_BigDecimal
+  totalSwapFee_gte: BalancerSubgraph_BigDecimal
+  totalSwapFee_lte: BalancerSubgraph_BigDecimal
+  totalSwapFee_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapFee_not_in: [BalancerSubgraph_BigDecimal!]
+  totalLiquidity: BalancerSubgraph_BigDecimal
+  totalLiquidity_not: BalancerSubgraph_BigDecimal
+  totalLiquidity_gt: BalancerSubgraph_BigDecimal
+  totalLiquidity_lt: BalancerSubgraph_BigDecimal
+  totalLiquidity_gte: BalancerSubgraph_BigDecimal
+  totalLiquidity_lte: BalancerSubgraph_BigDecimal
+  totalLiquidity_in: [BalancerSubgraph_BigDecimal!]
+  totalLiquidity_not_in: [BalancerSubgraph_BigDecimal!]
+  swapsCount: BigInt
+  swapsCount_not: BigInt
+  swapsCount_gt: BigInt
+  swapsCount_lt: BigInt
+  swapsCount_gte: BigInt
+  swapsCount_lte: BigInt
+  swapsCount_in: [BigInt!]
+  swapsCount_not_in: [BigInt!]
+  holdersCount: BigInt
+  holdersCount_not: BigInt
+  holdersCount_gt: BigInt
+  holdersCount_lt: BigInt
+  holdersCount_gte: BigInt
+  holdersCount_lte: BigInt
+  holdersCount_in: [BigInt!]
+  holdersCount_not_in: [BigInt!]
+}
+
+enum BalancerSubgraph_PoolSnapshot_orderBy {
+  id
+  pool
+  amounts
+  totalShares
+  swapVolume
+  swapFees
+  liquidity
+  timestamp
+  totalSwapVolume
+  totalSwapFee
+  totalLiquidity
+  swapsCount
+  holdersCount
+}
+
+type BalancerSubgraph_PoolToken {
+  id: ID!
+  poolId: BalancerSubgraph_Pool!
+  token: BalancerSubgraph_Token!
+  symbol: String!
+  name: String!
+  decimals: Int!
+  address: String!
+  priceRate: BalancerSubgraph_BigDecimal!
+  balance: BalancerSubgraph_BigDecimal!
+  invested: BalancerSubgraph_BigDecimal!
+  investments(skip: Int = 0, first: Int = 100, orderBy: BalancerSubgraph_Investment_orderBy, orderDirection: BalancerSubgraph_OrderDirection, where: BalancerSubgraph_Investment_filter): [BalancerSubgraph_Investment!]
+  weight: BalancerSubgraph_BigDecimal
+}
+
+input BalancerSubgraph_PoolToken_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  poolId: String
+  poolId_not: String
+  poolId_gt: String
+  poolId_lt: String
+  poolId_gte: String
+  poolId_lte: String
+  poolId_in: [String!]
+  poolId_not_in: [String!]
+  poolId_contains: String
+  poolId_not_contains: String
+  poolId_starts_with: String
+  poolId_not_starts_with: String
+  poolId_ends_with: String
+  poolId_not_ends_with: String
+  token: String
+  token_not: String
+  token_gt: String
+  token_lt: String
+  token_gte: String
+  token_lte: String
+  token_in: [String!]
+  token_not_in: [String!]
+  token_contains: String
+  token_not_contains: String
+  token_starts_with: String
+  token_not_starts_with: String
+  token_ends_with: String
+  token_not_ends_with: String
+  symbol: String
+  symbol_not: String
+  symbol_gt: String
+  symbol_lt: String
+  symbol_gte: String
+  symbol_lte: String
+  symbol_in: [String!]
+  symbol_not_in: [String!]
+  symbol_contains: String
+  symbol_not_contains: String
+  symbol_starts_with: String
+  symbol_not_starts_with: String
+  symbol_ends_with: String
+  symbol_not_ends_with: String
+  name: String
+  name_not: String
+  name_gt: String
+  name_lt: String
+  name_gte: String
+  name_lte: String
+  name_in: [String!]
+  name_not_in: [String!]
+  name_contains: String
+  name_not_contains: String
+  name_starts_with: String
+  name_not_starts_with: String
+  name_ends_with: String
+  name_not_ends_with: String
+  decimals: Int
+  decimals_not: Int
+  decimals_gt: Int
+  decimals_lt: Int
+  decimals_gte: Int
+  decimals_lte: Int
+  decimals_in: [Int!]
+  decimals_not_in: [Int!]
+  address: String
+  address_not: String
+  address_gt: String
+  address_lt: String
+  address_gte: String
+  address_lte: String
+  address_in: [String!]
+  address_not_in: [String!]
+  address_contains: String
+  address_not_contains: String
+  address_starts_with: String
+  address_not_starts_with: String
+  address_ends_with: String
+  address_not_ends_with: String
+  priceRate: BalancerSubgraph_BigDecimal
+  priceRate_not: BalancerSubgraph_BigDecimal
+  priceRate_gt: BalancerSubgraph_BigDecimal
+  priceRate_lt: BalancerSubgraph_BigDecimal
+  priceRate_gte: BalancerSubgraph_BigDecimal
+  priceRate_lte: BalancerSubgraph_BigDecimal
+  priceRate_in: [BalancerSubgraph_BigDecimal!]
+  priceRate_not_in: [BalancerSubgraph_BigDecimal!]
+  balance: BalancerSubgraph_BigDecimal
+  balance_not: BalancerSubgraph_BigDecimal
+  balance_gt: BalancerSubgraph_BigDecimal
+  balance_lt: BalancerSubgraph_BigDecimal
+  balance_gte: BalancerSubgraph_BigDecimal
+  balance_lte: BalancerSubgraph_BigDecimal
+  balance_in: [BalancerSubgraph_BigDecimal!]
+  balance_not_in: [BalancerSubgraph_BigDecimal!]
+  invested: BalancerSubgraph_BigDecimal
+  invested_not: BalancerSubgraph_BigDecimal
+  invested_gt: BalancerSubgraph_BigDecimal
+  invested_lt: BalancerSubgraph_BigDecimal
+  invested_gte: BalancerSubgraph_BigDecimal
+  invested_lte: BalancerSubgraph_BigDecimal
+  invested_in: [BalancerSubgraph_BigDecimal!]
+  invested_not_in: [BalancerSubgraph_BigDecimal!]
+  weight: BalancerSubgraph_BigDecimal
+  weight_not: BalancerSubgraph_BigDecimal
+  weight_gt: BalancerSubgraph_BigDecimal
+  weight_lt: BalancerSubgraph_BigDecimal
+  weight_gte: BalancerSubgraph_BigDecimal
+  weight_lte: BalancerSubgraph_BigDecimal
+  weight_in: [BalancerSubgraph_BigDecimal!]
+  weight_not_in: [BalancerSubgraph_BigDecimal!]
+}
+
+enum BalancerSubgraph_PoolToken_orderBy {
+  id
+  poolId
+  token
+  symbol
+  name
+  decimals
+  address
+  priceRate
+  balance
+  invested
+  investments
+  weight
+}
+
+input BalancerSubgraph_Pool_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  address: BalancerSubgraph_Bytes
+  address_not: BalancerSubgraph_Bytes
+  address_in: [BalancerSubgraph_Bytes!]
+  address_not_in: [BalancerSubgraph_Bytes!]
+  address_contains: BalancerSubgraph_Bytes
+  address_not_contains: BalancerSubgraph_Bytes
+  poolType: String
+  poolType_not: String
+  poolType_gt: String
+  poolType_lt: String
+  poolType_gte: String
+  poolType_lte: String
+  poolType_in: [String!]
+  poolType_not_in: [String!]
+  poolType_contains: String
+  poolType_not_contains: String
+  poolType_starts_with: String
+  poolType_not_starts_with: String
+  poolType_ends_with: String
+  poolType_not_ends_with: String
+  factory: BalancerSubgraph_Bytes
+  factory_not: BalancerSubgraph_Bytes
+  factory_in: [BalancerSubgraph_Bytes!]
+  factory_not_in: [BalancerSubgraph_Bytes!]
+  factory_contains: BalancerSubgraph_Bytes
+  factory_not_contains: BalancerSubgraph_Bytes
+  strategyType: Int
+  strategyType_not: Int
+  strategyType_gt: Int
+  strategyType_lt: Int
+  strategyType_gte: Int
+  strategyType_lte: Int
+  strategyType_in: [Int!]
+  strategyType_not_in: [Int!]
+  symbol: String
+  symbol_not: String
+  symbol_gt: String
+  symbol_lt: String
+  symbol_gte: String
+  symbol_lte: String
+  symbol_in: [String!]
+  symbol_not_in: [String!]
+  symbol_contains: String
+  symbol_not_contains: String
+  symbol_starts_with: String
+  symbol_not_starts_with: String
+  symbol_ends_with: String
+  symbol_not_ends_with: String
+  name: String
+  name_not: String
+  name_gt: String
+  name_lt: String
+  name_gte: String
+  name_lte: String
+  name_in: [String!]
+  name_not_in: [String!]
+  name_contains: String
+  name_not_contains: String
+  name_starts_with: String
+  name_not_starts_with: String
+  name_ends_with: String
+  name_not_ends_with: String
+  swapEnabled: Boolean
+  swapEnabled_not: Boolean
+  swapEnabled_in: [Boolean!]
+  swapEnabled_not_in: [Boolean!]
+  swapFee: BalancerSubgraph_BigDecimal
+  swapFee_not: BalancerSubgraph_BigDecimal
+  swapFee_gt: BalancerSubgraph_BigDecimal
+  swapFee_lt: BalancerSubgraph_BigDecimal
+  swapFee_gte: BalancerSubgraph_BigDecimal
+  swapFee_lte: BalancerSubgraph_BigDecimal
+  swapFee_in: [BalancerSubgraph_BigDecimal!]
+  swapFee_not_in: [BalancerSubgraph_BigDecimal!]
+  owner: BalancerSubgraph_Bytes
+  owner_not: BalancerSubgraph_Bytes
+  owner_in: [BalancerSubgraph_Bytes!]
+  owner_not_in: [BalancerSubgraph_Bytes!]
+  owner_contains: BalancerSubgraph_Bytes
+  owner_not_contains: BalancerSubgraph_Bytes
+  totalWeight: BalancerSubgraph_BigDecimal
+  totalWeight_not: BalancerSubgraph_BigDecimal
+  totalWeight_gt: BalancerSubgraph_BigDecimal
+  totalWeight_lt: BalancerSubgraph_BigDecimal
+  totalWeight_gte: BalancerSubgraph_BigDecimal
+  totalWeight_lte: BalancerSubgraph_BigDecimal
+  totalWeight_in: [BalancerSubgraph_BigDecimal!]
+  totalWeight_not_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapVolume: BalancerSubgraph_BigDecimal
+  totalSwapVolume_not: BalancerSubgraph_BigDecimal
+  totalSwapVolume_gt: BalancerSubgraph_BigDecimal
+  totalSwapVolume_lt: BalancerSubgraph_BigDecimal
+  totalSwapVolume_gte: BalancerSubgraph_BigDecimal
+  totalSwapVolume_lte: BalancerSubgraph_BigDecimal
+  totalSwapVolume_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapVolume_not_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapFee: BalancerSubgraph_BigDecimal
+  totalSwapFee_not: BalancerSubgraph_BigDecimal
+  totalSwapFee_gt: BalancerSubgraph_BigDecimal
+  totalSwapFee_lt: BalancerSubgraph_BigDecimal
+  totalSwapFee_gte: BalancerSubgraph_BigDecimal
+  totalSwapFee_lte: BalancerSubgraph_BigDecimal
+  totalSwapFee_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapFee_not_in: [BalancerSubgraph_BigDecimal!]
+  totalLiquidity: BalancerSubgraph_BigDecimal
+  totalLiquidity_not: BalancerSubgraph_BigDecimal
+  totalLiquidity_gt: BalancerSubgraph_BigDecimal
+  totalLiquidity_lt: BalancerSubgraph_BigDecimal
+  totalLiquidity_gte: BalancerSubgraph_BigDecimal
+  totalLiquidity_lte: BalancerSubgraph_BigDecimal
+  totalLiquidity_in: [BalancerSubgraph_BigDecimal!]
+  totalLiquidity_not_in: [BalancerSubgraph_BigDecimal!]
+  totalShares: BalancerSubgraph_BigDecimal
+  totalShares_not: BalancerSubgraph_BigDecimal
+  totalShares_gt: BalancerSubgraph_BigDecimal
+  totalShares_lt: BalancerSubgraph_BigDecimal
+  totalShares_gte: BalancerSubgraph_BigDecimal
+  totalShares_lte: BalancerSubgraph_BigDecimal
+  totalShares_in: [BalancerSubgraph_BigDecimal!]
+  totalShares_not_in: [BalancerSubgraph_BigDecimal!]
+  createTime: Int
+  createTime_not: Int
+  createTime_gt: Int
+  createTime_lt: Int
+  createTime_gte: Int
+  createTime_lte: Int
+  createTime_in: [Int!]
+  createTime_not_in: [Int!]
+  swapsCount: BigInt
+  swapsCount_not: BigInt
+  swapsCount_gt: BigInt
+  swapsCount_lt: BigInt
+  swapsCount_gte: BigInt
+  swapsCount_lte: BigInt
+  swapsCount_in: [BigInt!]
+  swapsCount_not_in: [BigInt!]
+  holdersCount: BigInt
+  holdersCount_not: BigInt
+  holdersCount_gt: BigInt
+  holdersCount_lt: BigInt
+  holdersCount_gte: BigInt
+  holdersCount_lte: BigInt
+  holdersCount_in: [BigInt!]
+  holdersCount_not_in: [BigInt!]
+  vaultID: String
+  vaultID_not: String
+  vaultID_gt: String
+  vaultID_lt: String
+  vaultID_gte: String
+  vaultID_lte: String
+  vaultID_in: [String!]
+  vaultID_not_in: [String!]
+  vaultID_contains: String
+  vaultID_not_contains: String
+  vaultID_starts_with: String
+  vaultID_not_starts_with: String
+  vaultID_ends_with: String
+  vaultID_not_ends_with: String
+  tx: BalancerSubgraph_Bytes
+  tx_not: BalancerSubgraph_Bytes
+  tx_in: [BalancerSubgraph_Bytes!]
+  tx_not_in: [BalancerSubgraph_Bytes!]
+  tx_contains: BalancerSubgraph_Bytes
+  tx_not_contains: BalancerSubgraph_Bytes
+  tokensList: [BalancerSubgraph_Bytes!]
+  tokensList_not: [BalancerSubgraph_Bytes!]
+  tokensList_contains: [BalancerSubgraph_Bytes!]
+  tokensList_not_contains: [BalancerSubgraph_Bytes!]
+  amp: BigInt
+  amp_not: BigInt
+  amp_gt: BigInt
+  amp_lt: BigInt
+  amp_gte: BigInt
+  amp_lte: BigInt
+  amp_in: [BigInt!]
+  amp_not_in: [BigInt!]
+  principalToken: BalancerSubgraph_Bytes
+  principalToken_not: BalancerSubgraph_Bytes
+  principalToken_in: [BalancerSubgraph_Bytes!]
+  principalToken_not_in: [BalancerSubgraph_Bytes!]
+  principalToken_contains: BalancerSubgraph_Bytes
+  principalToken_not_contains: BalancerSubgraph_Bytes
+  baseToken: BalancerSubgraph_Bytes
+  baseToken_not: BalancerSubgraph_Bytes
+  baseToken_in: [BalancerSubgraph_Bytes!]
+  baseToken_not_in: [BalancerSubgraph_Bytes!]
+  baseToken_contains: BalancerSubgraph_Bytes
+  baseToken_not_contains: BalancerSubgraph_Bytes
+  expiryTime: BigInt
+  expiryTime_not: BigInt
+  expiryTime_gt: BigInt
+  expiryTime_lt: BigInt
+  expiryTime_gte: BigInt
+  expiryTime_lte: BigInt
+  expiryTime_in: [BigInt!]
+  expiryTime_not_in: [BigInt!]
+  unitSeconds: BigInt
+  unitSeconds_not: BigInt
+  unitSeconds_gt: BigInt
+  unitSeconds_lt: BigInt
+  unitSeconds_gte: BigInt
+  unitSeconds_lte: BigInt
+  unitSeconds_in: [BigInt!]
+  unitSeconds_not_in: [BigInt!]
+  managementFee: BalancerSubgraph_BigDecimal
+  managementFee_not: BalancerSubgraph_BigDecimal
+  managementFee_gt: BalancerSubgraph_BigDecimal
+  managementFee_lt: BalancerSubgraph_BigDecimal
+  managementFee_gte: BalancerSubgraph_BigDecimal
+  managementFee_lte: BalancerSubgraph_BigDecimal
+  managementFee_in: [BalancerSubgraph_BigDecimal!]
+  managementFee_not_in: [BalancerSubgraph_BigDecimal!]
+  mainIndex: Int
+  mainIndex_not: Int
+  mainIndex_gt: Int
+  mainIndex_lt: Int
+  mainIndex_gte: Int
+  mainIndex_lte: Int
+  mainIndex_in: [Int!]
+  mainIndex_not_in: [Int!]
+  wrappedIndex: Int
+  wrappedIndex_not: Int
+  wrappedIndex_gt: Int
+  wrappedIndex_lt: Int
+  wrappedIndex_gte: Int
+  wrappedIndex_lte: Int
+  wrappedIndex_in: [Int!]
+  wrappedIndex_not_in: [Int!]
+  lowerTarget: BalancerSubgraph_BigDecimal
+  lowerTarget_not: BalancerSubgraph_BigDecimal
+  lowerTarget_gt: BalancerSubgraph_BigDecimal
+  lowerTarget_lt: BalancerSubgraph_BigDecimal
+  lowerTarget_gte: BalancerSubgraph_BigDecimal
+  lowerTarget_lte: BalancerSubgraph_BigDecimal
+  lowerTarget_in: [BalancerSubgraph_BigDecimal!]
+  lowerTarget_not_in: [BalancerSubgraph_BigDecimal!]
+  upperTarget: BalancerSubgraph_BigDecimal
+  upperTarget_not: BalancerSubgraph_BigDecimal
+  upperTarget_gt: BalancerSubgraph_BigDecimal
+  upperTarget_lt: BalancerSubgraph_BigDecimal
+  upperTarget_gte: BalancerSubgraph_BigDecimal
+  upperTarget_lte: BalancerSubgraph_BigDecimal
+  upperTarget_in: [BalancerSubgraph_BigDecimal!]
+  upperTarget_not_in: [BalancerSubgraph_BigDecimal!]
+}
+
+enum BalancerSubgraph_Pool_orderBy {
+  id
+  address
+  poolType
+  factory
+  strategyType
+  symbol
+  name
+  swapEnabled
+  swapFee
+  owner
+  totalWeight
+  totalSwapVolume
+  totalSwapFee
+  totalLiquidity
+  totalShares
+  createTime
+  swapsCount
+  holdersCount
+  vaultID
+  tx
+  tokensList
+  tokens
+  swaps
+  shares
+  historicalValues
+  weightUpdates
+  amp
+  priceRateProviders
+  principalToken
+  baseToken
+  expiryTime
+  unitSeconds
+  managementFee
+  mainIndex
+  wrappedIndex
+  lowerTarget
+  upperTarget
+}
+
+type BalancerSubgraph_PriceRateProvider {
+  id: ID!
+  poolId: BalancerSubgraph_Pool!
+  token: BalancerSubgraph_PoolToken!
+  address: BalancerSubgraph_Bytes!
+  rate: BalancerSubgraph_BigDecimal!
+  lastCached: Int!
+  cacheDuration: Int!
+  cacheExpiry: Int!
+}
+
+input BalancerSubgraph_PriceRateProvider_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  poolId: String
+  poolId_not: String
+  poolId_gt: String
+  poolId_lt: String
+  poolId_gte: String
+  poolId_lte: String
+  poolId_in: [String!]
+  poolId_not_in: [String!]
+  poolId_contains: String
+  poolId_not_contains: String
+  poolId_starts_with: String
+  poolId_not_starts_with: String
+  poolId_ends_with: String
+  poolId_not_ends_with: String
+  token: String
+  token_not: String
+  token_gt: String
+  token_lt: String
+  token_gte: String
+  token_lte: String
+  token_in: [String!]
+  token_not_in: [String!]
+  token_contains: String
+  token_not_contains: String
+  token_starts_with: String
+  token_not_starts_with: String
+  token_ends_with: String
+  token_not_ends_with: String
+  address: BalancerSubgraph_Bytes
+  address_not: BalancerSubgraph_Bytes
+  address_in: [BalancerSubgraph_Bytes!]
+  address_not_in: [BalancerSubgraph_Bytes!]
+  address_contains: BalancerSubgraph_Bytes
+  address_not_contains: BalancerSubgraph_Bytes
+  rate: BalancerSubgraph_BigDecimal
+  rate_not: BalancerSubgraph_BigDecimal
+  rate_gt: BalancerSubgraph_BigDecimal
+  rate_lt: BalancerSubgraph_BigDecimal
+  rate_gte: BalancerSubgraph_BigDecimal
+  rate_lte: BalancerSubgraph_BigDecimal
+  rate_in: [BalancerSubgraph_BigDecimal!]
+  rate_not_in: [BalancerSubgraph_BigDecimal!]
+  lastCached: Int
+  lastCached_not: Int
+  lastCached_gt: Int
+  lastCached_lt: Int
+  lastCached_gte: Int
+  lastCached_lte: Int
+  lastCached_in: [Int!]
+  lastCached_not_in: [Int!]
+  cacheDuration: Int
+  cacheDuration_not: Int
+  cacheDuration_gt: Int
+  cacheDuration_lt: Int
+  cacheDuration_gte: Int
+  cacheDuration_lte: Int
+  cacheDuration_in: [Int!]
+  cacheDuration_not_in: [Int!]
+  cacheExpiry: Int
+  cacheExpiry_not: Int
+  cacheExpiry_gt: Int
+  cacheExpiry_lt: Int
+  cacheExpiry_gte: Int
+  cacheExpiry_lte: Int
+  cacheExpiry_in: [Int!]
+  cacheExpiry_not_in: [Int!]
+}
+
+enum BalancerSubgraph_PriceRateProvider_orderBy {
+  id
+  poolId
+  token
+  address
+  rate
+  lastCached
+  cacheDuration
+  cacheExpiry
+}
+
+type Query {
+  BalancerSubgraph_balancer(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_Balancer
+  BalancerSubgraph_balancers(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_Balancer_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_Balancer_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_Balancer!]!
+  BalancerSubgraph_pool(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_Pool
+  BalancerSubgraph_pools(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_Pool_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_Pool_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_Pool!]!
+  BalancerSubgraph_poolToken(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_PoolToken
+  BalancerSubgraph_poolTokens(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_PoolToken_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_PoolToken_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_PoolToken!]!
+  BalancerSubgraph_priceRateProvider(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_PriceRateProvider
+  BalancerSubgraph_priceRateProviders(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_PriceRateProvider_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_PriceRateProvider_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_PriceRateProvider!]!
+  BalancerSubgraph_poolShare(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_PoolShare
+  BalancerSubgraph_poolShares(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_PoolShare_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_PoolShare_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_PoolShare!]!
+  BalancerSubgraph_user(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_User
+  BalancerSubgraph_users(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_User_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_User_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_User!]!
+  BalancerSubgraph_userInternalBalance(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_UserInternalBalance
+  BalancerSubgraph_userInternalBalances(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_UserInternalBalance_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_UserInternalBalance_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_UserInternalBalance!]!
+  BalancerSubgraph_gradualWeightUpdate(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_GradualWeightUpdate
+  BalancerSubgraph_gradualWeightUpdates(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_GradualWeightUpdate_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_GradualWeightUpdate_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_GradualWeightUpdate!]!
+  BalancerSubgraph_ampUpdate(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_AmpUpdate
+  BalancerSubgraph_ampUpdates(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_AmpUpdate_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_AmpUpdate_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_AmpUpdate!]!
+  BalancerSubgraph_swap(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_Swap
+  BalancerSubgraph_swaps(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_Swap_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_Swap_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_Swap!]!
+  BalancerSubgraph_joinExit(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_JoinExit
+  BalancerSubgraph_joinExits(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_JoinExit_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_JoinExit_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_JoinExit!]!
+  BalancerSubgraph_latestPrice(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_LatestPrice
+  BalancerSubgraph_latestPrices(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_LatestPrice_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_LatestPrice_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_LatestPrice!]!
+  BalancerSubgraph_poolHistoricalLiquidity(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_PoolHistoricalLiquidity
+  BalancerSubgraph_poolHistoricalLiquidities(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_PoolHistoricalLiquidity_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_PoolHistoricalLiquidity_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_PoolHistoricalLiquidity!]!
+  BalancerSubgraph_tokenPrice(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_TokenPrice
+  BalancerSubgraph_tokenPrices(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_TokenPrice_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_TokenPrice_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_TokenPrice!]!
+  BalancerSubgraph_investment(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_Investment
+  BalancerSubgraph_investments(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_Investment_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_Investment_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_Investment!]!
+  BalancerSubgraph_poolSnapshot(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_PoolSnapshot
+  BalancerSubgraph_poolSnapshots(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_PoolSnapshot_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_PoolSnapshot_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_PoolSnapshot!]!
+  BalancerSubgraph_token(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_Token
+  BalancerSubgraph_tokens(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_Token_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_Token_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_Token!]!
+  BalancerSubgraph_tokenSnapshot(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_TokenSnapshot
+  BalancerSubgraph_tokenSnapshots(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_TokenSnapshot_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_TokenSnapshot_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_TokenSnapshot!]!
+  BalancerSubgraph_tradePair(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_TradePair
+  BalancerSubgraph_tradePairs(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_TradePair_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_TradePair_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_TradePair!]!
+  BalancerSubgraph_tradePairSnapshot(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_TradePairSnapshot
+  BalancerSubgraph_tradePairSnapshots(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_TradePairSnapshot_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_TradePairSnapshot_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_TradePairSnapshot!]!
+  BalancerSubgraph_balancerSnapshot(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_BalancerSnapshot
+  BalancerSubgraph_balancerSnapshots(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_BalancerSnapshot_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_BalancerSnapshot_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_BalancerSnapshot!]!
+  """Access to subgraph metadata"""
+  BalancerSubgraph__meta(block: BalancerSubgraph_Block_height): BalancerSubgraph__Meta_
+}
+
+type Subscription {
+  BalancerSubgraph_balancer(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_Balancer
+  BalancerSubgraph_balancers(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_Balancer_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_Balancer_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_Balancer!]!
+  BalancerSubgraph_pool(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_Pool
+  BalancerSubgraph_pools(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_Pool_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_Pool_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_Pool!]!
+  BalancerSubgraph_poolToken(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_PoolToken
+  BalancerSubgraph_poolTokens(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_PoolToken_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_PoolToken_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_PoolToken!]!
+  BalancerSubgraph_priceRateProvider(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_PriceRateProvider
+  BalancerSubgraph_priceRateProviders(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_PriceRateProvider_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_PriceRateProvider_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_PriceRateProvider!]!
+  BalancerSubgraph_poolShare(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_PoolShare
+  BalancerSubgraph_poolShares(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_PoolShare_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_PoolShare_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_PoolShare!]!
+  BalancerSubgraph_user(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_User
+  BalancerSubgraph_users(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_User_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_User_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_User!]!
+  BalancerSubgraph_userInternalBalance(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_UserInternalBalance
+  BalancerSubgraph_userInternalBalances(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_UserInternalBalance_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_UserInternalBalance_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_UserInternalBalance!]!
+  BalancerSubgraph_gradualWeightUpdate(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_GradualWeightUpdate
+  BalancerSubgraph_gradualWeightUpdates(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_GradualWeightUpdate_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_GradualWeightUpdate_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_GradualWeightUpdate!]!
+  BalancerSubgraph_ampUpdate(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_AmpUpdate
+  BalancerSubgraph_ampUpdates(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_AmpUpdate_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_AmpUpdate_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_AmpUpdate!]!
+  BalancerSubgraph_swap(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_Swap
+  BalancerSubgraph_swaps(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_Swap_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_Swap_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_Swap!]!
+  BalancerSubgraph_joinExit(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_JoinExit
+  BalancerSubgraph_joinExits(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_JoinExit_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_JoinExit_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_JoinExit!]!
+  BalancerSubgraph_latestPrice(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_LatestPrice
+  BalancerSubgraph_latestPrices(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_LatestPrice_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_LatestPrice_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_LatestPrice!]!
+  BalancerSubgraph_poolHistoricalLiquidity(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_PoolHistoricalLiquidity
+  BalancerSubgraph_poolHistoricalLiquidities(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_PoolHistoricalLiquidity_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_PoolHistoricalLiquidity_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_PoolHistoricalLiquidity!]!
+  BalancerSubgraph_tokenPrice(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_TokenPrice
+  BalancerSubgraph_tokenPrices(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_TokenPrice_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_TokenPrice_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_TokenPrice!]!
+  BalancerSubgraph_investment(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_Investment
+  BalancerSubgraph_investments(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_Investment_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_Investment_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_Investment!]!
+  BalancerSubgraph_poolSnapshot(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_PoolSnapshot
+  BalancerSubgraph_poolSnapshots(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_PoolSnapshot_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_PoolSnapshot_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_PoolSnapshot!]!
+  BalancerSubgraph_token(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_Token
+  BalancerSubgraph_tokens(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_Token_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_Token_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_Token!]!
+  BalancerSubgraph_tokenSnapshot(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_TokenSnapshot
+  BalancerSubgraph_tokenSnapshots(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_TokenSnapshot_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_TokenSnapshot_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_TokenSnapshot!]!
+  BalancerSubgraph_tradePair(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_TradePair
+  BalancerSubgraph_tradePairs(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_TradePair_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_TradePair_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_TradePair!]!
+  BalancerSubgraph_tradePairSnapshot(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_TradePairSnapshot
+  BalancerSubgraph_tradePairSnapshots(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_TradePairSnapshot_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_TradePairSnapshot_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_TradePairSnapshot!]!
+  BalancerSubgraph_balancerSnapshot(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): BalancerSubgraph_BalancerSnapshot
+  BalancerSubgraph_balancerSnapshots(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BalancerSubgraph_BalancerSnapshot_orderBy
+    orderDirection: BalancerSubgraph_OrderDirection
+    where: BalancerSubgraph_BalancerSnapshot_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BalancerSubgraph_Block_height
+  ): [BalancerSubgraph_BalancerSnapshot!]!
+  """Access to subgraph metadata"""
+  BalancerSubgraph__meta(block: BalancerSubgraph_Block_height): BalancerSubgraph__Meta_
+}
+
+type BalancerSubgraph_Swap {
+  id: ID!
+  caller: BalancerSubgraph_Bytes!
+  tokenIn: BalancerSubgraph_Bytes!
+  tokenInSym: String!
+  tokenOut: BalancerSubgraph_Bytes!
+  tokenOutSym: String!
+  tokenAmountIn: BalancerSubgraph_BigDecimal!
+  tokenAmountOut: BalancerSubgraph_BigDecimal!
+  poolId: BalancerSubgraph_Pool!
+  userAddress: BalancerSubgraph_User!
+  timestamp: Int!
+  tx: BalancerSubgraph_Bytes!
+  valueUSD: BalancerSubgraph_BigDecimal!
+}
+
+input BalancerSubgraph_Swap_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  caller: BalancerSubgraph_Bytes
+  caller_not: BalancerSubgraph_Bytes
+  caller_in: [BalancerSubgraph_Bytes!]
+  caller_not_in: [BalancerSubgraph_Bytes!]
+  caller_contains: BalancerSubgraph_Bytes
+  caller_not_contains: BalancerSubgraph_Bytes
+  tokenIn: BalancerSubgraph_Bytes
+  tokenIn_not: BalancerSubgraph_Bytes
+  tokenIn_in: [BalancerSubgraph_Bytes!]
+  tokenIn_not_in: [BalancerSubgraph_Bytes!]
+  tokenIn_contains: BalancerSubgraph_Bytes
+  tokenIn_not_contains: BalancerSubgraph_Bytes
+  tokenInSym: String
+  tokenInSym_not: String
+  tokenInSym_gt: String
+  tokenInSym_lt: String
+  tokenInSym_gte: String
+  tokenInSym_lte: String
+  tokenInSym_in: [String!]
+  tokenInSym_not_in: [String!]
+  tokenInSym_contains: String
+  tokenInSym_not_contains: String
+  tokenInSym_starts_with: String
+  tokenInSym_not_starts_with: String
+  tokenInSym_ends_with: String
+  tokenInSym_not_ends_with: String
+  tokenOut: BalancerSubgraph_Bytes
+  tokenOut_not: BalancerSubgraph_Bytes
+  tokenOut_in: [BalancerSubgraph_Bytes!]
+  tokenOut_not_in: [BalancerSubgraph_Bytes!]
+  tokenOut_contains: BalancerSubgraph_Bytes
+  tokenOut_not_contains: BalancerSubgraph_Bytes
+  tokenOutSym: String
+  tokenOutSym_not: String
+  tokenOutSym_gt: String
+  tokenOutSym_lt: String
+  tokenOutSym_gte: String
+  tokenOutSym_lte: String
+  tokenOutSym_in: [String!]
+  tokenOutSym_not_in: [String!]
+  tokenOutSym_contains: String
+  tokenOutSym_not_contains: String
+  tokenOutSym_starts_with: String
+  tokenOutSym_not_starts_with: String
+  tokenOutSym_ends_with: String
+  tokenOutSym_not_ends_with: String
+  tokenAmountIn: BalancerSubgraph_BigDecimal
+  tokenAmountIn_not: BalancerSubgraph_BigDecimal
+  tokenAmountIn_gt: BalancerSubgraph_BigDecimal
+  tokenAmountIn_lt: BalancerSubgraph_BigDecimal
+  tokenAmountIn_gte: BalancerSubgraph_BigDecimal
+  tokenAmountIn_lte: BalancerSubgraph_BigDecimal
+  tokenAmountIn_in: [BalancerSubgraph_BigDecimal!]
+  tokenAmountIn_not_in: [BalancerSubgraph_BigDecimal!]
+  tokenAmountOut: BalancerSubgraph_BigDecimal
+  tokenAmountOut_not: BalancerSubgraph_BigDecimal
+  tokenAmountOut_gt: BalancerSubgraph_BigDecimal
+  tokenAmountOut_lt: BalancerSubgraph_BigDecimal
+  tokenAmountOut_gte: BalancerSubgraph_BigDecimal
+  tokenAmountOut_lte: BalancerSubgraph_BigDecimal
+  tokenAmountOut_in: [BalancerSubgraph_BigDecimal!]
+  tokenAmountOut_not_in: [BalancerSubgraph_BigDecimal!]
+  poolId: String
+  poolId_not: String
+  poolId_gt: String
+  poolId_lt: String
+  poolId_gte: String
+  poolId_lte: String
+  poolId_in: [String!]
+  poolId_not_in: [String!]
+  poolId_contains: String
+  poolId_not_contains: String
+  poolId_starts_with: String
+  poolId_not_starts_with: String
+  poolId_ends_with: String
+  poolId_not_ends_with: String
+  userAddress: String
+  userAddress_not: String
+  userAddress_gt: String
+  userAddress_lt: String
+  userAddress_gte: String
+  userAddress_lte: String
+  userAddress_in: [String!]
+  userAddress_not_in: [String!]
+  userAddress_contains: String
+  userAddress_not_contains: String
+  userAddress_starts_with: String
+  userAddress_not_starts_with: String
+  userAddress_ends_with: String
+  userAddress_not_ends_with: String
+  timestamp: Int
+  timestamp_not: Int
+  timestamp_gt: Int
+  timestamp_lt: Int
+  timestamp_gte: Int
+  timestamp_lte: Int
+  timestamp_in: [Int!]
+  timestamp_not_in: [Int!]
+  tx: BalancerSubgraph_Bytes
+  tx_not: BalancerSubgraph_Bytes
+  tx_in: [BalancerSubgraph_Bytes!]
+  tx_not_in: [BalancerSubgraph_Bytes!]
+  tx_contains: BalancerSubgraph_Bytes
+  tx_not_contains: BalancerSubgraph_Bytes
+  valueUSD: BalancerSubgraph_BigDecimal
+  valueUSD_not: BalancerSubgraph_BigDecimal
+  valueUSD_gt: BalancerSubgraph_BigDecimal
+  valueUSD_lt: BalancerSubgraph_BigDecimal
+  valueUSD_gte: BalancerSubgraph_BigDecimal
+  valueUSD_lte: BalancerSubgraph_BigDecimal
+  valueUSD_in: [BalancerSubgraph_BigDecimal!]
+  valueUSD_not_in: [BalancerSubgraph_BigDecimal!]
+}
+
+enum BalancerSubgraph_Swap_orderBy {
+  id
+  caller
+  tokenIn
+  tokenInSym
+  tokenOut
+  tokenOutSym
+  tokenAmountIn
+  tokenAmountOut
+  poolId
+  userAddress
+  timestamp
+  tx
+  valueUSD
+}
+
+type BalancerSubgraph_Token {
+  id: ID!
+  symbol: String
+  name: String
+  decimals: Int!
+  address: String!
+  totalBalanceUSD: BalancerSubgraph_BigDecimal!
+  totalBalanceNotional: BalancerSubgraph_BigDecimal!
+  totalVolumeUSD: BalancerSubgraph_BigDecimal!
+  totalVolumeNotional: BalancerSubgraph_BigDecimal!
+  totalSwapCount: BigInt!
+  latestPrice: BalancerSubgraph_LatestPrice
+}
+
+type BalancerSubgraph_TokenPrice {
+  id: ID!
+  poolId: BalancerSubgraph_Pool!
+  asset: BalancerSubgraph_Bytes!
+  amount: BalancerSubgraph_BigDecimal!
+  pricingAsset: BalancerSubgraph_Bytes!
+  price: BalancerSubgraph_BigDecimal!
+  block: BigInt!
+  timestamp: Int!
+  priceUSD: BalancerSubgraph_BigDecimal!
+}
+
+input BalancerSubgraph_TokenPrice_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  poolId: String
+  poolId_not: String
+  poolId_gt: String
+  poolId_lt: String
+  poolId_gte: String
+  poolId_lte: String
+  poolId_in: [String!]
+  poolId_not_in: [String!]
+  poolId_contains: String
+  poolId_not_contains: String
+  poolId_starts_with: String
+  poolId_not_starts_with: String
+  poolId_ends_with: String
+  poolId_not_ends_with: String
+  asset: BalancerSubgraph_Bytes
+  asset_not: BalancerSubgraph_Bytes
+  asset_in: [BalancerSubgraph_Bytes!]
+  asset_not_in: [BalancerSubgraph_Bytes!]
+  asset_contains: BalancerSubgraph_Bytes
+  asset_not_contains: BalancerSubgraph_Bytes
+  amount: BalancerSubgraph_BigDecimal
+  amount_not: BalancerSubgraph_BigDecimal
+  amount_gt: BalancerSubgraph_BigDecimal
+  amount_lt: BalancerSubgraph_BigDecimal
+  amount_gte: BalancerSubgraph_BigDecimal
+  amount_lte: BalancerSubgraph_BigDecimal
+  amount_in: [BalancerSubgraph_BigDecimal!]
+  amount_not_in: [BalancerSubgraph_BigDecimal!]
+  pricingAsset: BalancerSubgraph_Bytes
+  pricingAsset_not: BalancerSubgraph_Bytes
+  pricingAsset_in: [BalancerSubgraph_Bytes!]
+  pricingAsset_not_in: [BalancerSubgraph_Bytes!]
+  pricingAsset_contains: BalancerSubgraph_Bytes
+  pricingAsset_not_contains: BalancerSubgraph_Bytes
+  price: BalancerSubgraph_BigDecimal
+  price_not: BalancerSubgraph_BigDecimal
+  price_gt: BalancerSubgraph_BigDecimal
+  price_lt: BalancerSubgraph_BigDecimal
+  price_gte: BalancerSubgraph_BigDecimal
+  price_lte: BalancerSubgraph_BigDecimal
+  price_in: [BalancerSubgraph_BigDecimal!]
+  price_not_in: [BalancerSubgraph_BigDecimal!]
+  block: BigInt
+  block_not: BigInt
+  block_gt: BigInt
+  block_lt: BigInt
+  block_gte: BigInt
+  block_lte: BigInt
+  block_in: [BigInt!]
+  block_not_in: [BigInt!]
+  timestamp: Int
+  timestamp_not: Int
+  timestamp_gt: Int
+  timestamp_lt: Int
+  timestamp_gte: Int
+  timestamp_lte: Int
+  timestamp_in: [Int!]
+  timestamp_not_in: [Int!]
+  priceUSD: BalancerSubgraph_BigDecimal
+  priceUSD_not: BalancerSubgraph_BigDecimal
+  priceUSD_gt: BalancerSubgraph_BigDecimal
+  priceUSD_lt: BalancerSubgraph_BigDecimal
+  priceUSD_gte: BalancerSubgraph_BigDecimal
+  priceUSD_lte: BalancerSubgraph_BigDecimal
+  priceUSD_in: [BalancerSubgraph_BigDecimal!]
+  priceUSD_not_in: [BalancerSubgraph_BigDecimal!]
+}
+
+enum BalancerSubgraph_TokenPrice_orderBy {
+  id
+  poolId
+  asset
+  amount
+  pricingAsset
+  price
+  block
+  timestamp
+  priceUSD
+}
+
+type BalancerSubgraph_TokenSnapshot {
+  id: ID!
+  token: BalancerSubgraph_Token!
+  timestamp: Int!
+  totalBalanceUSD: BalancerSubgraph_BigDecimal!
+  totalBalanceNotional: BalancerSubgraph_BigDecimal!
+  totalVolumeUSD: BalancerSubgraph_BigDecimal!
+  totalVolumeNotional: BalancerSubgraph_BigDecimal!
+  totalSwapCount: BigInt!
+}
+
+input BalancerSubgraph_TokenSnapshot_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  token: String
+  token_not: String
+  token_gt: String
+  token_lt: String
+  token_gte: String
+  token_lte: String
+  token_in: [String!]
+  token_not_in: [String!]
+  token_contains: String
+  token_not_contains: String
+  token_starts_with: String
+  token_not_starts_with: String
+  token_ends_with: String
+  token_not_ends_with: String
+  timestamp: Int
+  timestamp_not: Int
+  timestamp_gt: Int
+  timestamp_lt: Int
+  timestamp_gte: Int
+  timestamp_lte: Int
+  timestamp_in: [Int!]
+  timestamp_not_in: [Int!]
+  totalBalanceUSD: BalancerSubgraph_BigDecimal
+  totalBalanceUSD_not: BalancerSubgraph_BigDecimal
+  totalBalanceUSD_gt: BalancerSubgraph_BigDecimal
+  totalBalanceUSD_lt: BalancerSubgraph_BigDecimal
+  totalBalanceUSD_gte: BalancerSubgraph_BigDecimal
+  totalBalanceUSD_lte: BalancerSubgraph_BigDecimal
+  totalBalanceUSD_in: [BalancerSubgraph_BigDecimal!]
+  totalBalanceUSD_not_in: [BalancerSubgraph_BigDecimal!]
+  totalBalanceNotional: BalancerSubgraph_BigDecimal
+  totalBalanceNotional_not: BalancerSubgraph_BigDecimal
+  totalBalanceNotional_gt: BalancerSubgraph_BigDecimal
+  totalBalanceNotional_lt: BalancerSubgraph_BigDecimal
+  totalBalanceNotional_gte: BalancerSubgraph_BigDecimal
+  totalBalanceNotional_lte: BalancerSubgraph_BigDecimal
+  totalBalanceNotional_in: [BalancerSubgraph_BigDecimal!]
+  totalBalanceNotional_not_in: [BalancerSubgraph_BigDecimal!]
+  totalVolumeUSD: BalancerSubgraph_BigDecimal
+  totalVolumeUSD_not: BalancerSubgraph_BigDecimal
+  totalVolumeUSD_gt: BalancerSubgraph_BigDecimal
+  totalVolumeUSD_lt: BalancerSubgraph_BigDecimal
+  totalVolumeUSD_gte: BalancerSubgraph_BigDecimal
+  totalVolumeUSD_lte: BalancerSubgraph_BigDecimal
+  totalVolumeUSD_in: [BalancerSubgraph_BigDecimal!]
+  totalVolumeUSD_not_in: [BalancerSubgraph_BigDecimal!]
+  totalVolumeNotional: BalancerSubgraph_BigDecimal
+  totalVolumeNotional_not: BalancerSubgraph_BigDecimal
+  totalVolumeNotional_gt: BalancerSubgraph_BigDecimal
+  totalVolumeNotional_lt: BalancerSubgraph_BigDecimal
+  totalVolumeNotional_gte: BalancerSubgraph_BigDecimal
+  totalVolumeNotional_lte: BalancerSubgraph_BigDecimal
+  totalVolumeNotional_in: [BalancerSubgraph_BigDecimal!]
+  totalVolumeNotional_not_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapCount: BigInt
+  totalSwapCount_not: BigInt
+  totalSwapCount_gt: BigInt
+  totalSwapCount_lt: BigInt
+  totalSwapCount_gte: BigInt
+  totalSwapCount_lte: BigInt
+  totalSwapCount_in: [BigInt!]
+  totalSwapCount_not_in: [BigInt!]
+}
+
+enum BalancerSubgraph_TokenSnapshot_orderBy {
+  id
+  token
+  timestamp
+  totalBalanceUSD
+  totalBalanceNotional
+  totalVolumeUSD
+  totalVolumeNotional
+  totalSwapCount
+}
+
+input BalancerSubgraph_Token_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  symbol: String
+  symbol_not: String
+  symbol_gt: String
+  symbol_lt: String
+  symbol_gte: String
+  symbol_lte: String
+  symbol_in: [String!]
+  symbol_not_in: [String!]
+  symbol_contains: String
+  symbol_not_contains: String
+  symbol_starts_with: String
+  symbol_not_starts_with: String
+  symbol_ends_with: String
+  symbol_not_ends_with: String
+  name: String
+  name_not: String
+  name_gt: String
+  name_lt: String
+  name_gte: String
+  name_lte: String
+  name_in: [String!]
+  name_not_in: [String!]
+  name_contains: String
+  name_not_contains: String
+  name_starts_with: String
+  name_not_starts_with: String
+  name_ends_with: String
+  name_not_ends_with: String
+  decimals: Int
+  decimals_not: Int
+  decimals_gt: Int
+  decimals_lt: Int
+  decimals_gte: Int
+  decimals_lte: Int
+  decimals_in: [Int!]
+  decimals_not_in: [Int!]
+  address: String
+  address_not: String
+  address_gt: String
+  address_lt: String
+  address_gte: String
+  address_lte: String
+  address_in: [String!]
+  address_not_in: [String!]
+  address_contains: String
+  address_not_contains: String
+  address_starts_with: String
+  address_not_starts_with: String
+  address_ends_with: String
+  address_not_ends_with: String
+  totalBalanceUSD: BalancerSubgraph_BigDecimal
+  totalBalanceUSD_not: BalancerSubgraph_BigDecimal
+  totalBalanceUSD_gt: BalancerSubgraph_BigDecimal
+  totalBalanceUSD_lt: BalancerSubgraph_BigDecimal
+  totalBalanceUSD_gte: BalancerSubgraph_BigDecimal
+  totalBalanceUSD_lte: BalancerSubgraph_BigDecimal
+  totalBalanceUSD_in: [BalancerSubgraph_BigDecimal!]
+  totalBalanceUSD_not_in: [BalancerSubgraph_BigDecimal!]
+  totalBalanceNotional: BalancerSubgraph_BigDecimal
+  totalBalanceNotional_not: BalancerSubgraph_BigDecimal
+  totalBalanceNotional_gt: BalancerSubgraph_BigDecimal
+  totalBalanceNotional_lt: BalancerSubgraph_BigDecimal
+  totalBalanceNotional_gte: BalancerSubgraph_BigDecimal
+  totalBalanceNotional_lte: BalancerSubgraph_BigDecimal
+  totalBalanceNotional_in: [BalancerSubgraph_BigDecimal!]
+  totalBalanceNotional_not_in: [BalancerSubgraph_BigDecimal!]
+  totalVolumeUSD: BalancerSubgraph_BigDecimal
+  totalVolumeUSD_not: BalancerSubgraph_BigDecimal
+  totalVolumeUSD_gt: BalancerSubgraph_BigDecimal
+  totalVolumeUSD_lt: BalancerSubgraph_BigDecimal
+  totalVolumeUSD_gte: BalancerSubgraph_BigDecimal
+  totalVolumeUSD_lte: BalancerSubgraph_BigDecimal
+  totalVolumeUSD_in: [BalancerSubgraph_BigDecimal!]
+  totalVolumeUSD_not_in: [BalancerSubgraph_BigDecimal!]
+  totalVolumeNotional: BalancerSubgraph_BigDecimal
+  totalVolumeNotional_not: BalancerSubgraph_BigDecimal
+  totalVolumeNotional_gt: BalancerSubgraph_BigDecimal
+  totalVolumeNotional_lt: BalancerSubgraph_BigDecimal
+  totalVolumeNotional_gte: BalancerSubgraph_BigDecimal
+  totalVolumeNotional_lte: BalancerSubgraph_BigDecimal
+  totalVolumeNotional_in: [BalancerSubgraph_BigDecimal!]
+  totalVolumeNotional_not_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapCount: BigInt
+  totalSwapCount_not: BigInt
+  totalSwapCount_gt: BigInt
+  totalSwapCount_lt: BigInt
+  totalSwapCount_gte: BigInt
+  totalSwapCount_lte: BigInt
+  totalSwapCount_in: [BigInt!]
+  totalSwapCount_not_in: [BigInt!]
+  latestPrice: String
+  latestPrice_not: String
+  latestPrice_gt: String
+  latestPrice_lt: String
+  latestPrice_gte: String
+  latestPrice_lte: String
+  latestPrice_in: [String!]
+  latestPrice_not_in: [String!]
+  latestPrice_contains: String
+  latestPrice_not_contains: String
+  latestPrice_starts_with: String
+  latestPrice_not_starts_with: String
+  latestPrice_ends_with: String
+  latestPrice_not_ends_with: String
+}
+
+enum BalancerSubgraph_Token_orderBy {
+  id
+  symbol
+  name
+  decimals
+  address
+  totalBalanceUSD
+  totalBalanceNotional
+  totalVolumeUSD
+  totalVolumeNotional
+  totalSwapCount
+  latestPrice
+}
+
+type BalancerSubgraph_TradePair {
+  """Token Address - Token Address"""
+  id: ID!
+  token0: BalancerSubgraph_Token!
+  token1: BalancerSubgraph_Token!
+  totalSwapVolume: BalancerSubgraph_BigDecimal!
+  totalSwapFee: BalancerSubgraph_BigDecimal!
+}
+
+type BalancerSubgraph_TradePairSnapshot {
+  id: ID!
+  pair: BalancerSubgraph_TradePair!
+  timestamp: Int!
+  totalSwapVolume: BalancerSubgraph_BigDecimal!
+  totalSwapFee: BalancerSubgraph_BigDecimal!
+}
+
+input BalancerSubgraph_TradePairSnapshot_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  pair: String
+  pair_not: String
+  pair_gt: String
+  pair_lt: String
+  pair_gte: String
+  pair_lte: String
+  pair_in: [String!]
+  pair_not_in: [String!]
+  pair_contains: String
+  pair_not_contains: String
+  pair_starts_with: String
+  pair_not_starts_with: String
+  pair_ends_with: String
+  pair_not_ends_with: String
+  timestamp: Int
+  timestamp_not: Int
+  timestamp_gt: Int
+  timestamp_lt: Int
+  timestamp_gte: Int
+  timestamp_lte: Int
+  timestamp_in: [Int!]
+  timestamp_not_in: [Int!]
+  totalSwapVolume: BalancerSubgraph_BigDecimal
+  totalSwapVolume_not: BalancerSubgraph_BigDecimal
+  totalSwapVolume_gt: BalancerSubgraph_BigDecimal
+  totalSwapVolume_lt: BalancerSubgraph_BigDecimal
+  totalSwapVolume_gte: BalancerSubgraph_BigDecimal
+  totalSwapVolume_lte: BalancerSubgraph_BigDecimal
+  totalSwapVolume_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapVolume_not_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapFee: BalancerSubgraph_BigDecimal
+  totalSwapFee_not: BalancerSubgraph_BigDecimal
+  totalSwapFee_gt: BalancerSubgraph_BigDecimal
+  totalSwapFee_lt: BalancerSubgraph_BigDecimal
+  totalSwapFee_gte: BalancerSubgraph_BigDecimal
+  totalSwapFee_lte: BalancerSubgraph_BigDecimal
+  totalSwapFee_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapFee_not_in: [BalancerSubgraph_BigDecimal!]
+}
+
+enum BalancerSubgraph_TradePairSnapshot_orderBy {
+  id
+  pair
+  timestamp
+  totalSwapVolume
+  totalSwapFee
+}
+
+input BalancerSubgraph_TradePair_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  token0: String
+  token0_not: String
+  token0_gt: String
+  token0_lt: String
+  token0_gte: String
+  token0_lte: String
+  token0_in: [String!]
+  token0_not_in: [String!]
+  token0_contains: String
+  token0_not_contains: String
+  token0_starts_with: String
+  token0_not_starts_with: String
+  token0_ends_with: String
+  token0_not_ends_with: String
+  token1: String
+  token1_not: String
+  token1_gt: String
+  token1_lt: String
+  token1_gte: String
+  token1_lte: String
+  token1_in: [String!]
+  token1_not_in: [String!]
+  token1_contains: String
+  token1_not_contains: String
+  token1_starts_with: String
+  token1_not_starts_with: String
+  token1_ends_with: String
+  token1_not_ends_with: String
+  totalSwapVolume: BalancerSubgraph_BigDecimal
+  totalSwapVolume_not: BalancerSubgraph_BigDecimal
+  totalSwapVolume_gt: BalancerSubgraph_BigDecimal
+  totalSwapVolume_lt: BalancerSubgraph_BigDecimal
+  totalSwapVolume_gte: BalancerSubgraph_BigDecimal
+  totalSwapVolume_lte: BalancerSubgraph_BigDecimal
+  totalSwapVolume_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapVolume_not_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapFee: BalancerSubgraph_BigDecimal
+  totalSwapFee_not: BalancerSubgraph_BigDecimal
+  totalSwapFee_gt: BalancerSubgraph_BigDecimal
+  totalSwapFee_lt: BalancerSubgraph_BigDecimal
+  totalSwapFee_gte: BalancerSubgraph_BigDecimal
+  totalSwapFee_lte: BalancerSubgraph_BigDecimal
+  totalSwapFee_in: [BalancerSubgraph_BigDecimal!]
+  totalSwapFee_not_in: [BalancerSubgraph_BigDecimal!]
+}
+
+enum BalancerSubgraph_TradePair_orderBy {
+  id
+  token0
+  token1
+  totalSwapVolume
+  totalSwapFee
+}
+
+type BalancerSubgraph_User {
+  id: ID!
+  sharesOwned(skip: Int = 0, first: Int = 100, orderBy: BalancerSubgraph_PoolShare_orderBy, orderDirection: BalancerSubgraph_OrderDirection, where: BalancerSubgraph_PoolShare_filter): [BalancerSubgraph_PoolShare!]
+  swaps(skip: Int = 0, first: Int = 100, orderBy: BalancerSubgraph_Swap_orderBy, orderDirection: BalancerSubgraph_OrderDirection, where: BalancerSubgraph_Swap_filter): [BalancerSubgraph_Swap!]
+  userInternalBalances(skip: Int = 0, first: Int = 100, orderBy: BalancerSubgraph_UserInternalBalance_orderBy, orderDirection: BalancerSubgraph_OrderDirection, where: BalancerSubgraph_UserInternalBalance_filter): [BalancerSubgraph_UserInternalBalance!]
+}
+
+type BalancerSubgraph_UserInternalBalance {
+  id: ID!
+  userAddress: BalancerSubgraph_User
+  token: BalancerSubgraph_Bytes!
+  balance: BalancerSubgraph_BigDecimal!
+}
+
+input BalancerSubgraph_UserInternalBalance_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  userAddress: String
+  userAddress_not: String
+  userAddress_gt: String
+  userAddress_lt: String
+  userAddress_gte: String
+  userAddress_lte: String
+  userAddress_in: [String!]
+  userAddress_not_in: [String!]
+  userAddress_contains: String
+  userAddress_not_contains: String
+  userAddress_starts_with: String
+  userAddress_not_starts_with: String
+  userAddress_ends_with: String
+  userAddress_not_ends_with: String
+  token: BalancerSubgraph_Bytes
+  token_not: BalancerSubgraph_Bytes
+  token_in: [BalancerSubgraph_Bytes!]
+  token_not_in: [BalancerSubgraph_Bytes!]
+  token_contains: BalancerSubgraph_Bytes
+  token_not_contains: BalancerSubgraph_Bytes
+  balance: BalancerSubgraph_BigDecimal
+  balance_not: BalancerSubgraph_BigDecimal
+  balance_gt: BalancerSubgraph_BigDecimal
+  balance_lt: BalancerSubgraph_BigDecimal
+  balance_gte: BalancerSubgraph_BigDecimal
+  balance_lte: BalancerSubgraph_BigDecimal
+  balance_in: [BalancerSubgraph_BigDecimal!]
+  balance_not_in: [BalancerSubgraph_BigDecimal!]
+}
+
+enum BalancerSubgraph_UserInternalBalance_orderBy {
+  id
+  userAddress
+  token
+  balance
+}
+
+input BalancerSubgraph_User_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+}
+
+enum BalancerSubgraph_User_orderBy {
+  id
+  sharesOwned
+  swaps
+  userInternalBalances
+}
+
+type BalancerSubgraph__Block_ {
+  """The hash of the block"""
+  hash: BalancerSubgraph_Bytes
+  """The block number"""
+  number: Int!
+}
+
+"""The type for the top-level _meta field"""
+type BalancerSubgraph__Meta_ {
+  """
+  Information about a specific subgraph block. The hash of the block
+  will be null if the _meta field has a block constraint that asks for
+  a block number. It will be filled if the _meta field has no block constraint
+  and therefore asks for the latest  block
+  
+  """
+  block: BalancerSubgraph__Block_!
+  """The deployment ID"""
+  deployment: String!
+  """If `true`, the subgraph encountered indexing errors at some past block"""
+  hasIndexingErrors: Boolean!
+}
+
+enum _SubgraphErrorPolicy_ {
+  """Data will be returned even if the subgraph has indexing errors"""
+  allow
+  """If the subgraph has indexing errors, data will be omitted. The default."""
+  deny
+}

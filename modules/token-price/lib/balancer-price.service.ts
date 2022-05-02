@@ -1,8 +1,4 @@
-import { balancerSubgraphService } from '../../subgraphs/balancer-subgraph/balancer-subgraph.service';
-import {
-    OrderDirection,
-    TokenPrice_OrderBy,
-} from '../../subgraphs/balancer-subgraph/generated/balancer-subgraph-types';
+import { balancerSubgraphService } from '../../subgraph/balancer/balancer-subgraph.service';
 import { HistoricalPrice, TokenHistoricalPrices, TokenPrices } from '../token-price-types';
 import { fiveMinutesInSeconds, getDailyTimestampRanges, getHourlyTimestamps } from '../../util/time';
 import _ from 'lodash';
@@ -13,8 +9,8 @@ export class BalancerPriceService {
 
         const { tokenPrices } = await balancerSubgraphService.getTokenPrices({
             first: 1000, //TODO: this could stop working at some point
-            orderBy: TokenPrice_OrderBy.Timestamp,
-            orderDirection: OrderDirection.Desc,
+            orderBy: 'timestamp',
+            orderDirection: 'desc',
             where: { asset_in: addresses },
         });
 
@@ -53,8 +49,8 @@ export class BalancerPriceService {
 
         const allTokenPrices = await balancerSubgraphService.getAllTokenPrices({
             where: { asset: address, timestamp_gte: minTimestamp, timestamp_lte: maxTimestamp },
-            orderBy: TokenPrice_OrderBy.Timestamp,
-            orderDirection: OrderDirection.Asc,
+            orderBy: 'timestamp',
+            orderDirection: 'asc',
         });
 
         for (const range of ranges) {

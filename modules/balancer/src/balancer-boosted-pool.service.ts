@@ -1,14 +1,10 @@
-import {
-    BalancerPoolFragment,
-    BalancerPoolTokenFragment,
-    BalancerSwapFragment,
-} from '../../subgraphs/balancer-subgraph/generated/balancer-subgraph-types';
 import { GqlBalancerPool } from '../../../schema';
 import { TokenPrices } from '../../token-price/token-price-types';
 import _ from 'lodash';
 import { tokenPriceService } from '../../token-price/token-price.service';
-import { balancerSubgraphService } from '../../subgraphs/balancer-subgraph/balancer-subgraph.service';
+import { balancerSubgraphService } from '../../subgraph/balancer/balancer-subgraph.service';
 import { addressesMatch } from '../../util/addresses';
+import { BalancerPoolFragment } from '../../../.graphclient';
 
 export class BalancerBoostedPoolService {
     public hasNestedBpt(

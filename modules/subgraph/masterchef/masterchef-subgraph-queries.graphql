@@ -1,12 +1,12 @@
 query MasterchefUsers(
     $skip: Int
     $first: Int
-    $orderBy: User_orderBy
-    $orderDirection: OrderDirection
-    $where: User_filter
-    $block: Block_height
+    $orderBy: MasterchefSubgraph_User_orderBy
+    $orderDirection: MasterchefSubgraph_OrderDirection
+    $where: MasterchefSubgraph_User_filter
+    $block: MasterchefSubgraph_Block_height
 ) {
-    farmUsers: users(
+    farmUsers: MasterchefSubgraph_users(
         skip: $skip
         first: $first
         orderBy: $orderBy
@@ -18,7 +18,8 @@ query MasterchefUsers(
     }
 }
 
-fragment FarmUser on User {
+fragment FarmUser on MasterchefSubgraph_User {
+    __typename
     id
     address
     amount
@@ -34,12 +35,12 @@ fragment FarmUser on User {
 query Masterchefs(
     $skip: Int
     $first: Int
-    $orderBy: MasterChef_orderBy
-    $orderDirection: OrderDirection
-    $where: MasterChef_filter
-    $block: Block_height
+    $orderBy: MasterchefSubgraph_MasterChef_orderBy
+    $orderDirection: MasterchefSubgraph_OrderDirection
+    $where: MasterchefSubgraph_MasterChef_filter
+    $block: MasterchefSubgraph_Block_height
 ) {
-    masterChefs(
+    masterChefs: MasterchefSubgraph_masterChefs(
         skip: $skip
         first: $first
         orderBy: $orderBy
@@ -60,12 +61,12 @@ query Masterchefs(
 query MasterchefFarms(
     $skip: Int
     $first: Int
-    $orderBy: Pool_orderBy
-    $orderDirection: OrderDirection
-    $where: Pool_filter
-    $block: Block_height
+    $orderBy: MasterchefSubgraph_Pool_orderBy
+    $orderDirection: MasterchefSubgraph_OrderDirection
+    $where: MasterchefSubgraph_Pool_filter
+    $block: MasterchefSubgraph_Block_height
 ) {
-    farms: pools(
+    farms: MasterchefSubgraph_pools(
         skip: $skip
         first: $first
         orderBy: $orderBy
@@ -77,7 +78,8 @@ query MasterchefFarms(
     }
 }
 
-fragment Farm on Pool {
+fragment Farm on MasterchefSubgraph_Pool {
+    __typename
     id
     pair
     allocPoint
@@ -104,10 +106,14 @@ fragment Farm on Pool {
 }
 
 query MasterchefPortfolioData($address: Bytes!, $previousBlockNumber: Int!) {
-    farmUsers: users(first: 1000, where: { address: $address }) {
+    farmUsers: MasterchefSubgraph_users(first: 1000, where: { address: $address }) {
         ...FarmUser
     }
-    previousFarmUsers: users(first: 1000, where: { address: $address }, block: { number: $previousBlockNumber }) {
+    previousFarmUsers: MasterchefSubgraph_users(
+        first: 1000
+        where: { address: $address }
+        block: { number: $previousBlockNumber }
+    ) {
         ...FarmUser
     }
 }

@@ -1,0 +1,384 @@
+schema {
+  query: Query
+  subscription: Subscription
+}
+
+directive @entity on OBJECT
+
+directive @derivedFrom(field: String) on FIELD_DEFINITION
+
+directive @subgraphId(id: String) on OBJECT
+
+type BeetsBarSubgraph_Bar {
+  id: ID!
+  address: BeetsBarSubgraph_Bytes!
+  decimals: Int!
+  name: String!
+  vestingToken: BeetsBarSubgraph_Bytes!
+  symbol: String!
+  totalSupply: BeetsBarSubgraph_BigDecimal!
+  ratio: BeetsBarSubgraph_BigDecimal!
+  fBeetsMinted: BeetsBarSubgraph_BigDecimal!
+  fBeetsBurned: BeetsBarSubgraph_BigDecimal!
+  vestingTokenStaked: BeetsBarSubgraph_BigDecimal!
+  sharedVestingTokenRevenue: BeetsBarSubgraph_BigDecimal!
+  users(skip: Int = 0, first: Int = 100, orderBy: BeetsBarSubgraph_User_orderBy, orderDirection: BeetsBarSubgraph_OrderDirection, where: BeetsBarSubgraph_User_filter): [BeetsBarSubgraph_User!]!
+  block: BigInt!
+  timestamp: BigInt!
+}
+
+input BeetsBarSubgraph_Bar_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  address: BeetsBarSubgraph_Bytes
+  address_not: BeetsBarSubgraph_Bytes
+  address_in: [BeetsBarSubgraph_Bytes!]
+  address_not_in: [BeetsBarSubgraph_Bytes!]
+  address_contains: BeetsBarSubgraph_Bytes
+  address_not_contains: BeetsBarSubgraph_Bytes
+  decimals: Int
+  decimals_not: Int
+  decimals_gt: Int
+  decimals_lt: Int
+  decimals_gte: Int
+  decimals_lte: Int
+  decimals_in: [Int!]
+  decimals_not_in: [Int!]
+  name: String
+  name_not: String
+  name_gt: String
+  name_lt: String
+  name_gte: String
+  name_lte: String
+  name_in: [String!]
+  name_not_in: [String!]
+  name_contains: String
+  name_not_contains: String
+  name_starts_with: String
+  name_not_starts_with: String
+  name_ends_with: String
+  name_not_ends_with: String
+  vestingToken: BeetsBarSubgraph_Bytes
+  vestingToken_not: BeetsBarSubgraph_Bytes
+  vestingToken_in: [BeetsBarSubgraph_Bytes!]
+  vestingToken_not_in: [BeetsBarSubgraph_Bytes!]
+  vestingToken_contains: BeetsBarSubgraph_Bytes
+  vestingToken_not_contains: BeetsBarSubgraph_Bytes
+  symbol: String
+  symbol_not: String
+  symbol_gt: String
+  symbol_lt: String
+  symbol_gte: String
+  symbol_lte: String
+  symbol_in: [String!]
+  symbol_not_in: [String!]
+  symbol_contains: String
+  symbol_not_contains: String
+  symbol_starts_with: String
+  symbol_not_starts_with: String
+  symbol_ends_with: String
+  symbol_not_ends_with: String
+  totalSupply: BeetsBarSubgraph_BigDecimal
+  totalSupply_not: BeetsBarSubgraph_BigDecimal
+  totalSupply_gt: BeetsBarSubgraph_BigDecimal
+  totalSupply_lt: BeetsBarSubgraph_BigDecimal
+  totalSupply_gte: BeetsBarSubgraph_BigDecimal
+  totalSupply_lte: BeetsBarSubgraph_BigDecimal
+  totalSupply_in: [BeetsBarSubgraph_BigDecimal!]
+  totalSupply_not_in: [BeetsBarSubgraph_BigDecimal!]
+  ratio: BeetsBarSubgraph_BigDecimal
+  ratio_not: BeetsBarSubgraph_BigDecimal
+  ratio_gt: BeetsBarSubgraph_BigDecimal
+  ratio_lt: BeetsBarSubgraph_BigDecimal
+  ratio_gte: BeetsBarSubgraph_BigDecimal
+  ratio_lte: BeetsBarSubgraph_BigDecimal
+  ratio_in: [BeetsBarSubgraph_BigDecimal!]
+  ratio_not_in: [BeetsBarSubgraph_BigDecimal!]
+  fBeetsMinted: BeetsBarSubgraph_BigDecimal
+  fBeetsMinted_not: BeetsBarSubgraph_BigDecimal
+  fBeetsMinted_gt: BeetsBarSubgraph_BigDecimal
+  fBeetsMinted_lt: BeetsBarSubgraph_BigDecimal
+  fBeetsMinted_gte: BeetsBarSubgraph_BigDecimal
+  fBeetsMinted_lte: BeetsBarSubgraph_BigDecimal
+  fBeetsMinted_in: [BeetsBarSubgraph_BigDecimal!]
+  fBeetsMinted_not_in: [BeetsBarSubgraph_BigDecimal!]
+  fBeetsBurned: BeetsBarSubgraph_BigDecimal
+  fBeetsBurned_not: BeetsBarSubgraph_BigDecimal
+  fBeetsBurned_gt: BeetsBarSubgraph_BigDecimal
+  fBeetsBurned_lt: BeetsBarSubgraph_BigDecimal
+  fBeetsBurned_gte: BeetsBarSubgraph_BigDecimal
+  fBeetsBurned_lte: BeetsBarSubgraph_BigDecimal
+  fBeetsBurned_in: [BeetsBarSubgraph_BigDecimal!]
+  fBeetsBurned_not_in: [BeetsBarSubgraph_BigDecimal!]
+  vestingTokenStaked: BeetsBarSubgraph_BigDecimal
+  vestingTokenStaked_not: BeetsBarSubgraph_BigDecimal
+  vestingTokenStaked_gt: BeetsBarSubgraph_BigDecimal
+  vestingTokenStaked_lt: BeetsBarSubgraph_BigDecimal
+  vestingTokenStaked_gte: BeetsBarSubgraph_BigDecimal
+  vestingTokenStaked_lte: BeetsBarSubgraph_BigDecimal
+  vestingTokenStaked_in: [BeetsBarSubgraph_BigDecimal!]
+  vestingTokenStaked_not_in: [BeetsBarSubgraph_BigDecimal!]
+  sharedVestingTokenRevenue: BeetsBarSubgraph_BigDecimal
+  sharedVestingTokenRevenue_not: BeetsBarSubgraph_BigDecimal
+  sharedVestingTokenRevenue_gt: BeetsBarSubgraph_BigDecimal
+  sharedVestingTokenRevenue_lt: BeetsBarSubgraph_BigDecimal
+  sharedVestingTokenRevenue_gte: BeetsBarSubgraph_BigDecimal
+  sharedVestingTokenRevenue_lte: BeetsBarSubgraph_BigDecimal
+  sharedVestingTokenRevenue_in: [BeetsBarSubgraph_BigDecimal!]
+  sharedVestingTokenRevenue_not_in: [BeetsBarSubgraph_BigDecimal!]
+  block: BigInt
+  block_not: BigInt
+  block_gt: BigInt
+  block_lt: BigInt
+  block_gte: BigInt
+  block_lte: BigInt
+  block_in: [BigInt!]
+  block_not_in: [BigInt!]
+  timestamp: BigInt
+  timestamp_not: BigInt
+  timestamp_gt: BigInt
+  timestamp_lt: BigInt
+  timestamp_gte: BigInt
+  timestamp_lte: BigInt
+  timestamp_in: [BigInt!]
+  timestamp_not_in: [BigInt!]
+}
+
+enum BeetsBarSubgraph_Bar_orderBy {
+  id
+  address
+  decimals
+  name
+  vestingToken
+  symbol
+  totalSupply
+  ratio
+  fBeetsMinted
+  fBeetsBurned
+  vestingTokenStaked
+  sharedVestingTokenRevenue
+  users
+  block
+  timestamp
+}
+
+scalar BeetsBarSubgraph_BigDecimal
+
+scalar BigInt
+
+input BeetsBarSubgraph_Block_height {
+  hash: BeetsBarSubgraph_Bytes
+  number: Int
+}
+
+scalar BeetsBarSubgraph_Bytes
+
+enum BeetsBarSubgraph_OrderDirection {
+  asc
+  desc
+}
+
+type Query {
+  BeetsBarSubgraph_bar(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BeetsBarSubgraph_Block_height
+  ): BeetsBarSubgraph_Bar
+  BeetsBarSubgraph_bars(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BeetsBarSubgraph_Bar_orderBy
+    orderDirection: BeetsBarSubgraph_OrderDirection
+    where: BeetsBarSubgraph_Bar_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BeetsBarSubgraph_Block_height
+  ): [BeetsBarSubgraph_Bar!]!
+  BeetsBarSubgraph_user(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BeetsBarSubgraph_Block_height
+  ): BeetsBarSubgraph_User
+  BeetsBarSubgraph_users(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BeetsBarSubgraph_User_orderBy
+    orderDirection: BeetsBarSubgraph_OrderDirection
+    where: BeetsBarSubgraph_User_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BeetsBarSubgraph_Block_height
+  ): [BeetsBarSubgraph_User!]!
+  """Access to subgraph metadata"""
+  BeetsBarSubgraph__meta(block: BeetsBarSubgraph_Block_height): BeetsBarSubgraph__Meta_
+}
+
+type Subscription {
+  BeetsBarSubgraph_bar(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BeetsBarSubgraph_Block_height
+  ): BeetsBarSubgraph_Bar
+  BeetsBarSubgraph_bars(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BeetsBarSubgraph_Bar_orderBy
+    orderDirection: BeetsBarSubgraph_OrderDirection
+    where: BeetsBarSubgraph_Bar_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BeetsBarSubgraph_Block_height
+  ): [BeetsBarSubgraph_Bar!]!
+  BeetsBarSubgraph_user(
+    id: ID!
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BeetsBarSubgraph_Block_height
+  ): BeetsBarSubgraph_User
+  BeetsBarSubgraph_users(
+    skip: Int = 0
+    first: Int = 100
+    orderBy: BeetsBarSubgraph_User_orderBy
+    orderDirection: BeetsBarSubgraph_OrderDirection
+    where: BeetsBarSubgraph_User_filter
+    """The block at which the query should be executed. Can either be an `{ number: Int }` containing the block number or a `{ hash: Bytes }` value containing a block hash. Defaults to the latest block when omitted."""
+    block: BeetsBarSubgraph_Block_height
+  ): [BeetsBarSubgraph_User!]!
+  """Access to subgraph metadata"""
+  BeetsBarSubgraph__meta(block: BeetsBarSubgraph_Block_height): BeetsBarSubgraph__Meta_
+}
+
+type BeetsBarSubgraph_User {
+  id: ID!
+  address: BeetsBarSubgraph_Bytes!
+  bar: BeetsBarSubgraph_Bar
+  fBeets: BeetsBarSubgraph_BigDecimal!
+  vestingTokenOut: BeetsBarSubgraph_BigDecimal!
+  vestingTokenIn: BeetsBarSubgraph_BigDecimal!
+  vestingTokenHarvested: BeetsBarSubgraph_BigDecimal!
+  block: BigInt!
+  timestamp: BigInt!
+}
+
+input BeetsBarSubgraph_User_filter {
+  id: ID
+  id_not: ID
+  id_gt: ID
+  id_lt: ID
+  id_gte: ID
+  id_lte: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  address: BeetsBarSubgraph_Bytes
+  address_not: BeetsBarSubgraph_Bytes
+  address_in: [BeetsBarSubgraph_Bytes!]
+  address_not_in: [BeetsBarSubgraph_Bytes!]
+  address_contains: BeetsBarSubgraph_Bytes
+  address_not_contains: BeetsBarSubgraph_Bytes
+  bar: String
+  bar_not: String
+  bar_gt: String
+  bar_lt: String
+  bar_gte: String
+  bar_lte: String
+  bar_in: [String!]
+  bar_not_in: [String!]
+  bar_contains: String
+  bar_not_contains: String
+  bar_starts_with: String
+  bar_not_starts_with: String
+  bar_ends_with: String
+  bar_not_ends_with: String
+  fBeets: BeetsBarSubgraph_BigDecimal
+  fBeets_not: BeetsBarSubgraph_BigDecimal
+  fBeets_gt: BeetsBarSubgraph_BigDecimal
+  fBeets_lt: BeetsBarSubgraph_BigDecimal
+  fBeets_gte: BeetsBarSubgraph_BigDecimal
+  fBeets_lte: BeetsBarSubgraph_BigDecimal
+  fBeets_in: [BeetsBarSubgraph_BigDecimal!]
+  fBeets_not_in: [BeetsBarSubgraph_BigDecimal!]
+  vestingTokenOut: BeetsBarSubgraph_BigDecimal
+  vestingTokenOut_not: BeetsBarSubgraph_BigDecimal
+  vestingTokenOut_gt: BeetsBarSubgraph_BigDecimal
+  vestingTokenOut_lt: BeetsBarSubgraph_BigDecimal
+  vestingTokenOut_gte: BeetsBarSubgraph_BigDecimal
+  vestingTokenOut_lte: BeetsBarSubgraph_BigDecimal
+  vestingTokenOut_in: [BeetsBarSubgraph_BigDecimal!]
+  vestingTokenOut_not_in: [BeetsBarSubgraph_BigDecimal!]
+  vestingTokenIn: BeetsBarSubgraph_BigDecimal
+  vestingTokenIn_not: BeetsBarSubgraph_BigDecimal
+  vestingTokenIn_gt: BeetsBarSubgraph_BigDecimal
+  vestingTokenIn_lt: BeetsBarSubgraph_BigDecimal
+  vestingTokenIn_gte: BeetsBarSubgraph_BigDecimal
+  vestingTokenIn_lte: BeetsBarSubgraph_BigDecimal
+  vestingTokenIn_in: [BeetsBarSubgraph_BigDecimal!]
+  vestingTokenIn_not_in: [BeetsBarSubgraph_BigDecimal!]
+  vestingTokenHarvested: BeetsBarSubgraph_BigDecimal
+  vestingTokenHarvested_not: BeetsBarSubgraph_BigDecimal
+  vestingTokenHarvested_gt: BeetsBarSubgraph_BigDecimal
+  vestingTokenHarvested_lt: BeetsBarSubgraph_BigDecimal
+  vestingTokenHarvested_gte: BeetsBarSubgraph_BigDecimal
+  vestingTokenHarvested_lte: BeetsBarSubgraph_BigDecimal
+  vestingTokenHarvested_in: [BeetsBarSubgraph_BigDecimal!]
+  vestingTokenHarvested_not_in: [BeetsBarSubgraph_BigDecimal!]
+  block: BigInt
+  block_not: BigInt
+  block_gt: BigInt
+  block_lt: BigInt
+  block_gte: BigInt
+  block_lte: BigInt
+  block_in: [BigInt!]
+  block_not_in: [BigInt!]
+  timestamp: BigInt
+  timestamp_not: BigInt
+  timestamp_gt: BigInt
+  timestamp_lt: BigInt
+  timestamp_gte: BigInt
+  timestamp_lte: BigInt
+  timestamp_in: [BigInt!]
+  timestamp_not_in: [BigInt!]
+}
+
+enum BeetsBarSubgraph_User_orderBy {
+  id
+  address
+  bar
+  fBeets
+  vestingTokenOut
+  vestingTokenIn
+  vestingTokenHarvested
+  block
+  timestamp
+}
+
+type BeetsBarSubgraph__Block_ {
+  """The hash of the block"""
+  hash: BeetsBarSubgraph_Bytes
+  """The block number"""
+  number: Int!
+}
+
+"""The type for the top-level _meta field"""
+type BeetsBarSubgraph__Meta_ {
+  """
+  Information about a specific subgraph block. The hash of the block
+  will be null if the _meta field has a block constraint that asks for
+  a block number. It will be filled if the _meta field has no block constraint
+  and therefore asks for the latest  block
+  
+  """
+  block: BeetsBarSubgraph__Block_!
+  """The deployment ID"""
+  deployment: String!
+  """If `true`, the subgraph encountered indexing errors at some past block"""
+  hasIndexingErrors: Boolean!
+}
+
+enum _SubgraphErrorPolicy_ {
+  """Data will be returned even if the subgraph has indexing errors"""
+  allow
+  """If the subgraph has indexing errors, data will be omitted. The default."""
+  deny
+}

@@ -1,12 +1,4 @@
 import { GraphQLClient } from 'graphql-request';
-import {
-    Block_OrderBy,
-    BlockFragment,
-    BlocksQuery,
-    BlocksQueryVariables,
-    getSdk,
-    OrderDirection,
-} from './generated/blocks-subgraph-types';
 import { env } from '../../../app/env';
 import {
     fiveMinutesInSeconds,
@@ -16,9 +8,9 @@ import {
     secondsPerDay,
     secondsPerYear,
 } from '../../util/time';
-import { subgraphLoadAll } from '../../util/subgraph-util';
 import { cache } from '../../cache/cache';
 import moment from 'moment-timezone';
+import { BlockFragment, BlocksQuery, BlocksQueryVariables, getBuiltGraphSDK, Sdk } from '../../../.graphclient';
 
 const DAILY_BLOCKS_CACHE_KEY = 'block-subgraph_daily-blocks';
 const AVG_BLOCK_TIME_CACHE_PREFIX = 'block-subgraph:average-block-time';
@@ -31,6 +23,7 @@ const BLOCK_TIME_MAP: { [chainId: string]: number } = {
 
 export class BlocksSubgraphService {
     private readonly client: GraphQLClient;
+    private sdk: Sdk | null = null;
 
     constructor() {
         this.client = new GraphQLClient(env.BLOCKS_SUBGRAPH);
@@ -47,17 +40,18 @@ export class BlocksSubgraphService {
     }
 
     public async cacheAverageBlockTime(): Promise<number> {
+        const sdk = await this.getSdk();
         const start = moment().startOf('hour').subtract(6, 'hours').unix();
         const end = moment().startOf('hour').unix();
 
         let blocks: BlockFragment[] = [];
 
         for (let i = 0; i < 10; i++) {
-            const result = await this.sdk.Blocks({
+            const result = await sdk.Blocks({
                 first: 1000,
                 skip: i * 1000,
-                orderBy: Block_OrderBy.Number,
-                orderDirection: OrderDirection.Desc,
+                orderBy: 'number',
+                orderDirection: 'desc',
                 where: { timestamp_gt: `${start}`, timestamp_lt: `${end}` },
             });
 
@@ -92,11 +86,17 @@ export class BlocksSubgraphService {
     }
 
     public async getBlocks(args: BlocksQueryVariables): Promise<BlocksQuery> {
-        return this.sdk.Blocks(args);
+        const sdk = await this.getSdk();
+
+        return sdk.Blocks(args);
     }
 
     public async getAllBlocks(args: BlocksQueryVariables): Promise<BlockFragment[]> {
-        return subgraphLoadAll<BlockFragment>(this.sdk.Blocks, 'blocks', args);
+        const sdk = await this.getSdk();
+        //TODO: rework
+        const { blocks } = await sdk.Blocks({ ...args, first: 10000 });
+
+        return blocks;
     }
 
     /*public async getHourlyBlocks(numDays: number): Promise<BlockFragment[]> {
@@ -142,8 +142,8 @@ export class BlocksSubgraphService {
         const blockTime = BLOCK_TIME_MAP[env.CHAIN_ID] ?? 1;
 
         const args: BlocksQueryVariables = {
-            orderDirection: OrderDirection.Desc,
-            orderBy: Block_OrderBy.Timestamp,
+            orderDirection: 'desc',
+            orderBy: 'timestamp',
             where: {
                 timestamp_gte: `${moment
                     .tz('GMT')
@@ -171,8 +171,8 @@ export class BlocksSubgraphService {
         const blockTime = BLOCK_TIME_MAP[env.CHAIN_ID] ?? 1;
 
         const args: BlocksQueryVariables = {
-            orderDirection: OrderDirection.Desc,
-            orderBy: Block_OrderBy.Timestamp,
+            orderDirection: 'desc',
+            orderBy: 'timestamp',
             where: {
                 timestamp_gt: `${timestamp - 4 * blockTime}`,
                 timestamp_lt: `${timestamp + 4 * blockTime}`,
@@ -193,9 +193,9 @@ export class BlocksSubgraphService {
 
         const timestamps = getDailyTimestampsForDays(numDays);
         const blocks: BlockFragment[] = [];
-        const args = {
-            orderDirection: OrderDirection.Desc,
-            orderBy: Block_OrderBy.Timestamp,
+        const args: BlocksQueryVariables = {
+            orderDirection: 'desc',
+            orderBy: 'timestamp',
             where: {
                 timestamp_in: timestampsWithBuffer.map((timestamp) => `${timestamp}`),
             },
@@ -241,8 +241,12 @@ export class BlocksSubgraphService {
         return secondsPerYear / blockTime;
     }
 
-    public get sdk() {
-        return getSdk(this.client);
+    private async getSdk(): Promise<Sdk> {
+        if (this.sdk === null) {
+            this.sdk = await getBuiltGraphSDK();
+        }
+
+        return this.sdk;
     }
 }
 

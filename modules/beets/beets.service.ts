@@ -1,14 +1,14 @@
-import { balancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer-subgraph.service';
+import { balancerSubgraphService } from '../subgraph/balancer/balancer-subgraph.service';
 import { env } from '../../app/env';
 import { GqlBeetsConfig, GqlBeetsProtocolData } from '../../schema';
 import { getCirculatingSupply } from './beets';
 import { fiveMinutesInMs } from '../util/time';
 import { Cache, CacheClass } from 'memory-cache';
 import { balancerService } from '../balancer/balancer.service';
-import { blocksSubgraphService } from '../subgraphs/blocks-subgraph/blocks-subgraph.service';
+import { blocksSubgraphService } from '../subgraph/blocks/blocks-subgraph.service';
 import { sanityClient } from '../util/sanity';
 import { cache } from '../cache/cache';
-import { beetsBarService } from '../subgraphs/beets-bar-subgraph/beets-bar.service';
+import { beetsBarService } from '../subgraph/beets-bar/beets-bar.service';
 import { tokenPriceService } from '../token-price/token-price.service';
 import _ from 'lodash';
 

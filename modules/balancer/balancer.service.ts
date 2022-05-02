@@ -1,15 +1,6 @@
-import { balancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer-subgraph.service';
-import {
-    BalancerLatestPriceFragment,
-    BalancerPoolFragment,
-    BalancerTradePairSnapshotFragment,
-    JoinExit_OrderBy,
-    OrderDirection,
-    Pool_OrderBy,
-    TradePairSnapshot_OrderBy,
-} from '../subgraphs/balancer-subgraph/generated/balancer-subgraph-types';
+import { balancerSubgraphService } from '../subgraph/balancer/balancer-subgraph.service';
 import { sanityClient } from '../util/sanity';
-import { blocksSubgraphService } from '../subgraphs/blocks-subgraph/blocks-subgraph.service';
+import { blocksSubgraphService } from '../subgraph/blocks/blocks-subgraph.service';
 import { getOnChainBalances } from './src/onchainData';
 import { providers } from 'ethers';
 import { env } from '../../app/env';
@@ -37,9 +28,18 @@ import { yearnVaultService } from '../boosted/yearn-vault.service';
 import { BalancerBoostedPoolService } from './src/balancer-boosted-pool.service';
 import { spookySwapService } from '../boosted/spooky-swap.service';
 import { formatFixed } from '@ethersproject/bignumber';
-import { BalancerUserPoolShare } from '../subgraphs/balancer-subgraph/balancer-subgraph-types';
+import { BalancerUserPoolShare } from '../subgraph/balancer/balancer-subgraph-types';
 import { getAddress } from '@ethersproject/address';
 import { SFTMX_ADDRESS } from '../token-price/lib/stader-staked-ftm.service';
+import {
+    BalancerLatestPriceFragment,
+    BalancerPoolFragment,
+    BalancerProtocolDataDocument,
+    BalancerTradePairSnapshotFragment,
+    BlocksDocument,
+    getBuiltGraphClient,
+    getSdk,
+} from '../../.graphclient';
 
 const POOLS_CACHE_KEY = 'pools:all';
 const PAST_POOLS_CACHE_KEY = 'pools:24h';
@@ -134,12 +134,22 @@ export class BalancerService {
         const provider = new providers.JsonRpcProvider(env.RPC_URL);
         const blacklistedPools = await this.getBlacklistedPools();
 
-        const pools = await balancerSubgraphService.getAllPools({
-            orderBy: Pool_OrderBy.TotalLiquidity,
-            orderDirection: OrderDirection.Desc,
-        });
+        /*const pools = await balancerSubgraphService.getAllPools({
+            orderBy: 'totalLiquidity',
+            orderDirection: 'desc',
+        });*/
 
-        const filtered: GqlBalancerPool[] = pools
+        /*const client = await getBuiltGraphClient();
+
+        const response = await client.execute(BlocksDocument, { first: 1 });*/
+
+        const response = await blocksSubgraphService.getBlocks({ first: 1 });
+
+        console.log('response', response);
+
+        //await blocksSubgraphService.getBlocks({ first: 1 });
+
+        /*const filtered: GqlBalancerPool[] = pools
             //sort bb-yv-USD to the front
             .sort((pool1, pool2) => {
                 if (pool1.id === BB_YV_USD) {
@@ -155,9 +165,9 @@ export class BalancerService {
                     return false;
                 }
 
-                /*if (parseFloat(pool.totalShares) < 0.001 && pool.poolType !== 'LiquidityBootstrapping') {
+                /!*if (parseFloat(pool.totalShares) < 0.001 && pool.poolType !== 'LiquidityBootstrapping') {
                     return false;
-                }*/
+                }*!/
 
                 if (parseFloat(pool.totalShares) < 0.0001) {
                     return false;
@@ -258,15 +268,17 @@ export class BalancerService {
 
         await cache.putObjectValue(POOLS_CACHE_KEY, decoratedPools);
 
-        return decoratedPools;
+        return decoratedPools;*/
+
+        return [];
     }
 
     public async cachePastPools(): Promise<BalancerPoolFragment[]> {
         const block = await blocksSubgraphService.getBlockFrom24HoursAgo();
         const blacklistedPools = await this.getBlacklistedPools();
         const pools = await balancerSubgraphService.getAllPools({
-            orderBy: Pool_OrderBy.TotalLiquidity,
-            orderDirection: OrderDirection.Desc,
+            orderBy: 'totalLiquidity',
+            orderDirection: 'desc',
             block: { number: parseInt(block.number) },
         });
 
@@ -422,8 +434,8 @@ export class BalancerService {
 
         const { tradePairSnapshots } = await balancerSubgraphService.getTradePairSnapshots({
             first: 5,
-            orderBy: TradePairSnapshot_OrderBy.TotalSwapVolume,
-            orderDirection: OrderDirection.Desc,
+            orderBy: 'totalSwapVolume',
+            orderDirection: 'desc',
             where: { timestamp_gt: timestamp },
         });
 
@@ -445,8 +457,8 @@ export class BalancerService {
             where: { pool: poolId, sender: sender?.toLowerCase() },
             first,
             skip,
-            orderBy: JoinExit_OrderBy.Timestamp,
-            orderDirection: OrderDirection.Desc,
+            orderBy: 'timestamp',
+            orderDirection: 'desc',
         });
 
         return joinExits.map((activity) => {

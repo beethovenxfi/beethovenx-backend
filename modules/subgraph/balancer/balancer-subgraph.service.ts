@@ -1,7 +1,12 @@
 import { GraphQLClient } from 'graphql-request';
+import { env } from '../../../app/env';
+import _ from 'lodash';
+import { subgraphPurgeCacheKeyAtBlock } from '../../util/subgraph-util';
+import { Cache, CacheClass } from 'memory-cache';
+import { fiveMinutesInMs, fiveMinutesInSeconds, twentyFourHoursInMs } from '../../util/time';
+import { cache } from '../../cache/cache';
+import { BalancerUserPoolShare } from './balancer-subgraph-types';
 import {
-    Balancer,
-    BalancerJoinExitFragment,
     BalancerJoinExitsQuery,
     BalancerJoinExitsQueryVariables,
     BalancerLatestPriceFragment,
@@ -11,7 +16,6 @@ import {
     BalancerPoolQuery,
     BalancerPoolQueryVariables,
     BalancerPoolShareFragment,
-    BalancerPoolSharesQuery,
     BalancerPoolSharesQueryVariables,
     BalancerPoolSnapshotFragment,
     BalancerPoolSnapshotsQuery,
@@ -21,6 +25,7 @@ import {
     BalancerPortfolioDataQuery,
     BalancerPortfolioPoolsDataQuery,
     BalancerProtocolDataQueryVariables,
+    BalancerSubgraph_Balancer,
     BalancerSwapFragment,
     BalancerSwapsQuery,
     BalancerSwapsQueryVariables,
@@ -31,15 +36,9 @@ import {
     BalancerTradePairSnapshotsQueryVariables,
     BalancerUserFragment,
     BalancerUsersQueryVariables,
-    getSdk,
-} from './generated/balancer-subgraph-types';
-import { env } from '../../../app/env';
-import _ from 'lodash';
-import { subgraphLoadAll, subgraphPurgeCacheKeyAtBlock } from '../../util/subgraph-util';
-import { Cache, CacheClass } from 'memory-cache';
-import { fiveMinutesInMs, fiveMinutesInSeconds, twentyFourHoursInMs } from '../../util/time';
-import { cache } from '../../cache/cache';
-import { BalancerUserPoolShare } from './balancer-subgraph-types';
+    getBuiltGraphSDK,
+    Sdk,
+} from '../../../.graphclient';
 
 const ALL_USERS_CACHE_KEY = 'balance-subgraph_all-users';
 const ALL_POOLS_CACHE_KEY = 'balance-subgraph_all-pools';
@@ -50,59 +49,61 @@ const USER_CACHE_KEY_PREFIX = 'balance-subgraph_user:';
 export class BalancerSubgraphService {
     private cache: CacheClass<string, any>;
     private readonly client: GraphQLClient;
+    private sdk: Sdk | null = null;
 
     constructor() {
         this.cache = new Cache<string, any>();
         this.client = new GraphQLClient(env.BALANCER_SUBGRAPH);
     }
 
-    public async getProtocolData(args: BalancerProtocolDataQueryVariables): Promise<Balancer> {
-        const { balancers } = await this.sdk.BalancerProtocolData(args);
+    public async getProtocolData(args: BalancerProtocolDataQueryVariables): Promise<BalancerSubgraph_Balancer> {
+        const sdk = await this.getSdk();
+        const { balancers } = await sdk.BalancerProtocolData(args);
 
         if (balancers.length === 0) {
             throw new Error('Missing protocol data');
         }
 
         //There is only ever one
-        return balancers[0] as Balancer;
+        return balancers[0] as BalancerSubgraph_Balancer;
     }
 
     public async getTokenPrices(args: BalancerTokenPricesQueryVariables): Promise<BalancerTokenPricesQuery> {
-        return this.sdk.BalancerTokenPrices(args);
-    }
-
-    public async getPoolSnapshots(args: BalancerPoolSnapshotsQueryVariables): Promise<BalancerPoolSnapshotsQuery> {
-        return this.sdk.BalancerPoolSnapshots(args);
-    }
-
-    public async getAllPoolSnapshots(
-        args: BalancerPoolSnapshotsQueryVariables,
-    ): Promise<BalancerPoolSnapshotFragment[]> {
-        return subgraphLoadAll<BalancerPoolSnapshotFragment>(this.sdk.BalancerPoolSnapshots, 'poolSnapshots', args);
+        const sdk = await this.getSdk();
+        return sdk.BalancerTokenPrices(args);
     }
 
     public async getPools(args: BalancerPoolsQueryVariables): Promise<BalancerPoolsQuery> {
-        return this.sdk.BalancerPools(args);
+        const sdk = await this.getSdk();
+        return sdk.BalancerPools(args);
     }
 
     public async getSwaps(args: BalancerSwapsQueryVariables): Promise<BalancerSwapsQuery> {
-        return this.sdk.BalancerSwaps(args);
+        const sdk = await this.getSdk();
+        return sdk.BalancerSwaps(args);
     }
 
     public async getAllSwaps(args: BalancerSwapsQueryVariables): Promise<BalancerSwapFragment[]> {
-        return subgraphLoadAll<BalancerSwapFragment>(this.sdk.BalancerSwaps, 'swaps', args);
+        const sdk = await this.getSdk();
+
+        const { swaps } = await sdk.BalancerSwaps({ ...args, first: 5000 });
+
+        return swaps;
     }
 
     public async getPool(args: BalancerPoolQueryVariables): Promise<BalancerPoolQuery> {
-        return this.sdk.BalancerPool(args);
+        const sdk = await this.getSdk();
+        return sdk.BalancerPool(args);
     }
 
     public async getPortfolioData(id: string, previousBlockNumber: number): Promise<BalancerPortfolioDataQuery> {
-        return this.sdk.BalancerPortfolioData({ id, previousBlockNumber });
+        const sdk = await this.getSdk();
+        return sdk.BalancerPortfolioData({ id, previousBlockNumber });
     }
 
     public async getUser(userAddress: string): Promise<BalancerUserFragment | null> {
-        const { users } = await this.sdk.BalancerUsers({ where: { id: userAddress.toLowerCase() }, first: 1 });
+        const sdk = await this.getSdk();
+        const { users } = await sdk.BalancerUsers({ where: { id: userAddress.toLowerCase() }, first: 1 });
 
         if (users.length === 0) {
             return null;
@@ -112,13 +113,17 @@ export class BalancerSubgraphService {
     }
 
     public async getAllUsers(args: BalancerUsersQueryVariables): Promise<BalancerUserFragment[]> {
-        const users = await subgraphLoadAll<BalancerUserFragment>(this.sdk.BalancerUsers, 'users', args);
+        const sdk = await this.getSdk();
+
+        //TODO: need to rework this
+        const { users } = await sdk.BalancerUsers({ ...args, first: 10000 });
 
         return users.map((user) => this.normalizeBalancerUser(user));
     }
 
     public async getPoolShares(args: BalancerPoolSharesQueryVariables): Promise<BalancerUserPoolShare[]> {
-        const { poolShares } = await this.sdk.BalancerPoolShares(args);
+        const sdk = await this.getSdk();
+        const { poolShares } = await sdk.BalancerPoolShares(args);
 
         return poolShares.map((shares) => ({
             ...shares,
@@ -130,11 +135,10 @@ export class BalancerSubgraphService {
     }
 
     public async getAllPoolShares(args: BalancerPoolSharesQueryVariables): Promise<BalancerUserPoolShare[]> {
-        const poolShares = await subgraphLoadAll<BalancerPoolShareFragment>(
-            this.sdk.BalancerPoolShares,
-            'poolShares',
-            args,
-        );
+        const sdk = await this.getSdk();
+
+        //TODO: need to rework this
+        const { poolShares } = await sdk.BalancerPoolShares({ ...args, first: 10000 });
 
         return poolShares.map((shares) => ({
             ...shares,
@@ -146,29 +150,41 @@ export class BalancerSubgraphService {
     }
 
     public async getLatestPrices(args: BalancerLatestPricesQueryVariables): Promise<BalancerLatestPricesQuery> {
-        return this.sdk.BalancerLatestPrices(args);
+        const sdk = await this.getSdk();
+        return sdk.BalancerLatestPrices(args);
     }
 
     public async getLatestPrice(id: string): Promise<BalancerLatestPriceFragment | null> {
-        const { latestPrice } = await this.sdk.BalancerLatestPrice({ id });
+        const sdk = await this.getSdk();
+        const { latestPrice } = await sdk.BalancerLatestPrice({ id });
 
         return latestPrice || null;
     }
 
     public async getAllTokenPrices(args: BalancerTokenPricesQueryVariables): Promise<BalancerTokenPriceFragment[]> {
-        return subgraphLoadAll<BalancerTokenPriceFragment>(this.sdk.BalancerTokenPrices, 'tokenPrices', args);
+        const sdk = await this.getSdk();
+        //TODO: rework
+        const { tokenPrices } = await sdk.BalancerTokenPrices({ ...args, first: 5000 });
+
+        return tokenPrices;
     }
 
     public async getAllPools(args: BalancerPoolsQueryVariables): Promise<BalancerPoolFragment[]> {
-        return subgraphLoadAll<BalancerPoolFragment>(this.sdk.BalancerPools, 'pools', args);
+        const sdk = await this.getSdk();
+        //TODO: rework
+        const { pools } = await sdk.BalancerPools({ ...args, first: 1000 });
+
+        return pools;
     }
 
     public async getPoolJoinExits(args: BalancerJoinExitsQueryVariables): Promise<BalancerJoinExitsQuery> {
-        return this.sdk.BalancerJoinExits(args);
+        const sdk = await this.getSdk();
+        return sdk.BalancerJoinExits(args);
     }
 
     public async cachePortfolioPoolsData(previousBlockNumber: number): Promise<BalancerPortfolioPoolsDataQuery> {
-        const response = await this.sdk.BalancerPortfolioPoolsData({ previousBlockNumber });
+        const sdk = await this.getSdk();
+        const response = await sdk.BalancerPortfolioPoolsData({ previousBlockNumber });
 
         await cache.putObjectValue(PORTFOLIO_POOLS_CACHE_KEY, response, 5);
 
@@ -194,13 +210,14 @@ export class BalancerSubgraphService {
     }
 
     public async getAllPoolsAtBlock(block: number): Promise<BalancerPoolFragment[]> {
+        const sdk = await this.getSdk();
         const cached = this.cache.get(`${ALL_POOLS_CACHE_KEY}:${block}`) as BalancerPoolFragment[] | null;
 
         if (cached) {
             return cached;
         }
 
-        const { pools } = await this.sdk.BalancerPools({
+        const { pools } = await sdk.BalancerPools({
             first: 1000,
             where: { totalShares_gt: '0' },
             block: { number: block },
@@ -214,7 +231,8 @@ export class BalancerSubgraphService {
     public async getTradePairSnapshots(
         args: BalancerTradePairSnapshotsQueryVariables,
     ): Promise<BalancerTradePairSnapshotsQuery> {
-        return this.sdk.BalancerTradePairSnapshots(args);
+        const sdk = await this.getSdk();
+        return sdk.BalancerTradePairSnapshots(args);
     }
 
     public async clearCacheAtBlock(block: number) {
@@ -227,10 +245,6 @@ export class BalancerSubgraphService {
         await subgraphPurgeCacheKeyAtBlock(ALL_POOLS_CACHE_KEY, block);
     }
 
-    private get sdk() {
-        return getSdk(this.client);
-    }
-
     private normalizeBalancerUser(user: BalancerUserFragment): BalancerUserFragment {
         return {
             ...user,
@@ -240,6 +254,14 @@ export class BalancerSubgraphService {
                 balance: parseFloat(shares.balance) < 0 ? '0' : shares.balance,
             })),
         };
+    }
+
+    private async getSdk(): Promise<Sdk> {
+        if (this.sdk === null) {
+            this.sdk = await getBuiltGraphSDK();
+        }
+
+        return this.sdk;
     }
 }
 

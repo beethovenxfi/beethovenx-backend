@@ -1,12 +1,12 @@
 query Blocks(
     $skip: Int
     $first: Int
-    $orderBy: Block_orderBy
-    $orderDirection: OrderDirection
-    $where: Block_filter
-    $block: Block_height
+    $orderBy: BlocksSubgraph_Block_orderBy
+    $orderDirection: BlocksSubgraph_OrderDirection
+    $where: BlocksSubgraph_Block_filter
+    $block: BlocksSubgraph_Block_height
 ) {
-    blocks(
+    blocks: BlocksSubgraph_blocks(
         skip: $skip
         first: $first
         orderBy: $orderBy
@@ -18,7 +18,8 @@ query Blocks(
     }
 }
 
-fragment Block on Block {
+fragment Block on BlocksSubgraph_Block {
+    __typename
     id
     number
     timestamp

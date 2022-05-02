@@ -1,12 +1,12 @@
 query BalancerProtocolData(
     $skip: Int
     $first: Int
-    $orderBy: Balancer_orderBy
-    $orderDirection: OrderDirection
-    $where: Balancer_filter
-    $block: Block_height
+    $orderBy: BalancerSubgraph_Balancer_orderBy
+    $orderDirection: BalancerSubgraph_OrderDirection
+    $where: BalancerSubgraph_Balancer_filter
+    $block: BalancerSubgraph_Block_height
 ) {
-    balancers(
+    balancers: BalancerSubgraph_balancers(
         skip: $skip
         first: $first
         orderBy: $orderBy
@@ -22,8 +22,8 @@ query BalancerProtocolData(
     }
 }
 
-query BalancerUser($id: ID!, $block: Block_height) {
-    user(id: $id, block: $block) {
+query BalancerUser($id: ID!, $block: BalancerSubgraph_Block_height) {
+    user: BalancerSubgraph_user(id: $id, block: $block) {
         ...BalancerUser
     }
 }
@@ -31,12 +31,12 @@ query BalancerUser($id: ID!, $block: Block_height) {
 query BalancerUsers(
     $skip: Int
     $first: Int
-    $orderBy: User_orderBy
-    $orderDirection: OrderDirection
-    $where: User_filter
-    $block: Block_height
+    $orderBy: BalancerSubgraph_User_orderBy
+    $orderDirection: BalancerSubgraph_OrderDirection
+    $where: BalancerSubgraph_User_filter
+    $block: BalancerSubgraph_Block_height
 ) {
-    users(
+    users: BalancerSubgraph_users(
         skip: $skip
         first: $first
         orderBy: $orderBy
@@ -48,7 +48,8 @@ query BalancerUsers(
     }
 }
 
-fragment BalancerUser on User {
+fragment BalancerUser on BalancerSubgraph_User {
+    __typename
     id
     sharesOwned(first: 1000) {
         id
@@ -62,12 +63,12 @@ fragment BalancerUser on User {
 query BalancerPoolShares(
     $skip: Int
     $first: Int
-    $orderBy: PoolShare_orderBy
-    $orderDirection: OrderDirection
-    $where: PoolShare_filter
-    $block: Block_height
+    $orderBy: BalancerSubgraph_PoolShare_orderBy
+    $orderDirection: BalancerSubgraph_OrderDirection
+    $where: BalancerSubgraph_PoolShare_filter
+    $block: BalancerSubgraph_Block_height
 ) {
-    poolShares(
+    poolShares: BalancerSubgraph_poolShares(
         skip: $skip
         first: $first
         orderBy: $orderBy
@@ -79,7 +80,8 @@ query BalancerPoolShares(
     }
 }
 
-fragment BalancerPoolShare on PoolShare {
+fragment BalancerPoolShare on BalancerSubgraph_PoolShare {
+    __typename
     id
     balance
 }
@@ -87,12 +89,12 @@ fragment BalancerPoolShare on PoolShare {
 query BalancerTokenPrices(
     $skip: Int
     $first: Int
-    $orderBy: TokenPrice_orderBy
-    $orderDirection: OrderDirection
-    $where: TokenPrice_filter
-    $block: Block_height
+    $orderBy: BalancerSubgraph_TokenPrice_orderBy
+    $orderDirection: BalancerSubgraph_OrderDirection
+    $where: BalancerSubgraph_TokenPrice_filter
+    $block: BalancerSubgraph_Block_height
 ) {
-    tokenPrices(
+    tokenPrices: BalancerSubgraph_tokenPrices(
         skip: $skip
         first: $first
         orderBy: $orderBy
@@ -104,7 +106,8 @@ query BalancerTokenPrices(
     }
 }
 
-fragment BalancerTokenPrice on TokenPrice {
+fragment BalancerTokenPrice on BalancerSubgraph_TokenPrice {
+    __typename
     id
     poolId {
         id
@@ -118,7 +121,8 @@ fragment BalancerTokenPrice on TokenPrice {
     priceUSD
 }
 
-fragment BalancerPool on Pool {
+fragment BalancerPool on BalancerSubgraph_Pool {
+    __typename
     id
     address
     poolType
@@ -152,7 +156,8 @@ fragment BalancerPool on Pool {
     }
 }
 
-fragment BalancerPoolToken on PoolToken {
+fragment BalancerPoolToken on BalancerSubgraph_PoolToken {
+    __typename
     id
     symbol
     name
@@ -167,12 +172,12 @@ fragment BalancerPoolToken on PoolToken {
 query BalancerPools(
     $skip: Int
     $first: Int
-    $orderBy: Pool_orderBy
-    $orderDirection: OrderDirection
-    $where: Pool_filter
-    $block: Block_height
+    $orderBy: BalancerSubgraph_Pool_orderBy
+    $orderDirection: BalancerSubgraph_OrderDirection
+    $where: BalancerSubgraph_Pool_filter
+    $block: BalancerSubgraph_Block_height
 ) {
-    pools(
+    pools: BalancerSubgraph_pools(
         skip: $skip
         first: $first
         orderBy: $orderBy
@@ -184,8 +189,8 @@ query BalancerPools(
     }
 }
 
-query BalancerPool($id: ID!, $block: Block_height) {
-    pool(id: $id, block: $block) {
+query BalancerPool($id: ID!, $block: BalancerSubgraph_Block_height) {
+    pool: BalancerSubgraph_pool(id: $id, block: $block) {
         ...BalancerPool
     }
 }
@@ -193,12 +198,12 @@ query BalancerPool($id: ID!, $block: Block_height) {
 query BalancerPoolHistoricalLiquidities(
     $skip: Int
     $first: Int
-    $orderBy: PoolHistoricalLiquidity_orderBy
-    $orderDirection: OrderDirection
-    $where: PoolHistoricalLiquidity_filter
-    $block: Block_height
+    $orderBy: BalancerSubgraph_PoolHistoricalLiquidity_orderBy
+    $orderDirection: BalancerSubgraph_OrderDirection
+    $where: BalancerSubgraph_PoolHistoricalLiquidity_filter
+    $block: BalancerSubgraph_Block_height
 ) {
-    poolHistoricalLiquidities(
+    poolHistoricalLiquidities: BalancerSubgraph_poolHistoricalLiquidities(
         skip: $skip
         first: $first
         orderBy: $orderBy
@@ -221,12 +226,12 @@ query BalancerPoolHistoricalLiquidities(
 query BalancerPoolSnapshots(
     $skip: Int
     $first: Int
-    $orderBy: PoolSnapshot_orderBy
-    $orderDirection: OrderDirection
-    $where: PoolSnapshot_filter
-    $block: Block_height
+    $orderBy: BalancerSubgraph_PoolSnapshot_orderBy
+    $orderDirection: BalancerSubgraph_OrderDirection
+    $where: BalancerSubgraph_PoolSnapshot_filter
+    $block: BalancerSubgraph_Block_height
 ) {
-    poolSnapshots(
+    poolSnapshots: BalancerSubgraph_poolSnapshots(
         skip: $skip
         first: $first
         orderBy: $orderBy
@@ -238,7 +243,8 @@ query BalancerPoolSnapshots(
     }
 }
 
-fragment BalancerPoolSnapshot on PoolSnapshot {
+fragment BalancerPoolSnapshot on BalancerSubgraph_PoolSnapshot {
+    __typename
     id
     pool {
         id
@@ -252,12 +258,12 @@ fragment BalancerPoolSnapshot on PoolSnapshot {
 query BalancerLatestPrices(
     $skip: Int
     $first: Int
-    $orderBy: LatestPrice_orderBy
-    $orderDirection: OrderDirection
-    $where: LatestPrice_filter
-    $block: Block_height
+    $orderBy: BalancerSubgraph_LatestPrice_orderBy
+    $orderDirection: BalancerSubgraph_OrderDirection
+    $where: BalancerSubgraph_LatestPrice_filter
+    $block: BalancerSubgraph_Block_height
 ) {
-    latestPrices(
+    latestPrices: BalancerSubgraph_latestPrices(
         skip: $skip
         first: $first
         orderBy: $orderBy
@@ -270,7 +276,7 @@ query BalancerLatestPrices(
 }
 
 query BalancerLatestPrice($id: ID!) {
-    latestPrice(id: $id) {
+    latestPrice: BalancerSubgraph_latestPrice(id: $id) {
         ...BalancerLatestPrice
     }
 }
@@ -278,12 +284,12 @@ query BalancerLatestPrice($id: ID!) {
 query BalancerJoinExits(
     $skip: Int
     $first: Int
-    $orderBy: JoinExit_orderBy
-    $orderDirection: OrderDirection
-    $where: JoinExit_filter
-    $block: Block_height
+    $orderBy: BalancerSubgraph_JoinExit_orderBy
+    $orderDirection: BalancerSubgraph_OrderDirection
+    $where: BalancerSubgraph_JoinExit_filter
+    $block: BalancerSubgraph_Block_height
 ) {
-    joinExits(
+    joinExits: BalancerSubgraph_joinExits(
         skip: $skip
         first: $first
         orderBy: $orderBy
@@ -295,7 +301,8 @@ query BalancerJoinExits(
     }
 }
 
-fragment BalancerLatestPrice on LatestPrice {
+fragment BalancerLatestPrice on BalancerSubgraph_LatestPrice {
+    __typename
     id
     asset
     price
@@ -307,7 +314,8 @@ fragment BalancerLatestPrice on LatestPrice {
     priceUSD
 }
 
-fragment BalancerJoinExit on JoinExit {
+fragment BalancerJoinExit on BalancerSubgraph_JoinExit {
+    __typename
     amounts
     id
     sender
@@ -325,20 +333,24 @@ fragment BalancerJoinExit on JoinExit {
 }
 
 query BalancerPortfolioData($id: ID!, $previousBlockNumber: Int!) {
-    user(id: $id) {
+    user: BalancerSubgraph_user(id: $id) {
         ...BalancerUser
     }
-    previousUser: user(id: $id, block: { number: $previousBlockNumber }) {
+    previousUser: BalancerSubgraph_user(id: $id, block: { number: $previousBlockNumber }) {
         ...BalancerUser
     }
 }
 
 query BalancerPortfolioPoolsData($previousBlockNumber: Int!) {
-    pools(first: 1000, where: { totalShares_gt: "0" }) {
+    pools: BalancerSubgraph_pools(first: 1000, where: { totalShares_gt: "0" }) {
         ...BalancerPool
     }
 
-    previousPools: pools(first: 1000, where: { totalShares_gt: "0" }, block: { number: $previousBlockNumber }) {
+    previousPools: BalancerSubgraph_pools(
+        first: 1000
+        where: { totalShares_gt: "0" }
+        block: { number: $previousBlockNumber }
+    ) {
         ...BalancerPool
     }
 }
@@ -346,12 +358,12 @@ query BalancerPortfolioPoolsData($previousBlockNumber: Int!) {
 query BalancerTradePairSnapshots(
     $skip: Int
     $first: Int
-    $orderBy: TradePairSnapshot_orderBy
-    $orderDirection: OrderDirection
-    $where: TradePairSnapshot_filter
-    $block: Block_height
+    $orderBy: BalancerSubgraph_TradePairSnapshot_orderBy
+    $orderDirection: BalancerSubgraph_OrderDirection
+    $where: BalancerSubgraph_TradePairSnapshot_filter
+    $block: BalancerSubgraph_Block_height
 ) {
-    tradePairSnapshots(
+    tradePairSnapshots: BalancerSubgraph_tradePairSnapshots(
         skip: $skip
         first: $first
         orderBy: $orderBy
@@ -363,7 +375,8 @@ query BalancerTradePairSnapshots(
     }
 }
 
-fragment BalancerTradePairSnapshot on TradePairSnapshot {
+fragment BalancerTradePairSnapshot on BalancerSubgraph_TradePairSnapshot {
+    __typename
     id
     totalSwapFee
     totalSwapVolume
@@ -383,12 +396,12 @@ fragment BalancerTradePairSnapshot on TradePairSnapshot {
 query BalancerSwaps(
     $skip: Int
     $first: Int
-    $orderBy: Swap_orderBy
-    $orderDirection: OrderDirection
-    $where: Swap_filter
-    $block: Block_height
+    $orderBy: BalancerSubgraph_Swap_orderBy
+    $orderDirection: BalancerSubgraph_OrderDirection
+    $where: BalancerSubgraph_Swap_filter
+    $block: BalancerSubgraph_Block_height
 ) {
-    swaps(
+    swaps: BalancerSubgraph_swaps(
         skip: $skip
         first: $first
         orderBy: $orderBy
@@ -400,7 +413,8 @@ query BalancerSwaps(
     }
 }
 
-fragment BalancerSwap on Swap {
+fragment BalancerSwap on BalancerSubgraph_Swap {
+    __typename
     id
     caller
     tokenIn

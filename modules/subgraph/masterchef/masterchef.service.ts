@@ -1,35 +1,38 @@
 import { GraphQLClient } from 'graphql-request';
+import { env } from '../../../app/env';
+import { subgraphPurgeCacheKeyAtBlock } from '../../util/subgraph-util';
+import { twentyFourHoursInMs } from '../../util/time';
+import { Cache, CacheClass } from 'memory-cache';
 import {
     FarmFragment,
     FarmUserFragment,
-    getSdk,
-    MasterChef,
+    getBuiltGraphSDK,
     MasterchefFarmsQuery,
     MasterchefFarmsQueryVariables,
     MasterchefPortfolioDataQuery,
     MasterchefPortfolioDataQueryVariables,
+    MasterchefsQueryVariables,
+    MasterchefSubgraph_MasterChef,
     MasterchefUsersQuery,
     MasterchefUsersQueryVariables,
-    QueryMasterChefsArgs,
-} from './generated/masterchef-subgraph-types';
-import { env } from '../../../app/env';
-import { subgraphLoadAll, subgraphPurgeCacheKeyAtBlock } from '../../util/subgraph-util';
-import { twentyFourHoursInMs } from '../../util/time';
-import { Cache, CacheClass } from 'memory-cache';
+    Sdk,
+} from '../../../.graphclient';
 
 const ALL_FARM_USERS_CACHE_KEY = 'masterchef-all-farm-users';
 
 export class MasterchefSubgraphService {
     private readonly cache: CacheClass<string, any>;
     private readonly client: GraphQLClient;
+    private sdk: Sdk | null = null;
 
     constructor() {
         this.cache = new Cache<string, any>();
         this.client = new GraphQLClient(env.MASTERCHEF_SUBGRAPH);
     }
 
-    public async getMasterChef(args: QueryMasterChefsArgs): Promise<MasterChef> {
-        const response = await this.sdk.Masterchefs(args);
+    public async getMasterChef(args: MasterchefsQueryVariables): Promise<MasterchefSubgraph_MasterChef> {
+        const sdk = await this.getSdk();
+        const response = await sdk.Masterchefs(args);
 
         if (!response || response.masterChefs.length === 0) {
             throw new Error('Missing masterchef');
@@ -40,11 +43,13 @@ export class MasterchefSubgraphService {
     }
 
     public async getFarms(args: MasterchefFarmsQueryVariables): Promise<MasterchefFarmsQuery> {
-        return this.sdk.MasterchefFarms(args);
+        const sdk = await this.getSdk();
+        return sdk.MasterchefFarms(args);
     }
 
     public async getFarmUsers(args: MasterchefUsersQueryVariables): Promise<MasterchefUsersQuery> {
-        return this.sdk.MasterchefUsers(args);
+        const sdk = await this.getSdk();
+        return sdk.MasterchefUsers(args);
     }
 
     public async getFarmUsersAtBlock(address: string, block: number): Promise<FarmUserFragment[]> {
@@ -62,15 +67,23 @@ export class MasterchefSubgraphService {
     }
 
     public async getAllFarms(args: MasterchefFarmsQueryVariables): Promise<FarmFragment[]> {
-        return subgraphLoadAll<FarmFragment>(this.sdk.MasterchefFarms, 'farms', args);
+        const sdk = await this.getSdk();
+        const { farms } = await sdk.MasterchefFarms(args);
+
+        return farms;
     }
 
     public async getAllFarmUsers(args: MasterchefUsersQueryVariables): Promise<FarmUserFragment[]> {
-        return subgraphLoadAll<FarmUserFragment>(this.sdk.MasterchefUsers, 'farmUsers', args);
+        const sdk = await this.getSdk();
+        //TODO: needs to be reworked
+        const { farmUsers } = await sdk.MasterchefUsers({ ...args, first: 10000 });
+
+        return farmUsers;
     }
 
     public async getPortfolioData(args: MasterchefPortfolioDataQueryVariables): Promise<MasterchefPortfolioDataQuery> {
-        return this.sdk.MasterchefPortfolioData(args);
+        const sdk = await this.getSdk();
+        return sdk.MasterchefPortfolioData(args);
     }
 
     public getFarmForPoolAddress(poolAddress: string, farms: FarmFragment[]): FarmFragment | null {
@@ -81,8 +94,12 @@ export class MasterchefSubgraphService {
         await subgraphPurgeCacheKeyAtBlock(ALL_FARM_USERS_CACHE_KEY, block);
     }
 
-    public get sdk() {
-        return getSdk(this.client);
+    private async getSdk(): Promise<Sdk> {
+        if (this.sdk === null) {
+            this.sdk = await getBuiltGraphSDK();
+        }
+
+        return this.sdk;
     }
 }
 

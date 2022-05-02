@@ -1,16 +1,17 @@
 import { GraphQLClient } from 'graphql-request';
 import { env } from '../../../app/env';
-import { subgraphLoadAll, subgraphPurgeCacheKeyAtBlock } from '../../util/subgraph-util';
+import { subgraphPurgeCacheKeyAtBlock } from '../../util/subgraph-util';
+import { blocksSubgraphService } from '../blocks/blocks-subgraph.service';
+import { Cache, CacheClass } from 'memory-cache';
+import { oneDayInMinutes, twentyFourHoursInMs } from '../../util/time';
+import { cache } from '../../cache/cache';
 import {
     BeetsBarFragment,
     BeetsBarUserFragment,
     BeetsBarUsersQueryVariables,
-    getSdk,
-} from './generated/beets-bar-subgraph-types';
-import { blocksSubgraphService } from '../blocks-subgraph/blocks-subgraph.service';
-import { Cache, CacheClass } from 'memory-cache';
-import { oneDayInMinutes, twentyFourHoursInMs } from '../../util/time';
-import { cache } from '../../cache/cache';
+    getBuiltGraphSDK,
+    Sdk,
+} from '../../../.graphclient';
 
 const ALL_USERS_CACHE_KEY = 'beets-bar-subgraph_all-users';
 const BEETS_BAR_CACHE_KEY_PREFIX = 'beets-bar:';
@@ -20,6 +21,7 @@ const BEETS_BAR_NOW_CACHE_KEY = 'beets-bar-now';
 export class BeetsBarSubgraphService {
     cache: CacheClass<string, any>;
     private readonly client: GraphQLClient;
+    private sdk: Sdk | null = null;
 
     constructor() {
         this.cache = new Cache<string, any>();
@@ -37,10 +39,11 @@ export class BeetsBarSubgraphService {
     }
 
     public async cacheFbeetsApr(): Promise<number> {
+        const sdk = await this.getSdk();
         const blocks = await blocksSubgraphService.getDailyBlocks(30);
         const block = blocks[blocks.length - 1]; //take the block from 30 days ago
 
-        const { beetsBar, previousBeetsBar } = await this.sdk.BeetsBarData({
+        const { beetsBar, previousBeetsBar } = await sdk.BeetsBarData({
             barId: env.FBEETS_ADDRESS,
             previousBlockNumber: parseFloat(block.number),
         });
@@ -64,13 +67,12 @@ export class BeetsBarSubgraphService {
         beetsBarUser: BeetsBarUserFragment | null;
         previousBeetsBarUser: BeetsBarUserFragment | null;
     }> {
-        const { beetsBarUser, beetsBar, previousBeetsBarUser, previousBeetsBar } = await this.sdk.BeetsBarPortfolioData(
-            {
-                barId: env.FBEETS_ADDRESS,
-                userAddress,
-                previousBlockNumber,
-            },
-        );
+        const sdk = await this.getSdk();
+        const { beetsBarUser, beetsBar, previousBeetsBarUser, previousBeetsBar } = await sdk.BeetsBarPortfolioData({
+            barId: env.FBEETS_ADDRESS,
+            userAddress,
+            previousBlockNumber,
+        });
 
         return {
             beetsBar: beetsBar || this.emptyBeetsBar,
@@ -89,7 +91,8 @@ export class BeetsBarSubgraphService {
             }
         }
 
-        const { bar } = await this.sdk.GetBeetsBar({ id: env.FBEETS_ADDRESS, block: { number: block } });
+        const sdk = await this.getSdk();
+        const { bar } = await sdk.GetBeetsBar({ id: env.FBEETS_ADDRESS, block: { number: block } });
 
         this.cache.put(`${BEETS_BAR_CACHE_KEY_PREFIX}:${block}`, bar ?? this.emptyBeetsBar, twentyFourHoursInMs);
 
@@ -107,7 +110,8 @@ export class BeetsBarSubgraphService {
             return cached;
         }
 
-        const { bar } = await this.sdk.GetBeetsBar({ id: env.FBEETS_ADDRESS });
+        const sdk = await this.getSdk();
+        const { bar } = await sdk.GetBeetsBar({ id: env.FBEETS_ADDRESS });
 
         if (!bar) {
             return this.emptyBeetsBar;
@@ -119,13 +123,19 @@ export class BeetsBarSubgraphService {
     }
 
     public async getUser(userAddress: string): Promise<BeetsBarUserFragment | null> {
-        const { users } = await this.sdk.BeetsBarUsers({ where: { address: userAddress.toLowerCase() } });
+        const sdk = await this.getSdk();
+        const { users } = await sdk.BeetsBarUsers({ where: { address: userAddress.toLowerCase() } });
 
         return users[0] || null;
     }
 
     public async getAllUsers(args: BeetsBarUsersQueryVariables): Promise<BeetsBarUserFragment[]> {
-        return subgraphLoadAll<BeetsBarUserFragment>(this.sdk.BeetsBarUsers, 'users', args);
+        const sdk = await this.getSdk();
+
+        //TODO: this needs to be reworked
+        const { users } = await sdk.BeetsBarUsers({ ...args, first: 10000 });
+
+        return users;
     }
 
     public async getUserAtBlock(address: string, block: number): Promise<BeetsBarUserFragment | null> {
@@ -146,12 +156,17 @@ export class BeetsBarSubgraphService {
         await subgraphPurgeCacheKeyAtBlock(ALL_USERS_CACHE_KEY, block);
     }
 
-    private get sdk() {
-        return getSdk(this.client);
+    private async getSdk(): Promise<Sdk> {
+        if (this.sdk === null) {
+            this.sdk = await getBuiltGraphSDK();
+        }
+
+        return this.sdk;
     }
 
     private get emptyBeetsBar(): BeetsBarFragment {
         return {
+            __typename: 'BeetsBarSubgraph_Bar',
             id: env.FBEETS_ADDRESS,
             address: env.FBEETS_ADDRESS,
             block: '',

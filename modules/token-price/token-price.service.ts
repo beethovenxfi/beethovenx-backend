@@ -8,15 +8,15 @@ import { cache } from '../cache/cache';
 import { Cache, CacheClass } from 'memory-cache';
 
 import { getAddress } from 'ethers/lib/utils';
-import { balancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer-subgraph.service';
-import { beetsBarService } from '../subgraphs/beets-bar-subgraph/beets-bar.service';
+import { balancerSubgraphService } from '../subgraph/balancer/balancer-subgraph.service';
+import { beetsBarService } from '../subgraph/beets-bar/beets-bar.service';
 import LinearPoolAbi from '../balancer/abi/LinearPool.json';
 import { formatFixed } from '@ethersproject/bignumber';
-import { BalancerPoolFragment } from '../subgraphs/balancer-subgraph/generated/balancer-subgraph-types';
-import { blocksSubgraphService } from '../subgraphs/blocks-subgraph/blocks-subgraph.service';
+import { blocksSubgraphService } from '../subgraph/blocks/blocks-subgraph.service';
 import moment from 'moment-timezone';
 import { SFTMX_ADDRESS, staderStakedFtmService } from './lib/stader-staked-ftm.service';
 import { getContractAt } from '../util/ethers';
+import { BalancerPoolFragment, getBuiltGraphClient, getBuiltGraphSDK } from '../../.graphclient';
 
 const TOKEN_PRICES_CACHE_KEY = 'token-prices';
 const TOKEN_HISTORICAL_PRICES_CACHE_KEY = 'token-historical-prices';

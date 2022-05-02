@@ -1,0 +1,56 @@
+sources:
+  - name: balancer
+    handler:
+      graphql:
+        endpoint: https://graph-node.beets-ftm-node.com/subgraphs/name/beethovenx
+    transforms:
+      - prefix:
+          value: BalancerSubgraph_
+          includeRootOperations: true
+          ignore:
+            - _SubgraphErrorPolicy_
+      - autoPagination:
+          validateSchema: true
+          limitOfRecords: 1000
+  - name: blocks
+    handler:
+      graphql:
+        endpoint: https://api.thegraph.com/subgraphs/name/danielmkm/optimism-blocks
+    transforms:
+      - prefix:
+          value: BlocksSubgraph_
+          includeRootOperations: true
+          ignore:
+            - _SubgraphErrorPolicy_
+      - autoPagination:
+          validateSchema: true
+          limitOfRecords: 1000
+  - name: masterchef
+    handler:
+      graphql:
+        endpoint: https://graph-node.beets-ftm-node.com/subgraphs/name/masterchefV2
+    transforms:
+      - prefix:
+          value: MasterchefSubgraph_
+          includeRootOperations: true
+          ignore:
+            - _SubgraphErrorPolicy_
+      - autoPagination:
+          validateSchema: true
+          limitOfRecords: 1000
+  - name: beetsbar
+    handler:
+      graphql:
+        endpoint: https://graph-node.beets-ftm-node.com/subgraphs/name/beets-bar
+    transforms:
+      - prefix:
+          value: BeetsBarSubgraph_
+          includeRootOperations: true
+          ignore:
+            - _SubgraphErrorPolicy_
+      - autoPagination:
+          validateSchema: true
+          limitOfRecords: 1000
+documents:
+  - './modules/subgraph/**/*.graphql'
+

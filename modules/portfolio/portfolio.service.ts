@@ -1,4 +1,3 @@
-import { BalancerJoinExitFragment, InvestType } from '../subgraphs/balancer-subgraph/generated/balancer-subgraph-types';
 import { BigNumber } from 'ethers';
 import { fromFp } from '../util/numbers';
 import _ from 'lodash';
@@ -27,6 +26,7 @@ import {
 } from '@prisma/client';
 import { cache } from '../cache/cache';
 import { getAddress } from 'ethers/lib/utils';
+import { BalancerJoinExitFragment } from '../../.graphclient';
 
 const PORTFOLIO_USER_DATA_CACHE_KEY_PREFIX = 'portfolio:user-data:';
 
@@ -308,10 +308,7 @@ class PortfolioService {
         const grouped = _.groupBy(tokensWithAmounts, 'token');
 
         return _.map(grouped, (token, address) => {
-            const balance = _.sumBy(
-                token,
-                (item) => parseFloat(item.amount) * (item.type === InvestType.Exit ? -1 : 1),
-            );
+            const balance = _.sumBy(token, (item) => parseFloat(item.amount) * (item.type === 'Exit' ? -1 : 1));
             const pricePerToken = tokenPrices[address.toLowerCase()]?.usd || 0;
 
             return {

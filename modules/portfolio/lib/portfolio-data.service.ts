@@ -1,28 +1,24 @@
-import { blocksSubgraphService } from '../../subgraphs/blocks-subgraph/blocks-subgraph.service';
-import { balancerSubgraphService } from '../../subgraphs/balancer-subgraph/balancer-subgraph.service';
-import { masterchefService } from '../../subgraphs/masterchef-subgraph/masterchef.service';
-import { beetsBarService } from '../../subgraphs/beets-bar-subgraph/beets-bar.service';
+import { blocksSubgraphService } from '../../subgraph/blocks/blocks-subgraph.service';
+import { balancerSubgraphService } from '../../subgraph/balancer/balancer-subgraph.service';
+import { masterchefService } from '../../subgraph/masterchef/masterchef.service';
+import { beetsBarService } from '../../subgraph/beets-bar/beets-bar.service';
 import { prisma } from '../../util/prisma-client';
 import _, { parseInt } from 'lodash';
-import { BlockFragment } from '../../subgraphs/blocks-subgraph/generated/blocks-subgraph-types';
-import {
-    BalancerPoolFragment,
-    BalancerUserFragment,
-} from '../../subgraphs/balancer-subgraph/generated/balancer-subgraph-types';
-import {
-    FarmFragment,
-    FarmUserFragment,
-} from '../../subgraphs/masterchef-subgraph/generated/masterchef-subgraph-types';
-import {
-    BeetsBarFragment,
-    BeetsBarUserFragment,
-} from '../../subgraphs/beets-bar-subgraph/generated/beets-bar-subgraph-types';
 import { PrismaBalancerPoolSnapshotWithTokens, PrismaBlockExtended, UserPortfolioData } from '../portfolio-types';
 import { PrismaBalancerPool } from '@prisma/client';
 import { cache } from '../../cache/cache';
 import { oneDayInMinutes } from '../../util/time';
 import { balancerService } from '../../balancer/balancer.service';
 import { GqlBalancerPool } from '../../../schema';
+import {
+    BalancerPoolFragment,
+    BalancerUserFragment,
+    BeetsBarFragment,
+    BeetsBarUserFragment,
+    BlockFragment,
+    FarmFragment,
+    FarmUserFragment,
+} from '../../../.graphclient';
 
 const LAST_BLOCK_CACHED_KEY = 'portfolio:data:last-block-cached';
 const HISTORY_CACHE_KEY_PREFIX = 'portfolio:data:history:';
@@ -68,7 +64,7 @@ export class PortfolioDataService {
             })),
             block: this.mapSubgraphDataToExtendedBlock(
                 userAddress,
-                { number: '0', timestamp: '0', id: '' }, //not important
+                { __typename: 'BlocksSubgraph_Block', number: '0', timestamp: '0', id: '' }, //not important
                 user,
                 pools,
                 farmUsers,
