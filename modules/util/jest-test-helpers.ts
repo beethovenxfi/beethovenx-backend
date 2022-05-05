@@ -46,7 +46,7 @@ export async function createTestDb(
             .withEnv('POSTGRES_PASSWORD', dbConfig.password)
             .withEnv('POSTGRES_DB', dbConfig.dbName)
             .withExposedPorts(5432)
-            .start();
+            .connect();
 
         const schema = `test_${uuidv4()}`;
         const connectionString = `postgresql://${dbConfig.user}:${

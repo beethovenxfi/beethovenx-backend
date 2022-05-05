@@ -1,5 +1,6 @@
 import { Contract, ethers } from 'ethers';
 import { env } from '../../app/env';
+import { getOperaSdk } from '@dethcrypto/eth-sdk-client';
 
 const jsonRpcProvider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 

@@ -19,6 +19,8 @@ import { scheduleMainTasks } from './app/scheduleMainTasks';
 import helmet from 'helmet';
 import GraphQLJSON from 'graphql-type-json';
 import { balancerService } from './modules/balancer/balancer.service';
+import { initEthersWebsocketListeners } from './modules/ethers/ethers-ws';
+import { getOperaSdk } from '@dethcrypto/eth-sdk-client';
 
 async function startServer() {
     //need to open the redis connection prior to adding the rate limit middleware
@@ -99,6 +101,18 @@ async function startServer() {
     } else {
         scheduleMainTasks();
     }
+
+    await initEthersWebsocketListeners(
+        (wallet) => getOperaSdk(wallet),
+        [
+            (sdk) =>
+                sdk.tokens.beets.on('Transfer', (from: string, to: string, value: string, ...rest) => {
+                    console.log(`Beets transfer: ${from} -> ${to} (${value})`);
+                    // console.log('rest ', rest);
+                }),
+        ],
+    );
+    // startConnection();
 }
 
 //

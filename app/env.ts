@@ -29,6 +29,7 @@ export const schema = {
     SANITY_API_TOKEN: String,
     COPPER_PROXY_ADDRESS: String,
     RPC_URL: String,
+    RPC_WS_URL: String,
     YEARN_VAULTS_ENDPOINT: String,
     MASTERCHEF_ADDRESS: String,
 };
