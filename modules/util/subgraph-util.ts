@@ -9,24 +9,43 @@ export async function subgraphLoadAll<T>(
 ): Promise<T[]> {
     let all: any[] = [];
     const limit = 1000;
-    let skip = 0;
     let hasMore = true;
 
-    while (hasMore) {
-        const response = await request({
-            ...args,
-            first: limit,
-            skip,
-        });
+    // if orderBy is used, can't retrieve based on ID
+    if (args.orderBy) {
+        let skip = 0;
 
-        all = [...all, ...response[resultKey]];
-        skip += limit;
-        hasMore = response[resultKey].length === limit;
+        while (hasMore) {
+            const response = await request({
+                ...args,
+                first: limit,
+                skip,
+            });
 
-        //TODO: rip this out asap
-        if (skip > 5000) {
-            console.log('BAILING EARLY FROM A subgraphLoadAll', resultKey, args);
-            break;
+            all = [...all, ...response[resultKey]];
+            skip += limit;
+            hasMore = response[resultKey].length === limit;
+
+            //TODO: rip this out asap
+            if (skip > 5000) {
+                console.log('BAILING EARLY FROM A subgraphLoadAll', resultKey, args);
+                break;
+            }
+        }
+    } else {
+        let lastId = '';
+        let where = args.where ? { ...args.where, id_gt: lastId } : { id_gt: lastId };
+
+        while (hasMore) {
+            let lastId = all.length > 0 ? all[all.length - 1].id : '';
+            where.id_gt = lastId;
+            const response = await request({
+                ...args,
+                first: limit,
+                where: where,
+            });
+            all = [...all, ...response[resultKey]];
+            hasMore = response[resultKey].length === limit;
         }
     }
 
