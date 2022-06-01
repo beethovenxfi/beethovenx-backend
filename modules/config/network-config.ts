@@ -110,7 +110,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         balancer: {
             vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
         },
-        multicall: '0x66335d7ad8011f6aa3f48aadcb523b62b38ed961',
+        multicall: '0x2DC0E2aa608532Da689e89e237dF582B783E552C',
     },
 };
 

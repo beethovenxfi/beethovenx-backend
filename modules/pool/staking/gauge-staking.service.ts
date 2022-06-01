@@ -34,6 +34,7 @@ export class GaugeStakingService implements PoolStakingService {
     ) {}
     public async syncStakingForPools(): Promise<void> {
         const gaugeStreamers = await this.getStreamers();
+        console.log('streamers', gaugeStreamers.length);
 
         const pools = await prisma.prismaPool.findMany({
             include: {
@@ -46,6 +47,7 @@ export class GaugeStakingService implements PoolStakingService {
         const gaugeStakingRewardOperations: any[] = [];
 
         for (const gaugeStreamer of gaugeStreamers) {
+            console.log('gaugeStreamer', gaugeStreamer.gaugeAddress);
             const pool = pools.find((pool) => pool.id === gaugeStreamer.poolId);
             if (!pool) {
                 continue;
@@ -86,7 +88,7 @@ export class GaugeStakingService implements PoolStakingService {
             }
         }
         operations.push(prisma.prismaPoolStakingGauge.createMany({ data: gaugeStakingEntities, skipDuplicates: true }));
-        operations.push(gaugeStakingRewardOperations);
+        operations.push(...gaugeStakingRewardOperations);
 
         await prismaBulkExecuteOperations(operations);
     }
@@ -99,6 +101,7 @@ export class GaugeStakingService implements PoolStakingService {
 
     public async getStreamers(): Promise<GaugeStreamer[]> {
         const streamers = await this.gaugeSubgraphService.getStreamers();
+        console.log('initial streamers', streamers.length);
 
         const multiCaller = new Multicaller(this.multiCallerAddress, this.provider, ChildChainStreamerAbi);
 
@@ -123,13 +126,13 @@ export class GaugeStakingService implements PoolStakingService {
                     ...rewardToken,
                     rewardsPerSecond: isActive ? scaleDown(rewardData.rate, rewardToken.decimals).toNumber() : 0,
                 });
-                gaugeStreamers.push({
-                    address: streamer.id,
-                    gaugeAddress: streamer.gauge.id,
-                    totalSupply: streamer.gauge.totalSupply,
-                    poolId: streamer.gauge.poolId,
-                    rewardTokens,
-                });
+            });
+            gaugeStreamers.push({
+                address: streamer.id,
+                gaugeAddress: streamer.gauge.id,
+                totalSupply: streamer.gauge.totalSupply,
+                poolId: streamer.gauge.poolId,
+                rewardTokens,
             });
         }
         return gaugeStreamers;
