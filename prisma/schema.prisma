@@ -234,8 +234,15 @@ model PrismaPoolStaking {
     pool                PrismaPool          @relation(fields:[poolId], references: [id])
     type                PrismaPoolStakingType
     address             String
-    rewarder            String?
     farm                PrismaPoolStakingMasterChefFarm?
+    gauge               PrismaPoolStakingGauge?
+}
+
+
+enum PrismaPoolStakingType {
+    MASTER_CHEF
+    GAUGE
+    FRESH_BEETS
 }
 
 model PrismaPoolStakingMasterChefFarm {
@@ -256,12 +263,22 @@ model PrismaPoolStakingMasterChefFarmRewarder {
     rewardPerSecond     String
 }
 
-
-enum PrismaPoolStakingType {
-    MASTER_CHEF
-    GAUGE
-    FRESH_BEETS
+model PrismaPoolStakingGauge {
+    id                  String              @id
+    stakingId           String
+    staking             PrismaPoolStaking          @relation(fields:[stakingId], references: [id])
+    gaugeAddress        String
+    rewards             PrismaPoolStakingGaugeReward[]
 }
+
+model PrismaPoolStakingGaugeReward{
+    id                  String              @id
+    gaugeId             String
+    gauge               PrismaPoolStakingGauge @relation(fields:[gaugeId], references: [id])
+    tokenAddress        String
+    rewardPerSecond     String
+}
+
 
 
 model PrismaBlock {
