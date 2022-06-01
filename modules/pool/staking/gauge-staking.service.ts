@@ -1,12 +1,12 @@
 import moment from 'moment-timezone';
-import { GaugeSubgraphService, gaugeSubgraphService } from '../../subgraphs/gauge-subgraph/gauge-subgraph.service';
+import { GaugeSubgraphService } from '../../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import ChildChainStreamerAbi from './abi/ChildChainStreamer.json';
 import { PoolStakingService } from '../pool-types';
 import { prisma } from '../../util/prisma-client';
 import { Provider } from '@ethersproject/providers';
 import { Multicaller } from '../../util/multicaller';
 import { scaleDown } from '../../util/numbers';
-import { networkConfig } from '../../config/network-config';
+import { prismaBulkExecuteOperations } from '../../../prisma/prisma-util';
 
 type GaugeRewardToken = { address: string; name: string; decimals: number; symbol: string };
 type GaugeRewardTokenWithEmissions = GaugeRewardToken & { rewardsPerSecond: number };
@@ -23,11 +23,10 @@ export type GaugeUserShare = {
     gaugeAddress: string;
     poolId: string;
     amount: string;
-    amountUSD: string;
     tokens: GaugeRewardToken[];
 };
 
-export class GaugesService implements PoolStakingService {
+export class GaugeStakingService implements PoolStakingService {
     constructor(
         private readonly provider: Provider,
         private readonly multiCallerAddress: string,
@@ -43,8 +42,11 @@ export class GaugesService implements PoolStakingService {
         });
         const operations: any[] = [];
 
+        const gaugeStakingEntities: any[] = [];
+        const gaugeStakingRewardOperations: any[] = [];
+
         for (const gaugeStreamer of gaugeStreamers) {
-            const pool = pools.find((pool) => pool.id === gaugeStreamer.gauge.poolId);
+            const pool = pools.find((pool) => pool.id === gaugeStreamer.poolId);
             if (!pool) {
                 continue;
             }
@@ -60,66 +62,43 @@ export class GaugesService implements PoolStakingService {
                     }),
                 );
             }
-            operations.push(
-                prisma.prismaPoolStakingGauge.create({
-                    data: {
-                        id: gaugeStreamer.gaugeAddress,
-                        stakingId: gaugeStreamer.gaugeAddress,
-                        gaugeAddress: gaugeStreamer.gaugeAddress,
-                    },
-                ),
-            );
+            gaugeStakingEntities.push({
+                id: gaugeStreamer.gaugeAddress,
+                stakingId: gaugeStreamer.gaugeAddress,
+                gaugeAddress: gaugeStreamer.gaugeAddress,
+            });
+            for (let rewardToken of gaugeStreamer.rewardTokens) {
+                const id = `${gaugeStreamer.gaugeAddress}-${rewardToken.address}`;
+                gaugeStakingRewardOperations.push(
+                    prisma.prismaPoolStakingGaugeReward.upsert({
+                        create: {
+                            id,
+                            gaugeId: gaugeStreamer.gaugeAddress,
+                            tokenAddress: rewardToken.address,
+                            rewardPerSecond: `${rewardToken.rewardsPerSecond}`,
+                        },
+                        update: {
+                            rewardPerSecond: `${rewardToken.rewardsPerSecond}`,
+                        },
+                        where: { id },
+                    }),
+                );
+            }
         }
-    }
-    public reloadStakingForAllPools(): Promise<void> {
-        throw new Error('Method not implemented.');
-    }
+        operations.push(prisma.prismaPoolStakingGauge.createMany({ data: gaugeStakingEntities, skipDuplicates: true }));
+        operations.push(gaugeStakingRewardOperations);
 
-    public async getAllGauges() {
-        const gauges = await gaugeSubgraphService.getAllGauges();
-        // console.log(gauges);
-
-        return gauges.map(({ id, poolId, totalSupply, shares, tokens }) => ({
-            id,
-            address: id,
-            poolId,
-            totalSupply,
-            shares:
-                shares?.map((share) => ({
-                    userAddress: share.user.id,
-                    amount: share.balance,
-                })) ?? [],
-            tokens: tokens?.map(({ __typename, ...rest }) => rest) ?? [],
-        }));
+        await prismaBulkExecuteOperations(operations);
     }
-
-    public async getAllUserShares(userAddress: string): Promise<GaugeUserShare[]> {
-        const pools = await balancerService.getPools();
-        const userGauges = await gaugeSubgraphService.getUserGauges(userAddress);
-        return (
-            userGauges?.gaugeShares?.map((share) => {
-                const pool = pools.find((pool) => pool.id === share.gauge.poolId);
-                const amountUSD =
-                    pool != null
-                        ? (parseFloat(share.balance) / parseFloat(pool.totalShares)) * parseFloat(pool.totalLiquidity)
-                        : 0;
-                return {
-                    gaugeAddress: share.gauge.id,
-                    poolId: share.gauge.poolId,
-                    amount: share.balance,
-                    amountUSD: `${amountUSD}`,
-                    tokens: share.gauge.tokens ?? [],
-                };
-            }) ?? []
-        );
-    }
-    public async getUserSharesForPool(userAddress: string, poolId: string) {
-        const userShares = await this.getAllUserShares(userAddress);
-        return userShares.find((share) => share.poolId === poolId);
+    public async reloadStakingForAllPools(): Promise<void> {
+        await prisma.prismaPoolStakingGaugeReward.deleteMany({});
+        await prisma.prismaPoolStakingGauge.deleteMany({});
+        await prisma.prismaPoolStaking.deleteMany({});
+        await this.syncStakingForPools();
     }
 
     public async getStreamers(): Promise<GaugeStreamer[]> {
-        const streamers = await gaugeSubgraphService.getStreamers();
+        const streamers = await this.gaugeSubgraphService.getStreamers();
 
         const multiCaller = new Multicaller(this.multiCallerAddress, this.provider, ChildChainStreamerAbi);
 
@@ -154,5 +133,33 @@ export class GaugesService implements PoolStakingService {
             });
         }
         return gaugeStreamers;
+    }
+
+    public async getAllGauges() {
+        const gauges = await this.gaugeSubgraphService.getAllGauges();
+
+        return gauges.map(({ id, poolId, totalSupply, shares, tokens }) => ({
+            id,
+            address: id,
+            poolId,
+            totalSupply,
+            shares:
+                shares?.map((share) => ({
+                    userAddress: share.user.id,
+                    amount: share.balance,
+                })) ?? [],
+            tokens: tokens,
+        }));
+    }
+    public async getAllUserShares(userAddress: string): Promise<GaugeUserShare[]> {
+        const userGauges = await this.gaugeSubgraphService.getUserGauges(userAddress);
+        return (
+            userGauges?.gaugeShares?.map((share) => ({
+                gaugeAddress: share.gauge.id,
+                poolId: share.gauge.poolId,
+                amount: share.balance,
+                tokens: share.gauge.tokens ?? [],
+            })) ?? []
+        );
     }
 }

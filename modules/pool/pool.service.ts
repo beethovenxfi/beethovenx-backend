@@ -33,6 +33,8 @@ import { PoolStakingService } from './pool-types';
 import { MasterChefStakingService } from './staking/master-chef-staking.service';
 import { masterchefService } from '../subgraphs/masterchef-subgraph/masterchef.service';
 import { networkConfig } from '../config/network-config';
+import { GaugeStakingService } from './staking/gauge-staking.service';
+import { GaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
 
 export class PoolService {
     constructor(
@@ -171,8 +173,10 @@ export class PoolService {
     }
 }
 
+const jsonRpcProvider = new providers.JsonRpcProvider(env.RPC_URL);
+
 export const poolService = new PoolService(
-    new providers.JsonRpcProvider(env.RPC_URL),
+    jsonRpcProvider,
     new PoolCreatorService(),
     new PoolOnChainDataService(networkConfig.multicall, networkConfig.balancer.vault, tokenService),
     new PoolUsdDataService(tokenService),
@@ -190,5 +194,7 @@ export const poolService = new PoolService(
     ]),
     new PoolSyncService(),
     new PoolSwapService(tokenService, balancerSubgraphService),
-    new MasterChefStakingService(masterchefService),
+    env.CHAIN_SLUG === 'fantom'
+        ? new MasterChefStakingService(masterchefService)
+        : new GaugeStakingService(jsonRpcProvider, networkConfig.multicall, new GaugeSubgraphService()),
 );

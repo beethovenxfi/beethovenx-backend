@@ -78,6 +78,40 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         multicall: '0x66335d7ad8011f6aa3f48aadcb523b62b38ed961',
     },
+    '10': {
+        eth: {
+            address: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+            addressFormatted: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+            symbol: 'ETH',
+            name: 'Ethereum',
+        },
+        weth: {
+            address: '0x4200000000000000000000000000000000000006',
+            addressFormatted: '0x4200000000000000000000000000000000000006',
+        },
+        coingecko: {
+            nativeAssetId: 'ethereum',
+            platformId: 'ethereum',
+        },
+        rpcUrl: 'https://mainnet.optimism.io/',
+        sanity: {
+            projectId: '1g2ag2hb',
+            dataset: 'production',
+        },
+        beets: {
+            address: '0xf24bcf4d1e507740041c9cfd2dddb29585adce1e',
+        },
+        fbeets: {
+            address: '0xfcef8a994209d6916eb2c86cdd2afd60aa6f54b1',
+            farmId: '22',
+            poolId: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019',
+            poolAddress: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837',
+        },
+        balancer: {
+            vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+        },
+        multicall: '0x66335d7ad8011f6aa3f48aadcb523b62b38ed961',
+    },
 };
 
 export const networkConfig = AllNetworkConfigs[env.CHAIN_ID];
