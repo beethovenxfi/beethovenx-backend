@@ -1,8 +1,8 @@
 import { GraphQLClient } from 'graphql-request';
-import { env } from '../../app/env';
 import { getSdk } from './generated/gauge-subgraph-types';
+import { env } from '../../../app/env';
 
-class GaugeSubgraphService {
+export class GaugeSubgraphService {
     private readonly client: GraphQLClient;
 
     constructor() {

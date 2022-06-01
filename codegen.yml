@@ -95,6 +95,22 @@ generates:
       - add:
           placement: 'append'
           content: '`;'
+  modules/subgraphs/gauge-subgraph/generated/gauge-subgraph-types.ts:
+    schema: ${GAUGE_SUBGRAPH}
+    documents: 'modules/subgraphs/gauge-subgraph/gauge-subgraph-queries.graphql'
+    plugins:
+      - typescript
+      - typescript-operations
+      - typescript-graphql-request
+    config:
+      scalars:
+        BigInt: string
+        Bytes: string
+        BigDecimal: string
+  modules/subgraphs/gauge-subgraph/generated/gauge-subgraph-schema.graphql:
+    schema: ${GAUGE_SUBGRAPH}
+    plugins:
+      - schema-ast
   schema.ts:
     schema: ./modules/**/*.gql
     plugins:
