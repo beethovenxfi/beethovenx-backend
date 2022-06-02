@@ -121,15 +121,9 @@ export function scheduleWorkerTasks() {
     });
 
     //every 5 minutes
-    scheduleJob(
-        '*/5 * * * *',
-        'syncStakingForPools',
-        ONE_MINUTE_IN_MS,
-        async () => {
-            await poolService.syncStakingForPools();
-        },
-        true,
-    );
+    scheduleJob('*/5 * * * *', 'syncStakingForPools', ONE_MINUTE_IN_MS, async () => {
+        await poolService.syncStakingForPools();
+    });
 
     scheduleJob('*/30 * * * * *', 'cache-protocol-data', TWO_MINUTES_IN_MS, async () => {
         await beetsService.cacheProtocolData();

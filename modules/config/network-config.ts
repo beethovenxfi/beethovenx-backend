@@ -1,4 +1,5 @@
 import { env } from '../../app/env';
+import { ZERO_ADDRESS } from '@gnosis.pm/safe-core-sdk/dist/src/utils/constants';
 
 export interface NetworkConfig {
     eth: {
@@ -36,6 +37,9 @@ export interface NetworkConfig {
         farmId: string;
         poolId: string;
         poolAddress: string;
+    };
+    bal: {
+        address: string;
     };
     balancer: {
         vault: string;
@@ -76,6 +80,9 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         balancer: {
             vault: '0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce',
         },
+        bal: {
+            address: '0x58a547Ed09684ac2A688610d5Caf8e8968b51908',
+        },
         multicall: '0x66335d7ad8011f6aa3f48aadcb523b62b38ed961',
     },
     '10': {
@@ -99,7 +106,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             dataset: 'production',
         },
         beets: {
-            address: '0xf24bcf4d1e507740041c9cfd2dddb29585adce1e',
+            address: '0x97513e975a7fA9072c72C92d8000B0dB90b163c5',
         },
         fbeets: {
             address: '0xfcef8a994209d6916eb2c86cdd2afd60aa6f54b1',
@@ -109,6 +116,9 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         balancer: {
             vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+        },
+        bal: {
+            address: '0xFE8B128bA8C78aabC59d4c64cEE7fF28e9379921',
         },
         multicall: '0x2DC0E2aa608532Da689e89e237dF582B783E552C',
     },

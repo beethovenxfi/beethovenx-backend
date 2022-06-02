@@ -32,7 +32,6 @@ export class GaugeSerivce {
 
     public async getStreamers(): Promise<GaugeStreamer[]> {
         const streamers = await this.gaugeSubgraphService.getStreamers();
-        console.log('initial streamers', streamers.length);
 
         const multiCaller = new Multicaller(this.multiCallerAddress, this.provider, ChildChainStreamerAbi);
 
