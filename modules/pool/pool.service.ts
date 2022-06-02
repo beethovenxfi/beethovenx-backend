@@ -24,7 +24,7 @@ import { MasterchefFarmAprService } from './apr-data-sources/masterchef-farm-apr
 import { SpookySwapAprService } from './apr-data-sources/spooky-swap-apr.service';
 import { YearnVaultAprService } from './apr-data-sources/yearn-vault-apr.service';
 import { PoolSyncService } from './src/pool-sync.service';
-import { tokenService } from '../token/token.service';
+import { TokenService, tokenService } from '../token/token.service';
 import { PhantomStableAprService } from './apr-data-sources/phantom-stable-apr.service';
 import { BoostedPoolAprService } from './apr-data-sources/boosted-pool-apr.service';
 import { PrismaPoolFilter, PrismaPoolSwap } from '@prisma/client';
@@ -33,6 +33,10 @@ import { PoolStakingService } from './pool-types';
 import { MasterChefStakingService } from './staking/master-chef-staking.service';
 import { masterchefService } from '../subgraphs/masterchef-subgraph/masterchef.service';
 import { networkConfig } from '../config/network-config';
+import { GaugeStakingService } from './staking/gauge-staking.service';
+import { GaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
+import { GaugeSerivce } from './staking/gauge.serivce';
+import { GaugeAprService } from './apr-data-sources/gauge-apr.service';
 
 export class PoolService {
     constructor(
@@ -171,8 +175,12 @@ export class PoolService {
     }
 }
 
+const jsonRpcProvider = new providers.JsonRpcProvider(env.RPC_URL);
+
+const isFantomChain = env.CHAIN_SLUG === 'fantom';
+
 export const poolService = new PoolService(
-    new providers.JsonRpcProvider(env.RPC_URL),
+    jsonRpcProvider,
     new PoolCreatorService(),
     new PoolOnChainDataService(networkConfig.multicall, networkConfig.balancer.vault, tokenService),
     new PoolUsdDataService(tokenService),
@@ -186,9 +194,19 @@ export const poolService = new PoolService(
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(),
-        new MasterchefFarmAprService(),
+        isFantomChain
+            ? new MasterchefFarmAprService()
+            : new GaugeAprService(
+                  new GaugeSerivce(jsonRpcProvider, networkConfig.multicall, new GaugeSubgraphService()),
+                  tokenService,
+                  [networkConfig.beets.address, networkConfig.bal.address],
+              ),
     ]),
     new PoolSyncService(),
     new PoolSwapService(tokenService, balancerSubgraphService),
-    new MasterChefStakingService(masterchefService),
+    isFantomChain
+        ? new MasterChefStakingService(masterchefService)
+        : new GaugeStakingService(
+              new GaugeSerivce(jsonRpcProvider, networkConfig.multicall, new GaugeSubgraphService()),
+          ),
 );

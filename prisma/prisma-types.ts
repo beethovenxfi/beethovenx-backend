@@ -26,6 +26,11 @@ export const prismaPoolWithExpandedNesting = Prisma.validator<Prisma.PrismaPoolA
                         rewarders: true,
                     },
                 },
+                gauge: {
+                    include: {
+                        rewards: true,
+                    },
+                },
             },
         },
         categories: true,

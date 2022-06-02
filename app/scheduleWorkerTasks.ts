@@ -35,8 +35,8 @@ function scheduleJob(
     runOnStartup: boolean = false,
 ) {
     if (runOnStartup) {
-        func().catch(() => {
-            console.log(`error on initial run ${taskName}`);
+        func().catch((error) => {
+            console.log(`error on initial run ${taskName}`, error);
         });
     }
 

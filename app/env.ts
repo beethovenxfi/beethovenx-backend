@@ -21,6 +21,7 @@ export const schema = {
     SUBGRAPH_START_DATE: String,
     BEETS_BAR_SUBGRAPH: String,
     CHANGELOG_SUBGRAPH: String,
+    GAUGE_SUBGRAPH: String,
     FBEETS_ADDRESS: String,
     FBEETS_POOL_ID: String,
     FBEETS_FARM_ID: String,
