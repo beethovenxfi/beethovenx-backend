@@ -91,6 +91,9 @@ export class UserSyncWalletBalanceService {
         console.log('initBalancesForPools: finished performing db operations...');
     }
 
+    /***
+     * Syncs user balances for all pools since the last synced block
+     */
     public async syncBalancesForAllPools() {
         const erc20Interface = new ethers.utils.Interface(ERC20Abi);
         const latestBlock = await jsonRpcProvider.getBlockNumber();
@@ -181,18 +184,27 @@ export class UserSyncWalletBalanceService {
         ]);
     }
 
+    /***
+     * Initializes all user balances for a pool
+     * @param poolId pool to sync user balances
+     */
     public async initBalancesForPool(poolId: string) {
+        // we get the latest synced block on the subgraph
         const { block } = await balancerSubgraphService.getMetadata();
         const shares = await balancerSubgraphService.getAllPoolShares({
             where: { poolId, userAddress_not: AddressZero, balance_not: '0' },
         });
 
         await prismaBulkExecuteOperations([
+            // make sure all users exist
             prisma.prismaUser.createMany({
                 data: shares.map((share) => ({ address: share.userAddress })),
                 skipDuplicates: true,
             }),
+            // upsert balances for pool
             ...shares.map((share) => this.getPrismaUpsertForPoolShare(poolId, share)),
+            // set latest synced block
+            // todo: isn't this for all pools? since we are only syncing one pool
             prisma.prismaUserBalanceSyncStatus.upsert({
                 where: { type: 'WALLET' },
                 create: { type: 'WALLET', blockNumber: block.number },
