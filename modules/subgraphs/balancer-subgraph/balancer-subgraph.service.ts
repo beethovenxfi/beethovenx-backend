@@ -40,9 +40,9 @@ import {
 } from './generated/balancer-subgraph-types';
 import { env } from '../../../app/env';
 import _ from 'lodash';
-import { subgraphLoadAll, subgraphPurgeCacheKeyAtBlock } from '../../util/subgraph-util';
+import { subgraphLoadAll, subgraphPurgeCacheKeyAtBlock } from '../subgraph-util';
 import { Cache, CacheClass } from 'memory-cache';
-import { fiveMinutesInMs, fiveMinutesInSeconds, twentyFourHoursInMs } from '../../util/time';
+import { fiveMinutesInMs, fiveMinutesInSeconds, twentyFourHoursInMs } from '../../common/time';
 import { cache } from '../../cache/cache';
 import { BalancerUserPoolShare } from './balancer-subgraph-types';
 
