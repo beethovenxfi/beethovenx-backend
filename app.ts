@@ -21,7 +21,6 @@ import * as Tracing from '@sentry/tracing';
 import { prisma } from './prisma/prisma-client';
 import { sentryPlugin } from './app/gql/sentry-apollo-plugin';
 import { startWorker } from './worker/worker';
-import { poolService } from './modules/pool/pool.service';
 
 async function startServer() {
     const app = createExpressApp();
