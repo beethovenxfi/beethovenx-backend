@@ -577,6 +577,7 @@ type GqlPoolStaking {
     type: GqlPoolStakingType!
     address: String!
     farm: GqlPoolStakingMasterChefFarm
+    gauge: GqlPoolStakingGauge
 }
 
 type GqlPoolStakingMasterChefFarm {
@@ -588,6 +589,18 @@ type GqlPoolStakingMasterChefFarm {
 type GqlPoolStakingMasterChefFarmRewarder {
     id: ID!
     address: String!
+    tokenAddress: String!
+    rewardPerSecond: String!
+}
+
+type GqlPoolStakingGauge {
+    id: ID!
+    gaugeAddress: String!
+    rewards: [GqlPoolStakingGaugeReward!]!
+}
+
+type GqlPoolStakingGaugeReward {
+    id: ID!
     tokenAddress: String!
     rewardPerSecond: String!
 }

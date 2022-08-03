@@ -44,6 +44,8 @@ import { blocksSubgraphService } from '../subgraphs/blocks-subgraph/blocks-subgr
 import { PoolSnapshotService } from './lib/pool-snapshot.service';
 import { GaugeStakingService } from './lib/staking/optimism/gauge-staking.service';
 import { Cache } from 'memory-cache';
+import { GaugeSerivce } from './lib/staking/optimism/gauge-service';
+import { GaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
 
 const FEATURED_POOL_GROUPS_CACHE_KEY = 'pool:featuredPoolGroups';
 
@@ -274,6 +276,8 @@ export const poolService = new PoolService(
     ]),
     new PoolSyncService(),
     new PoolSwapService(tokenService, balancerSubgraphService),
-    isFantomNetwork() ? new MasterChefStakingService(masterchefService) : new GaugeStakingService(),
+    isFantomNetwork()
+        ? new MasterChefStakingService(masterchefService)
+        : new GaugeStakingService(new GaugeSerivce(jsonRpcProvider, new GaugeSubgraphService())),
     new PoolSnapshotService(balancerSubgraphService),
 );

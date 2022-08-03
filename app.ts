@@ -21,6 +21,7 @@ import * as Tracing from '@sentry/tracing';
 import { prisma } from './prisma/prisma-client';
 import { sentryPlugin } from './app/gql/sentry-apollo-plugin';
 import { startWorker } from './worker/worker';
+import { poolService } from './modules/pool/pool.service';
 
 async function startServer() {
     const app = createExpressApp();
@@ -97,6 +98,7 @@ async function startServer() {
 
     if (process.env.NODE_ENV === 'local') {
         try {
+            await poolService.syncStakingForPools();
             scheduleLocalWorkerTasks();
         } catch (e) {
             console.log(`Fatal error happened during cron scheduling.`, e);

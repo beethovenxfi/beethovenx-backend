@@ -29,6 +29,7 @@ export interface NetworkConfig {
         masterchef: string;
         beetsBar: string;
         changelog: string;
+        gauge: string;
     };
     sanity: {
         projectId: string;
@@ -78,6 +79,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             blocks: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/fantom-blocks',
             changelog: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/changelog',
             masterchef: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/masterchefv2',
+            gauge: 'https://#/',
         },
         eth: {
             address: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
@@ -144,6 +146,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             blocks: 'https://api.thegraph.com/subgraphs/name/danielmkm/optimism-blocks',
             changelog: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/changelog-optimism',
             masterchef: 'https://',
+            gauge: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/balancer-gauges-optimism',
         },
         eth: {
             address: '0x4200000000000000000000000000000000000006',
