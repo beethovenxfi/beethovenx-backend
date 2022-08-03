@@ -1,4 +1,4 @@
-query LiquidityGauges(
+query GaugeLiquidityGauges(
     $first: Int = 100
     $orderBy: LiquidityGauge_orderBy
     $orderDirection: OrderDirection
@@ -25,7 +25,13 @@ query LiquidityGauges(
     }
 }
 
-query UserGauges($userAddress: ID!) {
+query GaugeLiquidityGaugeAddresses {
+    liquidityGauges {
+        id
+    }
+}
+
+query GaugeUserGauges($userAddress: ID!) {
     user(id: $userAddress) {
         id
         gaugeShares {
@@ -44,7 +50,28 @@ query UserGauges($userAddress: ID!) {
     }
 }
 
-query Streamers {
+query GaugeShares(
+    $block: Block_height
+    $first: Int = 100
+    $orderBy: GaugeShare_orderBy
+    $orderDirection: OrderDirection
+    $skip: Int = 0
+) {
+    gaugeShares(block: $block, first: $first, skip: $skip, orderBy: $orderBy, orderDirection: $orderDirection) {
+        id
+        balance
+        gauge {
+            id
+            poolId
+            poolAddress
+        }
+        user {
+           id
+        }
+    }
+}
+
+query GaugeStreamers {
     streamers {
         id
         rewardTokens {
@@ -58,5 +85,15 @@ query Streamers {
             poolId
             totalSupply
         }
+    }
+}
+
+query GaugeGetMeta {
+    meta: _meta {
+        block {
+            number
+        }
+        deployment
+        hasIndexingErrors
     }
 }

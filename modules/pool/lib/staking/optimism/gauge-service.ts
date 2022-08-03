@@ -6,9 +6,20 @@ import { scaleDown } from '../../../../big-number/big-number';
 import { networkConfig } from '../../../../config/network-config';
 import ChildChainStreamerAbi from './abi/ChildChainStreamer.json';
 import { jsonRpcProvider } from '../../../../web3/contract';
+import {
+    GaugeLiquidityGaugesQueryVariables,
+    GaugeSharesQueryVariables,
+} from '../../../../subgraphs/gauge-subgraph/generated/gauge-subgraph-types';
 
 export type GaugeRewardToken = { address: string; name: string; decimals: number; symbol: string };
 export type GaugeRewardTokenWithEmissions = GaugeRewardToken & { rewardsPerSecond: number };
+
+export type GaugeShare = {
+    id: string;
+    balance: string;
+    gauge: { id: string; poolId: string; poolAddress: string };
+    user: { id: string };
+};
 
 export type GaugeStreamer = {
     address: string;
@@ -66,8 +77,12 @@ export class GaugeSerivce {
         return gaugeStreamers;
     }
 
-    public async getAllGauges() {
-        const gauges = await this.gaugeSubgraphService.getAllGauges();
+    public async getAllGaugeAddresses(): Promise<string[]> {
+        return await this.gaugeSubgraphService.getAllGaugeAddresses();
+    }
+
+    public async getAllGauges(args: GaugeLiquidityGaugesQueryVariables) {
+        const gauges = await this.gaugeSubgraphService.getAllGauges(args);
 
         return gauges.map(({ id, poolId, totalSupply, shares, tokens }) => ({
             id,
@@ -92,6 +107,14 @@ export class GaugeSerivce {
                 tokens: share.gauge.tokens ?? [],
             })) ?? []
         );
+    }
+
+    public async getAllGaugeShares(args: GaugeSharesQueryVariables): Promise<GaugeShare[]> {
+        return await this.gaugeSubgraphService.getAllGaugeShares(args);
+    }
+
+    public async getMetadata() {
+        return this.gaugeSubgraphService.getMetadata();
     }
 }
 
