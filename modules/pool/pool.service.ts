@@ -44,8 +44,9 @@ import { blocksSubgraphService } from '../subgraphs/blocks-subgraph/blocks-subgr
 import { PoolSnapshotService } from './lib/pool-snapshot.service';
 import { GaugeStakingService } from './lib/staking/optimism/gauge-staking.service';
 import { Cache } from 'memory-cache';
-import { GaugeSerivce } from './lib/staking/optimism/gauge-service';
+import { gaugeSerivce, GaugeSerivce } from './lib/staking/optimism/gauge-service';
 import { GaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
+import { GaugeAprService } from './lib/apr-data-sources/optimism/ve-bal-guage-apr.service';
 
 const FEATURED_POOL_GROUPS_CACHE_KEY = 'pool:featuredPoolGroups';
 
@@ -256,9 +257,6 @@ export class PoolService {
     }
 }
 
-//order matters for the boosted pool aprs: linear, phantom stable, then boosted
-const aprServices = [];
-
 export const poolService = new PoolService(
     jsonRpcProvider,
     new PoolCreatorService(userService),
@@ -272,12 +270,17 @@ export const poolService = new PoolService(
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(),
-        ...(isFantomNetwork() ? [new MasterchefFarmAprService()] : []),
+        ...(isFantomNetwork()
+            ? [new MasterchefFarmAprService()]
+            : [
+                  new GaugeAprService(gaugeSerivce, tokenService, [
+                      networkConfig.beets.address,
+                      networkConfig.bal.address,
+                  ]),
+              ]),
     ]),
     new PoolSyncService(),
     new PoolSwapService(tokenService, balancerSubgraphService),
-    isFantomNetwork()
-        ? new MasterChefStakingService(masterchefService)
-        : new GaugeStakingService(new GaugeSerivce(jsonRpcProvider, new GaugeSubgraphService())),
+    isFantomNetwork() ? new MasterChefStakingService(masterchefService) : new GaugeStakingService(gaugeSerivce),
     new PoolSnapshotService(balancerSubgraphService),
 );

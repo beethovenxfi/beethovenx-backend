@@ -6,7 +6,6 @@ import { prismaBulkExecuteOperations } from '../../../../../prisma/prisma-util';
 export class GaugeStakingService implements PoolStakingService {
     constructor(private readonly gaugeService: GaugeSerivce) {}
     public async syncStakingForPools(): Promise<void> {
-        console.log('Syncing staking for pools... !!!!!!!!!!!!!!!!!!!!!!!!!!');
         const gaugeStreamers = await this.gaugeService.getStreamers();
 
         const pools = await prisma.prismaPool.findMany({

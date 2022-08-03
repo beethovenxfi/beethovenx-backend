@@ -98,7 +98,6 @@ async function startServer() {
 
     if (process.env.NODE_ENV === 'local') {
         try {
-            await poolService.syncStakingForPools();
             scheduleLocalWorkerTasks();
         } catch (e) {
             console.log(`Fatal error happened during cron scheduling.`, e);

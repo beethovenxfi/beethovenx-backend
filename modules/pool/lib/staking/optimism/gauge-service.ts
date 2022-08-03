@@ -5,6 +5,7 @@ import { Multicaller } from '../../../../web3/multicaller';
 import { scaleDown } from '../../../../big-number/big-number';
 import { networkConfig } from '../../../../config/network-config';
 import ChildChainStreamerAbi from './abi/ChildChainStreamer.json';
+import { jsonRpcProvider } from '../../../../web3/contract';
 
 export type GaugeRewardToken = { address: string; name: string; decimals: number; symbol: string };
 export type GaugeRewardTokenWithEmissions = GaugeRewardToken & { rewardsPerSecond: number };
@@ -93,3 +94,5 @@ export class GaugeSerivce {
         );
     }
 }
+
+export const gaugeSerivce = new GaugeSerivce(jsonRpcProvider, new GaugeSubgraphService());
