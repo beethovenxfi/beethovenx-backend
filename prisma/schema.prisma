@@ -381,7 +381,6 @@ model PrismaToken {
     prices              PrismaTokenPrice[]
     types               PrismaTokenType[]
 
-//    poolTokenSnapshots  PrismaBalancerPoolTokenSnapshot[]
     expandedPools       PrismaPoolExpandedTokens[]
     poolTokens          PrismaPoolToken[]
 
@@ -458,12 +457,6 @@ model PrismaUser {
 
     walletBalances  PrismaUserWalletBalance[]
     stakedBalances  PrismaUserStakedBalance[]
-
-    //TODO: old models, remove these or refactor
-//    farms               PrismaFarmUser[]
-//    sharesOwnedSnapshots PrismaBalancerPoolShareSnapshot[]
-//    farmSnapshots       PrismaFarmUserSnapshot[]
-//    beetsBarSnapshots   PrismaBeetsBarUserSnapshot[]
 }
 
 model PrismaUserWalletBalance {

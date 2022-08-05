@@ -20,7 +20,6 @@ model PrismaToken {
     prices              PrismaTokenPrice[]
     types               PrismaTokenType[]
 
-//    poolTokenSnapshots  PrismaBalancerPoolTokenSnapshot[]
     expandedPools       PrismaPoolExpandedTokens[]
     poolTokens          PrismaPoolToken[]
 

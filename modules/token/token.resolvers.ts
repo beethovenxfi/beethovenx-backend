@@ -5,7 +5,7 @@ import { tokenService } from './token.service';
 
 const resolvers: Resolvers = {
     Query: {
-        tokenGetTokens: async (parent, {}, context) => {
+        tokenGetTokens: async () => {
             return tokenService.getTokenDefinitions();
         },
         tokenGetCurrentPrices: async (parent, {}, context) => {
@@ -81,10 +81,19 @@ const resolvers: Resolvers = {
             }));
         },
         tokenGetTokenData: async (parent, { address }, context) => {
-            return tokenService.getTokenData(address);
+            const token = await tokenService.getToken(address);
+            if (token) {
+                return {
+                    ...token,
+                    id: token.address,
+                    tokenAddress: token.address,
+                };
+            }
+            return null;
         },
         tokenGetTokensData: async (parent, { addresses }, context) => {
-            return tokenService.getTokensData(addresses);
+            const tokens = await tokenService.getTokens(addresses);
+            return tokens.map((token) => ({ ...token, id: token.address, tokenAddress: token.address }));
         },
     },
     Mutation: {
