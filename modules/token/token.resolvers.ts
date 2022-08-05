@@ -34,6 +34,7 @@ const resolvers: Resolvers = {
             return data
                 ? {
                       ...data,
+                      id: data.coingeckoId,
                       fdv: data.fdv ? `${data.fdv}` : null,
                       marketCap: data.marketCap ? `${data.marketCap}` : null,
                       updatedAt: data.updatedAt.toUTCString(),
@@ -45,6 +46,7 @@ const resolvers: Resolvers = {
 
             return items.map((item) => ({
                 ...item,
+                id: item.coingeckoId,
                 fdv: item.fdv ? `${item.fdv}` : null,
                 marketCap: item.marketCap ? `${item.marketCap}` : null,
                 updatedAt: item.updatedAt.toUTCString(),

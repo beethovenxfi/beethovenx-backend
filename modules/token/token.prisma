@@ -29,8 +29,7 @@ model PrismaToken {
 
 
 model PrismaTokenCurrentPrice {
-    id                  String               @id
-    tokenAddress        String               @unique
+    tokenAddress        String               @id
     token               PrismaToken          @relation(fields:[tokenAddress], references: [address])
     updatedAt           DateTime             @updatedAt
     timestamp           Int
@@ -55,8 +54,8 @@ model PrismaTokenPrice {
 }
 
 model PrismaTokenDynamicData {
-    id                  String              @id
-    tokenAddress        String              @unique
+    coingeckoId         String
+    tokenAddress        String              @id
     token               PrismaToken         @relation(fields:[tokenAddress], references: [address])
     updatedAt           DateTime            @updatedAt
 
