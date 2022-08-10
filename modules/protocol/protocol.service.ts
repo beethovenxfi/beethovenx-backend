@@ -1,8 +1,8 @@
 import moment from 'moment-timezone';
 import { prisma } from '../../prisma/prisma-client';
-import _ from 'lodash';
 import { BalancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer-subgraph.service';
 import { Cache } from 'memory-cache';
+import { PrismaUserBalanceType, PrismaLastBlockSyncedCategory } from '@prisma/client';
 
 export type ProtocolMetrics = {
     poolCount: string;
@@ -11,6 +11,9 @@ export type ProtocolMetrics = {
     totalLiquidity: string;
     totalSwapFee: string;
     totalSwapVolume: string;
+    userWalletSyncBlock: string;
+    userStakeSyncBlock: string;
+    poolSyncBlock: string;
 };
 
 export const PROTOCOL_METRICS_CACHE_KEY = 'protocol:metrics';
@@ -50,6 +53,18 @@ export class ProtocolService {
             return parseFloat(pool?.dynamicData?.swapFee || '0') * swap.valueUSD;
         });
 
+        const userStakeSyncBlock = await prisma.prismaUserBalanceSyncStatus.findUnique({
+            where: { type: PrismaUserBalanceType.STAKED },
+        });
+
+        const userWalletSyncBlock = await prisma.prismaUserBalanceSyncStatus.findUnique({
+            where: { type: PrismaUserBalanceType.WALLET },
+        });
+
+        const poolSyncBlock = await prisma.prismaLastBlockSynced.findUnique({
+            where: { category: PrismaLastBlockSyncedCategory.POOLS },
+        });
+
         const protocolData: ProtocolMetrics = {
             totalLiquidity: `${totalLiquidity}`,
             totalSwapFee,
@@ -57,6 +72,9 @@ export class ProtocolService {
             poolCount: `${poolCount}`,
             swapVolume24h: `${swapVolume24h}`,
             swapFee24h: `${swapFee24h}`,
+            userWalletSyncBlock: `${userWalletSyncBlock?.blockNumber}`,
+            userStakeSyncBlock: `${userStakeSyncBlock?.blockNumber}`,
+            poolSyncBlock: `${poolSyncBlock?.blockNumber}`,
         };
 
         this.cache.put(PROTOCOL_METRICS_CACHE_KEY, protocolData, 60 * 30 * 1000);
