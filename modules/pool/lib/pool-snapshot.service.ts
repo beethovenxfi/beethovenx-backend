@@ -138,10 +138,6 @@ export class PoolSnapshotService {
         const tokenPriceMap: TokenHistoricalPrices = {};
 
         for (const token of pool.tokens) {
-            if (token.address === pool.address) {
-                continue;
-            }
-
             if (token.nestedPoolId && token.nestedPool) {
                 const snapshots = await prisma.prismaPoolSnapshot.findMany({ where: { poolId: token.nestedPoolId } });
 
@@ -167,11 +163,7 @@ export class PoolSnapshotService {
             const startTimestamp = parseInt(block.timestamp);
             const endTimestamp = startTimestamp + 86400;
             const swapsForDay = swaps.filter(
-                (swap) =>
-                    swap.timestamp >= startTimestamp &&
-                    swap.timestamp < endTimestamp &&
-                    swap.tokenIn !== pool.address &&
-                    swap.tokenOut !== pool.address,
+                (swap) => swap.timestamp >= startTimestamp && swap.timestamp < endTimestamp,
             );
 
             const volume24h = _.sumBy(swapsForDay, (swap) => {
