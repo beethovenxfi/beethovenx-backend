@@ -10,7 +10,10 @@ import { TokenService } from '../../token/token.service';
 export class UserBalanceService {
     constructor(private readonly tokenService: TokenService) {}
 
-    public async getUserPoolBalances(address: string, minUsdLiquidity: number = 0.01): Promise<UserPoolBalance[]> {
+    public async getUserPoolBalances(
+        address: string,
+        minUsdLiquidity: number = 0.0000000000000001,
+    ): Promise<UserPoolBalance[]> {
         const user = await prisma.prismaUser.findUnique({
             where: { address: address.toLowerCase() },
             include: {
@@ -42,7 +45,7 @@ export class UserBalanceService {
             const totalBalance = formatFixed(stakedNum.add(walletNum), 18);
 
             const tokenPrice = this.tokenService.getPriceForToken(tokenPrices, tokenAddress);
-            if (tokenPrice * parseFloat(totalBalance) >= minUsdLiquidity) {
+            if (parseFloat(totalBalance) >= minUsdLiquidity) {
                 balancesWithPrice.push({
                     poolId,
                     tokenAddress,
