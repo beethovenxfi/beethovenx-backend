@@ -96,7 +96,7 @@ export class UserService {
 }
 
 export const userService = new UserService(
-    new UserBalanceService(),
+    new UserBalanceService(tokenService),
     new UserSyncWalletBalanceService(),
     isFantomNetwork() ? new UserSyncMasterchefFarmBalanceService() : new UserSyncGaugeBalanceService(),
     new PoolSwapService(tokenService, balancerSubgraphService),

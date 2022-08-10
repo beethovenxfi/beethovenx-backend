@@ -5,9 +5,12 @@ import { parseUnits } from 'ethers/lib/utils';
 import { formatFixed } from '@ethersproject/bignumber';
 import { networkConfig } from '../../config/network-config';
 import { PrismaPoolStaking } from '@prisma/client';
+import { TokenService } from '../../token/token.service';
 
 export class UserBalanceService {
-    public async getUserPoolBalances(address: string): Promise<UserPoolBalance[]> {
+    constructor(private readonly tokenService: TokenService) {}
+
+    public async getUserPoolBalances(address: string, minUsdLiquidity: number = 0.01): Promise<UserPoolBalance[]> {
         const user = await prisma.prismaUser.findUnique({
             where: { address: address.toLowerCase() },
             include: {
@@ -27,20 +30,31 @@ export class UserBalanceService {
             ...user.walletBalances.map((balance) => balance.poolId),
         ]) as string[];
 
-        return poolIds.map((poolId) => {
+        const tokenPrices = await this.tokenService.getTokenPrices();
+
+        const balancesWithPrice = [];
+        for (const poolId of poolIds) {
             const stakedBalance = user.stakedBalances.find((balance) => balance.poolId === poolId);
             const walletBalance = user.walletBalances.find((balance) => balance.poolId === poolId);
+            const tokenAddress = stakedBalance?.tokenAddress || walletBalance?.tokenAddress || '';
             const stakedNum = parseUnits(stakedBalance?.balance || '0', 18);
             const walletNum = parseUnits(walletBalance?.balance || '0', 18);
+            const totalBalance = formatFixed(stakedNum.add(walletNum), 18);
 
-            return {
-                poolId,
-                tokenAddress: stakedBalance?.tokenAddress || walletBalance?.tokenAddress || '',
-                totalBalance: formatFixed(stakedNum.add(walletNum), 18),
-                stakedBalance: stakedBalance?.balance || '0',
-                walletBalance: walletBalance?.balance || '0',
-            };
-        });
+            const tokenPrice = this.tokenService.getPriceForToken(tokenPrices, tokenAddress);
+            if (tokenPrice * parseFloat(totalBalance) >= minUsdLiquidity) {
+                balancesWithPrice.push({
+                    poolId,
+                    tokenAddress,
+                    totalBalance,
+                    stakedBalance: stakedBalance?.balance ?? '0',
+                    walletBalance: walletBalance?.balance ?? '0',
+                    tokenPrice,
+                });
+            }
+        }
+
+        return balancesWithPrice;
     }
 
     public async getUserFbeetsBalance(address: string): Promise<Omit<UserPoolBalance, 'poolId'>> {
@@ -62,6 +76,10 @@ export class UserBalanceService {
             totalBalance: formatFixed(stakedNum.add(walletNum), 18),
             stakedBalance: stakedBalance?.balance || '0',
             walletBalance: walletBalance?.balance || '0',
+            tokenPrice: this.tokenService.getPriceForToken(
+                await this.tokenService.getTokenPrices(),
+                networkConfig.fbeets.address,
+            ),
         };
     }
 

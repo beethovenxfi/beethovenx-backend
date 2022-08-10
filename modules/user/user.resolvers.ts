@@ -1,19 +1,14 @@
 import { Resolvers } from '../../schema';
 import { userService } from './user.service';
 import { getRequiredAccountAddress, isAdminRoute } from '../auth/auth-context';
-import { tokenService } from '../token/token.service';
 
 const resolvers: Resolvers = {
     Query: {
         userGetPoolBalances: async (parent, {}, context) => {
             const accountAddress = getRequiredAccountAddress(context);
-            const tokenPrices = await tokenService.getTokenPrices();
             const balances = await userService.getUserPoolBalances(accountAddress);
 
-            return balances.map((balance) => ({
-                ...balance,
-                tokenPrice: tokenService.getPriceForToken(tokenPrices, balance.tokenAddress),
-            }));
+            return balances;
         },
         userGetPoolJoinExits: async (parent, { first, skip, poolId }, context) => {
             const accountAddress = getRequiredAccountAddress(context);

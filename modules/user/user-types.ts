@@ -13,6 +13,7 @@ export interface UserPoolBalance {
     totalBalance: AmountHumanReadable;
     walletBalance: AmountHumanReadable;
     stakedBalance: AmountHumanReadable;
+    tokenPrice: number;
 }
 
 export interface UserSyncUserBalanceInput {
