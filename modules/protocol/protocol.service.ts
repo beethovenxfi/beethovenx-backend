@@ -3,6 +3,7 @@ import { prisma } from '../../prisma/prisma-client';
 import { BalancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer-subgraph.service';
 import { Cache } from 'memory-cache';
 import { PrismaUserBalanceType, PrismaLastBlockSyncedCategory } from '@prisma/client';
+import { GqlLatestSyncedBlocks } from '../../schema';
 import _ from 'lodash';
 
 export type ProtocolMetrics = {
@@ -12,6 +13,9 @@ export type ProtocolMetrics = {
     totalLiquidity: string;
     totalSwapFee: string;
     totalSwapVolume: string;
+};
+
+export type LatestsSyncedBlocks = {
     userWalletSyncBlock: string;
     userStakeSyncBlock: string;
     poolSyncBlock: string;
@@ -54,6 +58,21 @@ export class ProtocolService {
             return parseFloat(pool?.dynamicData?.swapFee || '0') * swap.valueUSD;
         });
 
+        const protocolData: ProtocolMetrics = {
+            totalLiquidity: `${totalLiquidity}`,
+            totalSwapFee,
+            totalSwapVolume,
+            poolCount: `${poolCount}`,
+            swapVolume24h: `${swapVolume24h}`,
+            swapFee24h: `${swapFee24h}`,
+        };
+
+        this.cache.put(PROTOCOL_METRICS_CACHE_KEY, protocolData, 60 * 30 * 1000);
+
+        return protocolData;
+    }
+
+    public async getLatestSyncedBlocks(): Promise<LatestsSyncedBlocks> {
         const userStakeSyncBlock = await prisma.prismaUserBalanceSyncStatus.findUnique({
             where: { type: PrismaUserBalanceType.STAKED },
         });
@@ -66,21 +85,11 @@ export class ProtocolService {
             where: { category: PrismaLastBlockSyncedCategory.POOLS },
         });
 
-        const protocolData: ProtocolMetrics = {
-            totalLiquidity: `${totalLiquidity}`,
-            totalSwapFee,
-            totalSwapVolume,
-            poolCount: `${poolCount}`,
-            swapVolume24h: `${swapVolume24h}`,
-            swapFee24h: `${swapFee24h}`,
+        return {
             userWalletSyncBlock: `${userWalletSyncBlock?.blockNumber}`,
             userStakeSyncBlock: `${userStakeSyncBlock?.blockNumber}`,
             poolSyncBlock: `${poolSyncBlock?.blockNumber}`,
         };
-
-        this.cache.put(PROTOCOL_METRICS_CACHE_KEY, protocolData, 60 * 30 * 1000);
-
-        return protocolData;
     }
 }
 
