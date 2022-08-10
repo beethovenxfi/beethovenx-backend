@@ -3,6 +3,7 @@ import { prisma } from '../../prisma/prisma-client';
 import { BalancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer-subgraph.service';
 import { Cache } from 'memory-cache';
 import { PrismaUserBalanceType, PrismaLastBlockSyncedCategory } from '@prisma/client';
+import _ from 'lodash';
 
 export type ProtocolMetrics = {
     poolCount: string;
