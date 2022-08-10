@@ -1,6 +1,5 @@
 import moment from 'moment-timezone';
 import { prisma } from '../../prisma/prisma-client';
-import _, { StringNullableChain } from 'lodash';
 import { BalancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer-subgraph.service';
 import { Cache } from 'memory-cache';
 import { PrismaUserBalanceType, PrismaLastBlockSyncedCategory } from '@prisma/client';
