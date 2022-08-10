@@ -13,6 +13,7 @@ type GqlProtocolMetrics {
     poolCount: BigInt!
     swapFee24h: BigDecimal!
     swapVolume24h: BigDecimal!
+    userWalletSyncBlock: BigInt!
+    userStakeSyncBlock: BigInt!
+    poolSyncBlock: BigInt!
 }
-
-
