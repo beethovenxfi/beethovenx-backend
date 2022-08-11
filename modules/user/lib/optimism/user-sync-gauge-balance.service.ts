@@ -1,4 +1,4 @@
-import { UserStakedBalanceService } from '../../user-types';
+import { UserStakedBalanceService, UserSyncUserBalanceInput } from '../../user-types';
 import { prisma } from '../../../../prisma/prisma-client';
 import { getContractAt, jsonRpcProvider } from '../../../web3/contract';
 import { networkConfig } from '../../../config/network-config';
@@ -181,6 +181,29 @@ export class UserSyncGaugeBalanceService implements UserStakedBalanceService {
             ],
             true,
         );
+    }
+
+    public async syncUserBalance({ userAddress, poolId, poolAddress, staking }: UserSyncUserBalanceInput) {
+        const contract = getContractAt(staking.address, RewardsOnlyGaugeAbi);
+        const balance = await contract.balanceOf(userAddress);
+        const amount = formatFixed(balance, 18);
+
+        await prisma.prismaUserStakedBalance.upsert({
+            where: { id: `${staking.address}-${userAddress}` },
+            update: {
+                balance: amount,
+                balanceNum: parseFloat(amount),
+            },
+            create: {
+                id: `${staking.address}-${userAddress}`,
+                balance: amount,
+                balanceNum: parseFloat(amount),
+                userAddress: userAddress,
+                poolId: poolId,
+                tokenAddress: poolAddress,
+                stakingId: staking.address,
+            },
+        });
     }
 
     private async loadAllSubgraphUsers(): Promise<GaugeShare[]> {
