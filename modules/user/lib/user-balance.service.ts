@@ -45,7 +45,8 @@ export class UserBalanceService {
             const totalBalance = formatFixed(stakedNum.add(walletNum), 18);
 
             const tokenPrice = this.tokenService.getPriceForToken(tokenPrices, tokenAddress);
-            if (parseFloat(totalBalance) >= minUsdLiquidity) {
+            // we have to include pools with no bpt price since we cannot determine how much is invested
+            if (tokenPrice === 0 || parseFloat(totalBalance) >= minUsdLiquidity) {
                 balancesWithPrice.push({
                     poolId,
                     tokenAddress,
