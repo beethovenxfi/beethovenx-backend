@@ -15,7 +15,7 @@ import _ from 'lodash';
 import { PrismaPoolSnapshot } from '@prisma/client';
 import { prismaBulkExecuteOperations } from '../../../prisma/prisma-util';
 import { prismaPoolWithExpandedNesting } from '../../../prisma/prisma-types';
-import { CoingeckoService } from '../../../legacy/token-price/lib/coingecko.service';
+import { CoingeckoService } from '../../coingecko/coingecko.service';
 import { TokenHistoricalPrices } from '../../../legacy/token-price/token-price-types';
 import { blocksSubgraphService } from '../../subgraphs/blocks-subgraph/blocks-subgraph.service';
 
@@ -90,8 +90,8 @@ export class PoolSnapshotService {
         });
 
         for (const pool of poolsWithoutSnapshots) {
-            if (pool.type !== 'LINEAR' && pool.tokens.filter((token) => !!token.nestedPoolId).length > 0) {
-                await this.syncPoolSnapshotsForBoostedPool(pool.id, oneDayAgoStartOfDay);
+            if (pool.type !== 'LINEAR') {
+                await this.createPoolSnapshotsForPoolsMissingSubgraphData(pool.id, oneDayAgoStartOfDay);
             }
         }
     }
@@ -119,7 +119,7 @@ export class PoolSnapshotService {
         }
     }
 
-    public async syncPoolSnapshotsForBoostedPool(poolId: string, timestampToSyncFrom = 0) {
+    public async createPoolSnapshotsForPoolsMissingSubgraphData(poolId: string, timestampToSyncFrom = 0) {
         const pool = await prisma.prismaPool.findUnique({
             where: { id: poolId },
             include: prismaPoolWithExpandedNesting.include,
@@ -128,12 +128,12 @@ export class PoolSnapshotService {
 
         const startTimestamp = timestampToSyncFrom > 0 ? timestampToSyncFrom : pool.createTime;
 
-        if (pool.type !== 'LINEAR' && pool.tokens.filter((token) => !!token.nestedPoolId).length === 0) {
-            throw new Error('Not a boosted pool');
+        if (pool.type === 'LINEAR') {
+            throw new Error('Unsupported pool type');
         }
 
         const swaps = await balancerSubgraphService.getAllSwapsWithPaging({ where: { poolId }, startTimestamp });
-        const numDays = moment().endOf('day').diff(startTimestamp, 'days');
+        const numDays = moment().endOf('day').diff(moment.unix(startTimestamp), 'days');
 
         const tokenPriceMap: TokenHistoricalPrices = {};
 
@@ -155,8 +155,14 @@ export class PoolSnapshotService {
                         token.address,
                         numDays,
                     );
-                } catch (error) {
-                    console.error(error);
+                } catch (error: any) {
+                    console.error(
+                        `Error getting historical prices form coingecko, falling back to database`,
+                        error.message,
+                    );
+                    tokenPriceMap[token.address] = await prisma.prismaTokenPrice.findMany({
+                        where: { tokenAddress: token.address, timestamp: { gte: startTimestamp } },
+                    });
                 }
             }
         }

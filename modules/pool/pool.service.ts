@@ -46,7 +46,7 @@ import { GaugeStakingService } from './lib/staking/optimism/gauge-staking.servic
 import { Cache } from 'memory-cache';
 import { gaugeSerivce } from './lib/staking/optimism/gauge-service';
 import { GaugeAprService } from './lib/apr-data-sources/optimism/ve-bal-guage-apr.service';
-import { coingeckoService } from '../../legacy/token-price/lib/coingecko.service';
+import { coingeckoService } from '../coingecko/coingecko.service';
 
 const FEATURED_POOL_GROUPS_CACHE_KEY = 'pool:featuredPoolGroups';
 
@@ -256,8 +256,8 @@ export class PoolService {
         await this.poolUsdDataService.updateLifetimeValuesForAllPools();
     }
 
-    public async initializeSnapshotsForBoostedPool(poolId: string) {
-        await this.poolSnapshotService.syncPoolSnapshotsForBoostedPool(poolId);
+    public async createPoolSnapshotsForPoolsMissingSubgraphData(poolId: string) {
+        await this.poolSnapshotService.createPoolSnapshotsForPoolsMissingSubgraphData(poolId);
     }
 }
 

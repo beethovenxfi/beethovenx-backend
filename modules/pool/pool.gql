@@ -44,7 +44,8 @@ extend type Mutation {
     poolLoadSnapshotsForAllPools: String!
     poolSyncLatestSnapshotsForAllPools(daysToSync: Int): String!
     poolUpdateLifetimeValuesForAllPools: String!
-    poolInitializeSnapshotsForBoostedPool(poolId: String!): String!
+    poolInitializeSnapshotsForPool(poolId: String!): String!
+    poolSyncPool(poolId: String!): String!
 }
 
 type GqlPoolMinimal {
@@ -494,6 +495,7 @@ input GqlPoolFilter {
 
 enum GqlPoolFilterCategory {
     INCENTIVIZED
+    BLACK_LISTED
 }
 
 enum GqlPoolFilterType {

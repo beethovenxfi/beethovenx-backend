@@ -2,6 +2,7 @@ import { poolService } from './pool.service';
 import { Resolvers } from '../../schema';
 import { isAdminRoute } from '../auth/auth-context';
 import { prisma } from '../../prisma/prisma-client';
+import { jsonRpcProvider } from '../web3/contract';
 
 const balancerResolvers: Resolvers = {
     Query: {
@@ -178,10 +179,18 @@ const balancerResolvers: Resolvers = {
 
             return 'success';
         },
-        poolInitializeSnapshotsForBoostedPool: async (parent, args, context) => {
+        poolInitializeSnapshotsForPool: async (parent, args, context) => {
             isAdminRoute(context);
 
-            await poolService.initializeSnapshotsForBoostedPool(args.poolId);
+            await poolService.createPoolSnapshotsForPoolsMissingSubgraphData(args.poolId);
+
+            return 'success';
+        },
+        poolSyncPool: async (parent, { poolId }, context) => {
+            isAdminRoute(context);
+
+            const latestBlockNumber = await jsonRpcProvider.getBlockNumber();
+            await poolService.updateOnChainDataForPools([poolId], latestBlockNumber);
 
             return 'success';
         },
