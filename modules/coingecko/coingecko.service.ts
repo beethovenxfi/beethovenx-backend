@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { twentyFourHoursInSecs } from '../../../modules/common/time';
+import { twentyFourHoursInSecs } from '../common/time';
 import _ from 'lodash';
 import {
     CoingeckoPriceResponse,
@@ -7,18 +7,24 @@ import {
     HistoricalPriceResponse,
     Price,
     TokenPrices,
-} from '../token-price-types';
+} from '../../legacy/token-price/token-price-types';
 import moment from 'moment-timezone';
-import { tokenService } from '../../../modules/token/token.service';
-import { TokenDefinition } from '../../../modules/token/token-types';
+import { tokenService } from '../token/token.service';
+import { TokenDefinition } from '../token/token-types';
 import { getAddress, isAddress } from 'ethers/lib/utils';
-import { networkConfig } from '../../../modules/config/network-config';
+import { networkConfig } from '../config/network-config';
+import { RateLimiter } from 'limiter';
 
 interface MappedToken {
     platform: string;
     address: string;
     originalAddress?: string;
 }
+
+/* coingecko has a rate limit of 50req/minute https://www.coingecko.com/en/api/documentation
+   but since we have 2 workers running, we have to give each 25
+*/
+const requestRateLimiter = new RateLimiter({ tokensPerInterval: 25, interval: 'minute' });
 
 export class CoingeckoService {
     private readonly baseUrl: string;
@@ -152,6 +158,8 @@ export class CoingeckoService {
     }
 
     private async get<T>(endpoint: string): Promise<T> {
+        const remainingRequests = await requestRateLimiter.removeTokens(1);
+        console.log('Remaining coingecko requests', remainingRequests);
         const { data } = await axios.get(this.baseUrl + endpoint);
         return data;
     }

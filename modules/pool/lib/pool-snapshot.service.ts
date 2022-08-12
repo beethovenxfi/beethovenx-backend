@@ -15,7 +15,7 @@ import _ from 'lodash';
 import { PrismaPoolSnapshot } from '@prisma/client';
 import { prismaBulkExecuteOperations } from '../../../prisma/prisma-util';
 import { prismaPoolWithExpandedNesting } from '../../../prisma/prisma-types';
-import { CoingeckoService } from '../../../legacy/token-price/lib/coingecko.service';
+import { CoingeckoService } from '../../coingecko/coingecko.service';
 import { TokenHistoricalPrices } from '../../../legacy/token-price/token-price-types';
 import { blocksSubgraphService } from '../../subgraphs/blocks-subgraph/blocks-subgraph.service';
 

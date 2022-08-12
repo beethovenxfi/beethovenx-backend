@@ -1,18 +1,8 @@
-import axios from 'axios';
 import { TokenPriceHandler } from '../../token-types';
 import { PrismaTokenWithTypes } from '../../../../prisma/prisma-types';
-import _ from 'lodash';
-import { sleep } from '../../../common/promise';
 import { prisma } from '../../../../prisma/prisma-client';
 import { timestampRoundedUpToNearestHour } from '../../../common/time';
-
-const BASE_URL = 'https://api.coingecko.com/api/v3';
-const FIAT_PARAM = 'usd';
-const ADDRESSES_PER_REQUEST = 100;
-
-type CoingeckoPriceResponse = {
-    [id: string]: { usd: number | undefined };
-};
+import { CoingeckoService } from '../../../coingecko/coingecko.service';
 
 export class CoingeckoPriceHandlerService implements TokenPriceHandler {
     public readonly exitIfFails = true;
@@ -22,6 +12,7 @@ export class CoingeckoPriceHandlerService implements TokenPriceHandler {
         private readonly nativeAssetId: string,
         private readonly platformId: string,
         private readonly weth: string,
+        private readonly coingeckoService: CoingeckoService,
     ) {}
 
     public async getAcceptedTokens(tokens: PrismaTokenWithTypes[]): Promise<string[]> {
@@ -41,110 +32,89 @@ export class CoingeckoPriceHandlerService implements TokenPriceHandler {
         const tokensUpdated: string[] = [];
 
         if (nativeAsset) {
-            const price = await this.getNativeAssetPrice();
+            const price = await this.coingeckoService.getNativeAssetPrice();
+            const usdPrice = price.usd;
 
-            if (typeof price === 'undefined') {
+            if (typeof usdPrice === 'undefined') {
                 throw new Error('failed to load native asset price');
             }
 
             await prisma.prismaTokenPrice.upsert({
                 where: { tokenAddress_timestamp: { tokenAddress: this.weth, timestamp } },
-                update: { price: price, close: price },
+                update: { price: usdPrice, close: usdPrice },
                 create: {
                     tokenAddress: this.weth,
                     timestamp,
-                    price,
-                    high: price,
-                    low: price,
-                    open: price,
-                    close: price,
+                    price: usdPrice,
+                    high: usdPrice,
+                    low: usdPrice,
+                    open: usdPrice,
+                    close: usdPrice,
                 },
             });
 
             tokensUpdated.push(this.weth);
         }
 
-        const groupedByPlatform = _.groupBy(
-            tokens.map((token) => ({
-                address: token.address,
-                fetchAddress: token.coingeckoContractAddress || token.address,
-                platformId: token.coingeckoPlatformId || this.platformId,
-            })),
-            (item) => item.platformId,
-        );
+        const tokenPricesByAddress = await this.coingeckoService.getTokenPrices(tokens.map((item) => item.address));
 
-        for (const platformId of Object.keys(groupedByPlatform)) {
-            const groupTokens = groupedByPlatform[platformId];
-            const chunks = _.chunk(groupTokens, ADDRESSES_PER_REQUEST);
+        let operations: any[] = [];
+        for (let tokenAddress of Object.keys(tokenPricesByAddress)) {
+            const priceUsd = tokenPricesByAddress[tokenAddress].usd;
+            operations.push(
+                prisma.prismaTokenPrice.upsert({
+                    where: { tokenAddress_timestamp: { tokenAddress: tokenAddress, timestamp } },
+                    update: { price: priceUsd, close: priceUsd },
+                    create: {
+                        tokenAddress: tokenAddress,
+                        timestamp,
+                        price: priceUsd,
+                        high: priceUsd,
+                        low: priceUsd,
+                        open: priceUsd,
+                        close: priceUsd,
+                        coingecko: true,
+                    },
+                }),
+            );
 
-            for (const chunk of chunks) {
-                const response = await this.getPricesForTokenAddresses(
-                    chunk.map((item) => item.fetchAddress),
-                    platformId,
-                );
-                let operations: any[] = [];
+            operations.push(
+                prisma.prismaTokenCurrentPrice.upsert({
+                    where: { tokenAddress: tokenAddress },
+                    update: { price: priceUsd },
+                    create: {
+                        tokenAddress: tokenAddress,
+                        timestamp,
+                        price: priceUsd,
+                        coingecko: true,
+                    },
+                }),
+            );
 
-                for (const item of chunk) {
-                    const price = response[item.fetchAddress]?.usd;
-
-                    if (price) {
-                        operations.push(
-                            prisma.prismaTokenPrice.upsert({
-                                where: { tokenAddress_timestamp: { tokenAddress: item.address, timestamp } },
-                                update: { price, close: price },
-                                create: {
-                                    tokenAddress: item.address,
-                                    timestamp,
-                                    price,
-                                    high: price,
-                                    low: price,
-                                    open: price,
-                                    close: price,
-                                    coingecko: true,
-                                },
-                            }),
-                        );
-
-                        operations.push(
-                            prisma.prismaTokenCurrentPrice.upsert({
-                                where: { tokenAddress: item.address },
-                                update: { price: price },
-                                create: {
-                                    tokenAddress: item.address,
-                                    timestamp,
-                                    price,
-                                    coingecko: true,
-                                },
-                            }),
-                        );
-
-                        tokensUpdated.push(item.address);
-                    }
-                }
-
-                await Promise.all(operations);
-            }
+            tokensUpdated.push(tokenAddress);
         }
+
+        await Promise.all(operations);
 
         return tokensUpdated;
     }
 
-    private async getNativeAssetPrice(): Promise<number | undefined> {
-        const response = await this.get<CoingeckoPriceResponse>(
-            `/simple/price?ids=${this.nativeAssetId}&vs_currencies=${FIAT_PARAM}`,
-        );
-
-        return response[this.nativeAssetId].usd;
-    }
-
-    private async getPricesForTokenAddresses(addresses: string[], platformId: string): Promise<CoingeckoPriceResponse> {
-        const endpoint = `/simple/token_price/${platformId}?contract_addresses=${addresses}&vs_currencies=${FIAT_PARAM}`;
-
-        return this.get<CoingeckoPriceResponse>(endpoint);
-    }
-
-    private async get<T>(endpoint: string): Promise<T> {
-        const { data } = await axios.get(BASE_URL + endpoint);
-        return data;
-    }
+    // private async getNativeAssetPrice(): Promise<number | undefined> {
+    //     const response = await this.get<CoingeckoPriceResponse>(
+    //         `/simple/price?ids=${this.nativeAssetId}&vs_currencies=${FIAT_PARAM}`,
+    //     );
+    //
+    //     return response[this.nativeAssetId].usd;
+    // }
+    //
+    // private async getPricesForTokenAddresses(addresses: string[], platformId: string): Promise<CoingeckoPriceResponse> {
+    //     const endpoint = `/simple/token_price/${platformId}?contract_addresses=${addresses}&vs_currencies=${FIAT_PARAM}`;
+    //
+    //     return this.get<CoingeckoPriceResponse>(endpoint);
+    // }
+    //
+    // private async get<T>(endpoint: string): Promise<T> {
+    //     const { data } = await axios.get(BASE_URL + endpoint);
+    //     return data;
+    // }
 }
