@@ -1,7 +1,10 @@
 import { assert } from 'console';
+import exp from 'constants';
+import { random } from 'lodash';
+import { prisma } from '../../prisma/prisma-client';
+import { isFantomNetwork } from '../config/network-config';
 import { createTestDb, TestDatabase } from '../tests-helper/jest-test-helpers';
 import { beetsService } from './beets.service';
-import { setPrisma } from '../../prisma/prisma-client';
 
 let db: TestDatabase;
 
@@ -20,16 +23,33 @@ afterAll(async () => {
     await db.stop();
 });
 
-test('retrieve fBeets ratio - error not synced', async () => {
-    expect(await beetsService.getFbeetsRatio()).toThrow('Fbeets data has not yet been synced');
-
+test('retrieve fBeets ratio before synced', async () => {
+    let ratio;
     try {
-        await beetsService.getFbeetsRatio();
+        ratio = await beetsService.getFbeetsRatio();
     } catch (e: any) {
         expect(e.message).toBe('Fbeets data has not yet been synced');
     }
+    if (!isFantomNetwork()) {
+        expect(ratio).toBe('1.0');
+    }
 
     expect.assertions(1);
+});
 
-    // await expect(beetsService.getFbeetsRatio()).rejects.toThrow('Fbees data has not yet been synced');
+test('sync fBeets ratio', async () => {
+    if (isFantomNetwork()) {
+        await beetsService.syncFbeetsRatio();
+        const fbeets = await prisma.prismaFbeets.findFirst({});
+        expect(fbeets).toBeDefined();
+    }
+});
+
+test('retrieve updated fBeets ratio', async () => {
+    const ratio = await beetsService.getFbeetsRatio();
+    if (isFantomNetwork()) {
+        expect(ratio).not.toBe('1.0');
+    } else {
+        expect(ratio).toBe('1.0');
+    }
 });
