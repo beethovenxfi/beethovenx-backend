@@ -120,11 +120,20 @@ export class CoingeckoService {
 
     private parsePaginatedTokens(paginatedResults: TokenPrices[], mappedTokens: MappedToken[]): TokenPrices {
         const results = paginatedResults.reduce((result, page) => ({ ...result, ...page }), {});
-        const prices: TokenPrices = _.mapKeys(results, (val, address) => this.getAddress(address));
+        const prices: TokenPrices = _.mapKeys(results, (val, address) => address);
 
+        const resultAddresses = Object.keys(results);
         for (const mappedToken of mappedTokens) {
-            if (mappedToken.originalAddress && results[mappedToken.address]) {
-                prices[this.getAddress(mappedToken.originalAddress)] = results[mappedToken.address];
+            if (mappedToken.originalAddress) {
+                const resultAddress = resultAddresses.find(
+                    (address) => address.toLowerCase() === mappedToken.address.toLowerCase(),
+                );
+                if (!resultAddress) {
+                    console.warn(`Matching address for original address ${mappedToken.originalAddress} not found`);
+                } else {
+                    prices[mappedToken.originalAddress] = results[resultAddress];
+                    delete prices[resultAddress];
+                }
             }
         }
 

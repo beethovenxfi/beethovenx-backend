@@ -51,42 +51,56 @@ export class CoingeckoPriceHandlerService implements TokenPriceHandler {
             tokensUpdated.push(this.weth);
         }
 
-        const tokenPricesByAddress = await this.coingeckoService.getTokenPrices(tokens.map((item) => item.address));
+        const tokenAddresses = tokens.map((item) => item.address);
+
+        const tokenPricesByAddress = await this.coingeckoService.getTokenPrices(tokenAddresses);
 
         let operations: any[] = [];
         for (let tokenAddress of Object.keys(tokenPricesByAddress)) {
             const priceUsd = tokenPricesByAddress[tokenAddress].usd;
-            operations.push(
-                prisma.prismaTokenPrice.upsert({
-                    where: { tokenAddress_timestamp: { tokenAddress: tokenAddress, timestamp } },
-                    update: { price: priceUsd, close: priceUsd },
-                    create: {
-                        tokenAddress: tokenAddress,
-                        timestamp,
-                        price: priceUsd,
-                        high: priceUsd,
-                        low: priceUsd,
-                        open: priceUsd,
-                        close: priceUsd,
-                        coingecko: true,
-                    },
-                }),
-            );
+            const normalizedTokenAddress = tokenAddress.toLowerCase();
+            const exists = tokenAddresses.includes(normalizedTokenAddress);
+            if (!exists) {
+                console.log('skipping token', normalizedTokenAddress);
+            }
+            if (exists && priceUsd) {
+                operations.push(
+                    prisma.prismaTokenPrice.upsert({
+                        where: { tokenAddress_timestamp: { tokenAddress: normalizedTokenAddress, timestamp } },
+                        update: { price: priceUsd, close: priceUsd },
+                        create: {
+                            tokenAddress: normalizedTokenAddress,
+                            timestamp,
+                            price: priceUsd,
+                            high: priceUsd,
+                            low: priceUsd,
+                            open: priceUsd,
+                            close: priceUsd,
+                            coingecko: true,
+                        },
+                    }),
+                );
 
-            operations.push(
-                prisma.prismaTokenCurrentPrice.upsert({
-                    where: { tokenAddress: tokenAddress },
-                    update: { price: priceUsd },
-                    create: {
-                        tokenAddress: tokenAddress,
-                        timestamp,
-                        price: priceUsd,
-                        coingecko: true,
-                    },
-                }),
-            );
+                // operations.push(
+                try {
+                    await prisma.prismaTokenCurrentPrice.upsert({
+                        where: { tokenAddress: normalizedTokenAddress },
+                        update: { price: priceUsd },
+                        create: {
+                            tokenAddress: normalizedTokenAddress,
+                            timestamp,
+                            price: priceUsd,
+                            coingecko: true,
+                        },
+                    });
+                } catch (e) {
+                    console.log('error', normalizedTokenAddress);
+                    throw e;
+                }
+                // );
 
-            tokensUpdated.push(tokenAddress);
+                tokensUpdated.push(normalizedTokenAddress);
+            }
         }
 
         await Promise.all(operations);
