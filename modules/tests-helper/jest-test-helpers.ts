@@ -1,8 +1,10 @@
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient, PrismaPool, PrismaPoolType } from '@prisma/client';
 import { commandSync } from 'execa';
+import { prisma } from '../../prisma/prisma-client';
+import _ from 'lodash';
 
 export type DeepPartial<T> = {
     [P in keyof T]?: DeepPartial<T[P]>;
@@ -13,6 +15,40 @@ export type TestDatabase = {
     prisma: PrismaClient;
     stop: () => Promise<void>;
 };
+
+// const defaultWeightedPool: Prisma.PrismaPoolCreateInput = {
+//     id: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019',
+//     createTime: 1633797478,
+//     address: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837',
+//     symbol: 'BPT-BEETS-FTM',
+//     name: 'The Fidelio Duetto',
+//     owner: '0x0000000000000000000000000000000000000000',
+//     type: PrismaPoolType.WEIGHTED,
+//     factory: '0x92b377187bccc6556fced2f1e6dad65850c20630',
+//     decimals: 18,
+
+//     linearDynamicData: {
+//         create: {
+//             blockNumber: 1,
+//         },
+//     },
+// };
+
+// createPool({
+//     linearDynamicData: {
+//         create: {
+//             blockNumber: 123,
+//         },
+//     },
+// });
+
+// export async function createPool(pool: DeepPartial<Prisma.PrismaPoolCreateInput>) {
+//     _.merge(defaultWeightedPool, pool);
+
+//     prisma.prismaPool.create({
+//         data: _.merge(defaultWeightedPool, pool),
+//     });
+// }
 
 export type TestDatabasePrismaConfig = {
     generateClient: boolean;
@@ -35,6 +71,10 @@ const defaultTestDatabasePrismaConfig: TestDatabasePrismaConfig = {
     generateClient: true,
     schemaFile: path.join(__dirname, '../../prisma/schema.prisma'),
 };
+
+// module.exports = async function globalCreateTestDb() {
+//     createTestDb();
+// };
 
 export async function createTestDb(
     prismaConfig: TestDatabasePrismaConfig = defaultTestDatabasePrismaConfig,

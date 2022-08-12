@@ -55,7 +55,7 @@ function scheduleJob(
         //     scope.setSpan(transaction);
         //     running = true;
         //     console.log(`Start ${taskName}...`);
-        //     console.time(taskName);
+        console.time(taskName);
         asyncCallWithTimeout(func, timeout)
             .catch((error) => {
                 console.log(`Error ${taskName}`, error);

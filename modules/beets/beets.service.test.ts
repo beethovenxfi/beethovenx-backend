@@ -1,12 +1,24 @@
+import { assert } from 'console';
+import { createTestDb, TestDatabase } from '../tests-helper/jest-test-helpers';
 import { beetsService } from './beets.service';
 
+let db: TestDatabase;
+
+beforeAll(async () => {
+    db = await createTestDb();
+    // createPool({
+    //     linearDynamicData: {
+    //         create: {
+    //             blockNumber: 123,
+    //         },
+    //     },
+    // });
+}, 60000);
+
+afterAll(async () => {
+    await db.stop();
+});
+
 test('retrieve fBeets ratio - error not synced', async () => {
-    try {
-        const ratio = await beetsService.getFbeetsRatio();
-        console.log(ratio);
-    } catch (e) {
-        console.log('hello');
-        console.log(e);
-        expect(e).toMatch('Fbeets data has not yet been synced');
-    }
+    expect(async () => await beetsService.getFbeetsRatio()).toThrow('Fbeets data has not yet been synced');
 });
