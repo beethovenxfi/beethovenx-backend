@@ -1,6 +1,4 @@
-import { assert } from 'console';
-import exp from 'constants';
-import { random } from 'lodash';
+import { server } from '../../mocks/server';
 import { prisma } from '../../prisma/prisma-client';
 import { isFantomNetwork } from '../config/network-config';
 import { createTestDb, TestDatabase } from '../tests-helper/jest-test-helpers';
@@ -10,6 +8,7 @@ let db: TestDatabase;
 
 beforeAll(async () => {
     db = await createTestDb();
+    server.listen();
     // createPool({
     //     linearDynamicData: {
     //         create: {
@@ -19,8 +18,11 @@ beforeAll(async () => {
     // });
 }, 60000);
 
+afterEach(() => server.resetHandlers());
+
 afterAll(async () => {
     await db.stop();
+    server.close();
 });
 
 test('retrieve fBeets ratio before synced', async () => {
