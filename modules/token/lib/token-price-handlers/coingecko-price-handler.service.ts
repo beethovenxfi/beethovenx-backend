@@ -8,12 +8,7 @@ export class CoingeckoPriceHandlerService implements TokenPriceHandler {
     public readonly exitIfFails = true;
     public readonly id = 'CoingeckoPriceHandlerService';
 
-    constructor(
-        private readonly nativeAssetId: string,
-        private readonly platformId: string,
-        private readonly weth: string,
-        private readonly coingeckoService: CoingeckoService,
-    ) {}
+    constructor(private readonly weth: string, private readonly coingeckoService: CoingeckoService) {}
 
     public async getAcceptedTokens(tokens: PrismaTokenWithTypes[]): Promise<string[]> {
         return tokens
@@ -98,23 +93,4 @@ export class CoingeckoPriceHandlerService implements TokenPriceHandler {
 
         return tokensUpdated;
     }
-
-    // private async getNativeAssetPrice(): Promise<number | undefined> {
-    //     const response = await this.get<CoingeckoPriceResponse>(
-    //         `/simple/price?ids=${this.nativeAssetId}&vs_currencies=${FIAT_PARAM}`,
-    //     );
-    //
-    //     return response[this.nativeAssetId].usd;
-    // }
-    //
-    // private async getPricesForTokenAddresses(addresses: string[], platformId: string): Promise<CoingeckoPriceResponse> {
-    //     const endpoint = `/simple/token_price/${platformId}?contract_addresses=${addresses}&vs_currencies=${FIAT_PARAM}`;
-    //
-    //     return this.get<CoingeckoPriceResponse>(endpoint);
-    // }
-    //
-    // private async get<T>(endpoint: string): Promise<T> {
-    //     const { data } = await axios.get(BASE_URL + endpoint);
-    //     return data;
-    // }
 }

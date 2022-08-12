@@ -91,9 +91,8 @@ export class CoingeckoService {
             }
 
             return results;
-        } catch (error) {
-            //console.error('Unable to fetch token prices', addresses, error);
-            throw error;
+        } catch (error: any) {
+            throw new Error(`Unable to fetch token prices - ${error.message} - ${error.statusCode}`);
         }
     }
 
