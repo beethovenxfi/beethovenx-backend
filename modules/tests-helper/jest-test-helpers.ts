@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
 import { Prisma, PrismaClient, PrismaPool, PrismaPoolType } from '@prisma/client';
 import { commandSync } from 'execa';
-import { prisma } from '../../prisma/prisma-client';
+import { prisma, setPrisma } from '../../prisma/prisma-client';
 import _ from 'lodash';
 
 export type DeepPartial<T> = {
@@ -105,6 +105,8 @@ export async function createTestDb(
                 },
             },
         });
+
+        setPrisma(prisma);
 
         return {
             postgres,
