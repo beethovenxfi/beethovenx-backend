@@ -81,9 +81,8 @@ export class CoingeckoPriceHandlerService implements TokenPriceHandler {
                     }),
                 );
 
-                // operations.push(
-                try {
-                    await prisma.prismaTokenCurrentPrice.upsert({
+                operations.push(
+                    prisma.prismaTokenCurrentPrice.upsert({
                         where: { tokenAddress: normalizedTokenAddress },
                         update: { price: priceUsd },
                         create: {
@@ -92,12 +91,8 @@ export class CoingeckoPriceHandlerService implements TokenPriceHandler {
                             price: priceUsd,
                             coingecko: true,
                         },
-                    });
-                } catch (e) {
-                    console.log('error', normalizedTokenAddress);
-                    throw e;
-                }
-                // );
+                    }),
+                );
 
                 tokensUpdated.push(normalizedTokenAddress);
             }
