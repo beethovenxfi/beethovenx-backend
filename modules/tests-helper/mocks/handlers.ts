@@ -1,8 +1,17 @@
+import { rest } from 'msw';
+
 export const handlers = [
-    //RPC requests
-    // rest.post(networkConfig.rpcUrl, async (req, res, ctx) => {
-    //     const body = await req.json();
-    //     console.log(body);
-    //     return req.passthrough();
-    // }),
+    //test containers
+    rest.get('http://localhost/containers/*', async (req, res, ctx) => {
+        return req.passthrough();
+    }),
+    rest.get('http://localhost/images/*', async (req, res, ctx) => {
+        return req.passthrough();
+    }),
+    rest.post('http://localhost/containers/*', async (req, res, ctx) => {
+        return req.passthrough();
+    }),
+    rest.delete('http://localhost/containers/*', async (req, res, ctx) => {
+        return req.passthrough();
+    }),
 ];

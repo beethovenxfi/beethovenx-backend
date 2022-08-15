@@ -3,26 +3,10 @@ import { isFantomNetwork } from '../config/network-config';
 import { createTestDb, TestDatabase } from '../tests-helper/jest-test-helpers';
 import { server } from '../tests-helper/mocks/server';
 import { beetsService } from './beets.service';
-import { handlers } from './mock-handlers';
+import { rpcHandlers } from './mock-handlers/rpc';
 
-let db: TestDatabase;
-
-beforeAll(async () => {
-    db = await createTestDb();
-    // createPool({
-    //     linearDynamicData: {
-    //         create: {
-    //             blockNumber: 123,
-    //         },
-    //     },s
-    // });
-    server.listen();
-    server.use(...handlers);
-    server.printHandlers();
-}, 60000);
-
-afterAll(async () => {
-    await db.stop();
+beforeEach(async () => {
+    server.use(...rpcHandlers);
 });
 
 test('retrieve fBeets ratio before synced', async () => {
@@ -41,16 +25,21 @@ test('retrieve fBeets ratio before synced', async () => {
 
 test('sync fBeets ratio', async () => {
     if (isFantomNetwork()) {
+        let fbeets;
+        fbeets = await prisma.prismaFbeets.findFirst({});
+        expect(fbeets).toBe(null);
+
         await beetsService.syncFbeetsRatio();
-        const fbeets = await prisma.prismaFbeets.findFirst({});
+        fbeets = await prisma.prismaFbeets.findFirst({});
         expect(fbeets).toBeDefined();
     }
 });
 
 test('retrieve updated fBeets ratio', async () => {
+    await beetsService.syncFbeetsRatio();
     const ratio = await beetsService.getFbeetsRatio();
     if (isFantomNetwork()) {
-        expect(ratio).not.toBe('1.0');
+        expect(ratio).toBe('2');
     } else {
         expect(ratio).toBe('1.0');
     }
