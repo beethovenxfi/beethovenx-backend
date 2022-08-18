@@ -161,8 +161,8 @@ export class TokenService {
 export const tokenService = new TokenService(
     new TokenDataLoaderService(),
     new TokenPriceService([
-        ...(isFantomNetwork() ? [new FbeetsPriceHandlerService()] : []),
         new BeetsPriceHandlerService(),
+        ...(isFantomNetwork() ? [new FbeetsPriceHandlerService()] : []),
         new CoingeckoPriceHandlerService(networkConfig.weth.address, coingeckoService),
         new BptPriceHandlerService(),
         new LinearWrappedTokenPriceHandlerService(),
