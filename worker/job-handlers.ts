@@ -61,10 +61,22 @@ export function configureWorkerRoutes(app: Express) {
         }
     });
 
-    app.post('/update-liquidity-for-all-pools', async (req, res, next) => {
+    app.post('/update-liquidity-for-active-pools', async (req, res, next) => {
         try {
-            await runIfNotAlreadyRunning('update-liquidity-for-all-pools', () =>
-                poolService.updateLiquidityValuesForAllPools(),
+            await runIfNotAlreadyRunning('update-liquidity-for-active-pools', () =>
+                poolService.updateLiquidityValuesForPools(),
+            );
+            res.sendStatus(200);
+        } catch (error) {
+            console.log(error);
+            next(error);
+        }
+    });
+
+    app.post('/update-liquidity-for-inactive-pools', async (req, res, next) => {
+        try {
+            await runIfNotAlreadyRunning('update-liquidity-for-inactive-pools', () =>
+                poolService.updateLiquidityValuesForPools(0, 0.00000000001),
             );
             res.sendStatus(200);
         } catch (error) {
