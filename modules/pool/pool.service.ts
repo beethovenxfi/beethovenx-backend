@@ -187,8 +187,8 @@ export class PoolService {
         console.timeEnd('updateOnChainData');
     }
 
-    public async updateLiquidityValuesForPools(minLiquidity?: number, maxLiquidity?: number): Promise<void> {
-        await this.poolUsdDataService.updateLiquidityValuesForPools(minLiquidity, maxLiquidity);
+    public async updateLiquidityValuesForPools(minShares?: number, maxShares?: number): Promise<void> {
+        await this.poolUsdDataService.updateLiquidityValuesForPools(minShares, maxShares);
     }
 
     public async updateVolumeAndFeeValuesForPools(poolIds?: string[]): Promise<void> {

@@ -18,8 +18,8 @@ export class PoolUsdDataService {
      * When updating, the easiest is to update all pools at once.
      */
     public async updateLiquidityValuesForPools(
-        minLiquidity: number = 0.00000000001,
-        maxLiquidity: number = Number.MAX_SAFE_INTEGER,
+        minShares: number = 0.00000000001,
+        maxShares: number = Number.MAX_SAFE_INTEGER,
     ) {
         const tokenPrices = await this.tokenService.getTokenPrices();
         const pools = await prisma.prismaPool.findMany({
@@ -28,10 +28,10 @@ export class PoolUsdDataService {
                 dynamicData: {
                     AND: [
                         {
-                            totalSharesNum: { lte: maxLiquidity },
+                            totalSharesNum: { lte: maxShares },
                         },
                         {
-                            totalSharesNum: { gt: minLiquidity },
+                            totalSharesNum: { gt: minShares },
                         },
                     ],
                 },
