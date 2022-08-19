@@ -11,7 +11,6 @@ export function startWorker() {
 
     Sentry.init({
         dsn: env.SENTRY_DSN,
-        tracesSampleRate: 0.01,
         environment: env.NODE_ENV,
         enabled: env.NODE_ENV === 'production',
         integrations: [
@@ -19,6 +18,16 @@ export function startWorker() {
             new Tracing.Integrations.Express({ app }),
             new Sentry.Integrations.Http({ tracing: true }),
         ],
+        tracesSampler: (samplingContext) => {
+            const defaultSamplingRate = 0.01;
+            const tags = samplingContext.transactionContext.tags;
+
+            if (tags && tags['samplingRate']) {
+                return parseFloat(tags['samplingRate'].toString());
+            } else {
+                return defaultSamplingRate;
+            }
+        },
     });
 
     app.use(Sentry.Handlers.requestHandler());
