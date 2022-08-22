@@ -20,33 +20,41 @@ async function runIfNotAlreadyRunning(
     next: NextFunction,
 ): Promise<void> {
     try {
-        Sentry.configureScope((scope) => {
-            scope.setTag('samplingRate', samplingRate);
-        });
         if (runningJobs.has(id)) {
             console.log('Skipping job', id);
-            Sentry.configureScope((scope) => {
-                scope.setTag('samplingRate', 0);
-            });
+            res.sendStatus(200);
             return;
         }
         runningJobs.add(id);
-        try {
-            console.time(id);
-            console.log(`Start job ${id}`);
-            await fn();
-        } finally {
-            runningJobs.delete(id);
-            console.timeEnd(id);
-            console.log(`Finished job ${id}`);
-            res.sendStatus(200);
-        }
-    } catch (error) {
+        const transaction = Sentry.startTransaction({ name: id }, { samplingRate: samplingRate.toString() });
         Sentry.configureScope((scope) => {
-            scope.setTag('error', 'load-token-prices');
-            scope.setTag('samplingRate', 1);
+            scope.setSpan(transaction);
+        });
+        transaction.sampled = true;
+        console.time(id);
+        console.log(`Start job ${id}`);
+        await fn();
+    } catch (error) {
+        const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
+        if (transaction) {
+            transaction.sampled = true;
+        }
+        Sentry.configureScope((scope) => {
+            scope.setTag('error', id);
         });
         next(error);
+    } finally {
+        runningJobs.delete(id);
+        console.timeEnd(id);
+        const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
+        if (transaction) {
+            if (Math.random() > samplingRate) {
+                transaction.sampled = false;
+            }
+            transaction.finish();
+        }
+        console.log(`Finished job ${id}`);
+        res.sendStatus(200);
     }
 }
 
@@ -89,9 +97,17 @@ export function configureWorkerRoutes(app: Express) {
             next,
         );
     });
+
     app.post('/update-pool-apr', async (req, res, next) => {
-        await runIfNotAlreadyRunning('update-pool-apr', () => poolService.updatePoolAprs(), 0.01, res, next);
+        await runIfNotAlreadyRunning(
+            'update-pool-apr',
+            () => poolService.updatePoolAprs(),
+            defaultSamplingRate,
+            res,
+            next,
+        );
     });
+
     app.post('/load-on-chain-data-for-pools-with-active-updates', async (req, res, next) => {
         await runIfNotAlreadyRunning(
             'load-on-chain-data-for-pools-with-active-updates',
@@ -101,6 +117,7 @@ export function configureWorkerRoutes(app: Express) {
             next,
         );
     });
+
     app.post('/sync-new-pools-from-subgraph', async (req, res, next) => {
         await runIfNotAlreadyRunning(
             'sync-new-pools-from-subgraph',
@@ -110,6 +127,7 @@ export function configureWorkerRoutes(app: Express) {
             next,
         );
     });
+
     app.post('/sync-sanity-pool-data', async (req, res, next) => {
         await runIfNotAlreadyRunning(
             'sync-sanity-pool-data',
@@ -119,6 +137,7 @@ export function configureWorkerRoutes(app: Express) {
             next,
         );
     });
+
     app.post('/sync-tokens-from-pool-tokens', async (req, res, next) => {
         await runIfNotAlreadyRunning(
             'sync-tokens-from-pool-tokens',
@@ -128,6 +147,7 @@ export function configureWorkerRoutes(app: Express) {
             next,
         );
     });
+
     app.post('/update-liquidity-24h-ago-for-all-pools', async (req, res, next) => {
         await runIfNotAlreadyRunning(
             'update-liquidity-24h-ago-for-all-pools',
@@ -137,14 +157,16 @@ export function configureWorkerRoutes(app: Express) {
             next,
         );
     });
+
     app.post('/sync-fbeets-ratio', async (req, res, next) => {
         await runIfNotAlreadyRunning('sync-fbeets-ratio', beetsService.syncFbeetsRatio, defaultSamplingRate, res, next);
     });
+
     app.post('/cache-average-block-time', async (req, res, next) => {
         await runIfNotAlreadyRunning(
             'cache-average-block-time',
             blocksSubgraphService.cacheAverageBlockTime,
-            defaultSamplingRate,
+            0.05,
             res,
             next,
         );
@@ -181,7 +203,7 @@ export function configureWorkerRoutes(app: Express) {
         await runIfNotAlreadyRunning(
             'sync-latest-snapshots-for-all-pools',
             poolService.syncLatestSnapshotsForAllPools,
-            defaultSamplingRate,
+            0.5,
             res,
             next,
         );
@@ -190,7 +212,7 @@ export function configureWorkerRoutes(app: Express) {
         await runIfNotAlreadyRunning(
             'update-lifetime-values-for-all-pools',
             poolService.updateLifetimeValuesForAllPools,
-            defaultSamplingRate,
+            0.05,
             res,
             next,
         );

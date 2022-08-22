@@ -15,23 +15,15 @@ export function startWorker() {
         enabled: env.NODE_ENV === 'production',
         integrations: [
             new Tracing.Integrations.Prisma({ client: prisma }),
-            new Tracing.Integrations.Express({ app }),
+            // new Tracing.Integrations.Express({ app }),
             new Sentry.Integrations.Http({ tracing: true }),
         ],
-        tracesSampler: (samplingContext) => {
-            const defaultSamplingRate = 0.01;
-            const tags = samplingContext.transactionContext.tags;
-
-            if (tags && tags['samplingRate']) {
-                return parseFloat(tags['samplingRate'].toString());
-            } else {
-                return defaultSamplingRate;
-            }
-        },
+        sampleRate: 1,
     });
 
     app.use(Sentry.Handlers.requestHandler());
-    app.use(Sentry.Handlers.tracingHandler());
+    // starting a manual transaction in the job-handler, no need for this
+    // app.use(Sentry.Handlers.tracingHandler());
     app.use(express.json());
 
     configureWorkerRoutes(app);
