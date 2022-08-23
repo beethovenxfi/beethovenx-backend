@@ -108,10 +108,16 @@ export class PoolService {
 
         return batchSwaps.map((batchSwap) => ({
             ...batchSwap,
-            swaps: batchSwap.swaps.map((swap) => ({
-                ...swap,
-                pool: pools.find((pool) => pool.id === swap.poolId)!,
-            })),
+            swaps: batchSwap.swaps.map((swap) => {
+                const pool = pools.find((pool) => pool.id === swap.poolId)!;
+                if (!pool) {
+                    console.log(`Missing pool for swap ${swap} in batchSwap ${batchSwap}`);
+                }
+                return {
+                    ...swap,
+                    pool,
+                };
+            }),
         }));
     }
 
