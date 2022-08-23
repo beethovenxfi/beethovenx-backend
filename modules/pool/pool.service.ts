@@ -92,6 +92,20 @@ export class PoolService {
         const poolIds = batchSwaps.map((batchSwap) => batchSwap.swaps.map((swap) => swap.poolId)).flat();
         const pools = await this.getGqlPools({ where: { idIn: poolIds } });
 
+        for (const batchSwap of batchSwaps) {
+            for (const swap of batchSwap.swaps) {
+                let foundPool = false;
+                for (const pool of pools) {
+                    if (pool.id === swap.poolId) {
+                        foundPool = true;
+                    }
+                }
+                if (!foundPool) {
+                    console.error(`Did not find a pool for the swap: ${swap} in batchSwap ${batchSwap.id}`);
+                }
+            }
+        }
+
         return batchSwaps.map((batchSwap) => ({
             ...batchSwap,
             swaps: batchSwap.swaps.map((swap) => ({
