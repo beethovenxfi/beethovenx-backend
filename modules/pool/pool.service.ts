@@ -97,7 +97,9 @@ export class PoolService {
             swaps: batchSwap.swaps.map((swap) => {
                 const pool = pools.find((pool) => pool.id === swap.poolId)!;
                 if (!pool) {
-                    console.log(`Missing pool for swap ${swap} in batchSwap ${batchSwap}`);
+                    console.log(
+                        `Missing pool for swap ${JSON.stringify(swap)} in batchSwap ${JSON.stringify(batchSwap)}`,
+                    );
                 }
                 return {
                     ...swap,
