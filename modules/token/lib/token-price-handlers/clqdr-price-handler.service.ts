@@ -11,9 +11,9 @@ import PriceRateProviderAbi from '../../abi/CLQDRPerpetualEscrowTokenRateProvide
 export class ClqdrPriceHandlerService implements TokenPriceHandler {
     public readonly exitIfFails = false;
     public readonly id = 'ClqdrPriceHandlerService';
-    public readonly clqdrAddress = '0x814c66594a22404e101fecfecac1012d8d75c156';
-    public readonly lqdrAddress = '0x10b620b2dbac4faa7d7ffd71da486f5d44cd86f9';
-    public readonly clqdrPriceRateProviderAddress = '0x1A148871bf262451F34f13CBCb7917b4FE59cB32';
+    private readonly clqdrAddress = '0x814c66594a22404e101fecfecac1012d8d75c156';
+    private readonly lqdrAddress = '0x10b620b2dbac4faa7d7ffd71da486f5d44cd86f9';
+    private readonly clqdrPriceRateProviderAddress = '0x1a148871bf262451f34f13cbcb7917b4fe59cb32';
 
     public async getAcceptedTokens(tokens: PrismaTokenWithTypes[]): Promise<string[]> {
         return [this.clqdrAddress];
