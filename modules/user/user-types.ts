@@ -21,3 +21,45 @@ export interface UserSyncUserBalanceInput {
     poolAddress: string;
     staking: PrismaPoolStaking;
 }
+
+// for portfolio
+export interface UserPortfolioSnapshot {
+    timestamp: number;
+    walletBalance: string;
+    gaugeBalance: string;
+    farmBalance: string;
+    totalBalance: string;
+    totalValueUSD: string;
+    fees24h: string;
+    totalFees: string;
+    pools: UserPoolSnapshot[];
+
+    // totalSwapFees: number;
+    // totalSwapVolume: number;
+    // tokens: UserTokenData[];
+}
+
+export interface UserPoolSnapshot {
+    id: string;
+    timestamp: number;
+    // poolId: string;
+    // poolAddress: string;
+    // poolName: string;
+    percentShare: number;
+    walletBalance: string;
+    gaugeBalance: string;
+    farmBalance: string;
+    totalBalance: string;
+    totalValueUSD: string;
+    fees24h: string;
+    // totalFees: string;
+    // percentOfPortfolio: number;
+    // priceChange24h: number;
+    // priceChangePercent24h: number;
+
+    // shares: number;
+    // pricePerShare: number;
+    // tokens: UserTokenData[];
+    // swapFees: number;
+    // swapVolume: number;
+}

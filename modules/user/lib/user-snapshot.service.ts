@@ -8,8 +8,9 @@ import {
     OrderDirection,
     UserBalanceSnapshot_OrderBy,
 } from '../../subgraphs/user-snapshot-subgraph/generated/user-snapshot-subgraph-types';
+import { UserPortfolioSnapshot, UserPoolSnapshot } from '../user-types';
 
-interface UserPoolBalanceSnapshot {
+interface SubgraphUserSnapshot {
     id: string;
     timestamp: number;
     walletBalance: string;
@@ -18,28 +19,18 @@ interface UserPoolBalanceSnapshot {
     totalBalance: string;
 }
 
-export interface UserPoolSnapshot extends UserPoolBalanceSnapshot {
-    percentShare: number;
-    valueUSD: string;
-    fees24h: string;
-}
-
 export class UserSnapshotService {
     constructor(private readonly userSnapshotSubgraphService: UserSnapshotSubgraphService) {}
 
-    public async getPoolSnapshots({
-        poolId,
-        userAddress,
-        numDays,
-    }: {
-        poolId: string;
-        userAddress: string;
-        numDays: number;
-    }): Promise<UserPoolSnapshot[]> {
-        const timestamp = moment().utc().startOf('day').subtract(numDays, 'days').unix();
+    public async getPortfolioSnapshots(accountAddress: string, numDays: number): Promise<UserPortfolioSnapshot[]> {
+        throw new Error('Method not implemented.');
+    }
+
+    public async getPoolSnapshots(accountAddress: string, poolId: string, days: number): Promise<UserPoolSnapshot[]> {
+        const timestamp = moment().utc().startOf('day').subtract(days, 'days').unix();
         const pool = await prisma.prismaPool.findUniqueOrThrow({ where: { id: poolId }, include: { staking: true } });
         const { snapshots } = await this.userSnapshotSubgraphService.userBalanceSnapshots({
-            where: { user: userAddress },
+            where: { user: accountAddress },
             orderBy: UserBalanceSnapshot_OrderBy.Timestamp,
             orderDirection: OrderDirection.Asc,
         });
@@ -75,7 +66,7 @@ export class UserSnapshotService {
             where: { poolId, timestamp: { gte: timestamp } },
         });
 
-        return _.times(numDays, (index) => {
+        return _.times(days, (index) => {
             const currentTimestamp = timestamp + index * 86400;
             const userSnapshot = this.getUserPoolSnapshotForTimestamp(userSnapshots, currentTimestamp);
             const poolSnapshot = poolSnapshots.find((poolSnapshot) => poolSnapshot.timestamp === currentTimestamp);
@@ -83,11 +74,14 @@ export class UserSnapshotService {
             const percentShare = poolSnapshot ? userBalance / poolSnapshot.totalSharesNum : 0;
 
             return {
-                ...userSnapshot,
-                id: `${userAddress}-${currentTimestamp}`,
-                percentShare,
+                id: `${accountAddress}-${currentTimestamp}`,
                 timestamp: currentTimestamp,
-                valueUSD: `${parseFloat(userSnapshot.totalBalance) * (poolSnapshot?.sharePrice || 0)}`,
+                percentShare,
+                walletBalance: userSnapshot?.walletBalance,
+                gaugeBalance: userSnapshot?.gaugeBalance,
+                farmBalance: userSnapshot?.farmBalance,
+                totalBalance: userSnapshot?.totalBalance,
+                totalValueUSD: `${parseFloat(userSnapshot.totalBalance) * (poolSnapshot?.sharePrice || 0)}`,
                 fees24h: `${percentShare * (poolSnapshot?.fees24h || 0)}`,
                 volume24h: `${percentShare * (poolSnapshot?.volume24h || 0)}`,
             };
@@ -96,9 +90,16 @@ export class UserSnapshotService {
 
     //snapshots expected to be ordered ASC
     private getUserPoolSnapshotForTimestamp(
-        snapshots: UserPoolBalanceSnapshot[],
+        snapshots: SubgraphUserSnapshot[],
         timestamp: number,
-    ): UserPoolBalanceSnapshot {
+    ): {
+        id: string;
+        timestamp: number;
+        walletBalance: string;
+        farmBalance: string;
+        gaugeBalance: string;
+        totalBalance: string;
+    } {
         for (let i = snapshots.length - 1; i >= 0; i--) {
             if (snapshots[i].timestamp <= timestamp) {
                 return snapshots[i];

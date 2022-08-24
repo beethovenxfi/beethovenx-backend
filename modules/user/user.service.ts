@@ -1,16 +1,16 @@
 import { UserSyncWalletBalanceService } from './lib/user-sync-wallet-balance.service';
 import { UserSyncMasterchefFarmBalanceService } from './lib/fantom/user-sync-masterchef-farm-balance.service';
-import { UserPoolBalance, UserStakedBalanceService } from './user-types';
+import { UserPoolBalance, UserPoolSnapshot, UserPortfolioSnapshot, UserStakedBalanceService } from './user-types';
 import { UserBalanceService } from './lib/user-balance.service';
 import { PrismaPoolStaking } from '@prisma/client';
 import { PoolSwapService } from '../pool/lib/pool-swap.service';
 import { tokenService } from '../token/token.service';
 import { balancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer-subgraph.service';
-import { GqlPoolJoinExit, GqlPoolSwap, GqlUserPoolSnapshot, QueryUserGetPoolSnapshotsArgs } from '../../schema';
+import { GqlPoolJoinExit, GqlPoolSwap } from '../../schema';
 import { isFantomNetwork } from '../config/network-config';
 import { UserSyncGaugeBalanceService } from './lib/optimism/user-sync-gauge-balance.service';
 import { prisma } from '../../prisma/prisma-client';
-import { UserPoolSnapshot, UserSnapshotService } from './lib/user-snapshot.service';
+import { UserSnapshotService } from './lib/user-snapshot.service';
 import { userSnapshotSubgraphService } from '../subgraphs/user-snapshot-subgraph/user-snapshot-subgraph.service';
 
 export class UserService {
@@ -104,10 +104,12 @@ export class UserService {
         await Promise.all(operations);
     }
 
-    public async getPoolSnapshots(
-        args: QueryUserGetPoolSnapshotsArgs & { userAddress: string },
-    ): Promise<UserPoolSnapshot[]> {
-        return this.snapshotService.getPoolSnapshots(args);
+    public async getPoolSnapshots(accountAddress: string, poolId: string, days: number): Promise<UserPoolSnapshot[]> {
+        return this.snapshotService.getPoolSnapshots(accountAddress, poolId, days);
+    }
+
+    getPortfolioSnapshots(accountAddress: string, numDays: number): Promise<UserPortfolioSnapshot[]> {
+        return this.snapshotService.getPortfolioSnapshots(accountAddress, numDays);
     }
 }
 

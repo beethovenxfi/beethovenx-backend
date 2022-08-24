@@ -39,10 +39,15 @@ const resolvers: Resolvers = {
 
             return userService.getUserStaking(accountAddress);
         },
-        userGetPoolSnapshots: async (parent, args, context) => {
-            const userAddress = getRequiredAccountAddress(context);
+        userGetPoolSnapshots: async (parent, { poolId, days }, context) => {
+            const accountAddress = getRequiredAccountAddress(context);
 
-            return userService.getPoolSnapshots({ ...args, userAddress });
+            return userService.getPoolSnapshots(accountAddress, poolId, days);
+        },
+        userGetPortfolioSnapshots: async (parent, { days }, context) => {
+            const accountAddress = getRequiredAccountAddress(context);
+
+            return userService.getPortfolioSnapshots(accountAddress, days);
         },
     },
     Mutation: {
