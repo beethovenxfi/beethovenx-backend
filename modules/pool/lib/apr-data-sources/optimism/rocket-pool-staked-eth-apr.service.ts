@@ -1,4 +1,3 @@
-import { getAddress } from '@ethersproject/address';
 import { prisma } from '../../../../../prisma/prisma-client';
 import { PrismaPoolWithExpandedNesting } from '../../../../../prisma/prisma-types';
 import { TokenService } from '../../../../token/token.service';
