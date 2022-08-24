@@ -19,7 +19,7 @@ export class ClqdrPriceHandlerService implements TokenPriceHandler {
         return [this.clqdrAddress];
     }
 
-    async updatePricesForTokens(tokens: PrismaTokenWithTypes[]): Promise<string[]> {
+    public async updatePricesForTokens(tokens: PrismaTokenWithTypes[]): Promise<string[]> {
         const timestamp = timestampRoundedUpToNearestHour();
 
         const clqdrPriceRateProviderContract = new Contract(
@@ -61,6 +61,20 @@ export class ClqdrPriceHandlerService implements TokenPriceHandler {
                 tokenAddress: this.clqdrAddress,
                 timestamp,
                 price: clqdrPrice,
+            },
+        });
+
+        await prisma.prismaTokenPrice.upsert({
+            where: { tokenAddress_timestamp: { tokenAddress: this.clqdrAddress, timestamp } },
+            update: { price: clqdrPrice, close: clqdrPrice },
+            create: {
+                tokenAddress: this.clqdrAddress,
+                timestamp,
+                price: clqdrPrice,
+                high: clqdrPrice,
+                low: clqdrPrice,
+                open: clqdrPrice,
+                close: clqdrPrice,
             },
         });
 
