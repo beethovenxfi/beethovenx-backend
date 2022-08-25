@@ -115,7 +115,6 @@ fragment BalancerTokenPrice on TokenPrice {
     price
     block
     timestamp
-    priceUSD
 }
 
 fragment BalancerPool on Pool {
@@ -159,7 +158,6 @@ fragment BalancerPoolToken on PoolToken {
     decimals
     address
     balance
-    invested
     weight
     priceRate
 }
@@ -248,9 +246,7 @@ fragment BalancerPoolSnapshot on PoolSnapshot {
     swapVolume
     swapFees
     timestamp
-    totalSwapVolume
-    totalLiquidity
-    totalSwapFee
+    liquidity
     swapsCount
     holdersCount
 }
@@ -310,7 +306,6 @@ fragment BalancerLatestPrice on LatestPrice {
     }
     pricingAsset
     block
-    priceUSD
 }
 
 fragment BalancerJoinExit on JoinExit {
@@ -324,7 +319,6 @@ fragment BalancerJoinExit on JoinExit {
         id
         tokensList
     }
-    valueUSD
 }
 
 query BalancerPortfolioData($id: ID!, $previousBlockNumber: Int!) {
@@ -420,7 +414,6 @@ fragment BalancerSwap on Swap {
     }
     timestamp
     tx
-    valueUSD
 }
 
 query BalancerAmpUpdates(
@@ -485,7 +478,7 @@ fragment BalancerGradualWeightUpdate on GradualWeightUpdate {
     }
 }
 
-query BalancerGetPoolsWithActiveUpdates($timestamp: Int!) {
+query BalancerGetPoolsWithActiveUpdates($timestamp: BigInt!) {
     ampUpdates(where: { endTimestamp_gte: $timestamp }) {
         poolId {
             id

@@ -4,9 +4,7 @@ import {
     BalancerAmpUpdateFragment,
     BalancerAmpUpdatesQueryVariables,
     BalancerGradualWeightUpdateFragment,
-    BalancerGradualWeightUpdatesQuery,
     BalancerGradualWeightUpdatesQueryVariables,
-    BalancerJoinExitFragment,
     BalancerJoinExitsQuery,
     BalancerJoinExitsQueryVariables,
     BalancerLatestPriceFragment,
@@ -16,7 +14,6 @@ import {
     BalancerPoolQuery,
     BalancerPoolQueryVariables,
     BalancerPoolShareFragment,
-    BalancerPoolSharesQuery,
     BalancerPoolSharesQueryVariables,
     BalancerPoolSnapshotFragment,
     BalancerPoolSnapshotsQuery,
@@ -40,19 +37,14 @@ import {
     OrderDirection,
     Swap_OrderBy,
 } from './generated/balancer-subgraph-types';
-import { env } from '../../../app/env';
-import _ from 'lodash';
 import { subgraphLoadAll } from '../subgraph-util';
 import { Cache, CacheClass } from 'memory-cache';
-import { fiveMinutesInMs, fiveMinutesInSeconds, twentyFourHoursInMs } from '../../common/time';
+import { fiveMinutesInMs, twentyFourHoursInMs } from '../../common/time';
 import { BalancerUserPoolShare } from './balancer-subgraph-types';
 import { networkConfig } from '../../config/network-config';
 
-const ALL_USERS_CACHE_KEY = 'balance-subgraph_all-users';
 const ALL_POOLS_CACHE_KEY = 'balance-subgraph_all-pools';
-const ALL_JOIN_EXITS_CACHE_KEY = 'balance-subgraph_all-join-exits';
 const PORTFOLIO_POOLS_CACHE_KEY = 'balance-subgraph_portfolio-pools';
-const USER_CACHE_KEY_PREFIX = 'balance-subgraph_user:';
 
 export class BalancerSubgraphService {
     private cache: CacheClass<string, any>;
@@ -279,7 +271,9 @@ export class BalancerSubgraphService {
     }
 
     public async getPoolsWithActiveUpdates(timestamp: number): Promise<string[]> {
-        const { ampUpdates, gradualWeightUpdates } = await this.sdk.BalancerGetPoolsWithActiveUpdates({ timestamp });
+        const { ampUpdates, gradualWeightUpdates } = await this.sdk.BalancerGetPoolsWithActiveUpdates({
+            timestamp: timestamp.toString(),
+        });
 
         return [...ampUpdates, ...gradualWeightUpdates].map((item) => item.poolId.id);
     }

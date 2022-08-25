@@ -557,7 +557,6 @@ type GqlPoolSwap {
     tokenAmountOut: String!
     timestamp: Int!
     tx: String!
-    valueUSD: Float!
 }
 
 type GqlPoolBatchSwap {
@@ -571,7 +570,6 @@ type GqlPoolBatchSwap {
     tokenOutPrice: Float!
     timestamp: Int!
     tx: String!
-    valueUSD: Float!
     swaps: [GqlPoolBatchSwapSwap!]!
 }
 
@@ -585,7 +583,6 @@ type GqlPoolBatchSwapSwap {
     tokenAmountOut: String!
     timestamp: Int!
     tx: String!
-    valueUSD: Float!
 }
 
 type GqlPoolBatchSwapPool {
@@ -648,7 +645,6 @@ type GqlPoolJoinExit {
     sender: String!
     poolId: String!
     timestamp: Int!
-    valueUSD: String!
     tx: String!
     amounts: [GqlPoolJoinExitAmount!]!
 }

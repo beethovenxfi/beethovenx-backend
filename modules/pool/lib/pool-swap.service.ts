@@ -113,7 +113,6 @@ export class PoolSwapService {
             tokenAmountIn: swap.tokenAmountIn,
             tokenOut: swap.tokenOut,
             tokenAmountOut: swap.tokenAmountOut,
-            valueUSD: parseFloat(swap.valueUSD),
             timestamp: swap.timestamp,
             tx: swap.tx,
         }));
@@ -175,9 +174,6 @@ export class PoolSwapService {
      * duplicate effort. Return an array of poolIds with swaps added.
      */
     public async syncSwapsForLast48Hours(): Promise<string[]> {
-        const allPoolAddresses = (await prisma.prismaPool.findMany({ select: { address: true } })).map(
-            (item) => item.address,
-        );
         const tokenPrices = await this.tokenService.getTokenPrices();
         const lastSwap = await prisma.prismaPoolSwap.findFirst({ orderBy: { timestamp: 'desc' } });
         const twoDaysAgo = moment().subtract(2, 'day').unix();
@@ -208,22 +204,15 @@ export class PoolSwapService {
             await prisma.prismaPoolSwap.createMany({
                 skipDuplicates: true,
                 data: swaps.map((swap) => {
-                    let valueUSD = parseFloat(swap.valueUSD);
+                    let valueUSD: number;
 
-                    if (
-                        valueUSD === 0 ||
-                        //does the swap include a nested BPT
-                        allPoolAddresses.includes(swap.tokenIn) ||
-                        allPoolAddresses.includes(swap.tokenOut)
-                    ) {
-                        const tokenInPrice = this.tokenService.getPriceForToken(tokenPrices, swap.tokenIn);
-                        const tokenOutPrice = this.tokenService.getPriceForToken(tokenPrices, swap.tokenOut);
+                    const tokenInPrice = this.tokenService.getPriceForToken(tokenPrices, swap.tokenIn);
+                    const tokenOutPrice = this.tokenService.getPriceForToken(tokenPrices, swap.tokenOut);
 
-                        if (tokenInPrice > 0) {
-                            valueUSD = tokenInPrice * parseFloat(swap.tokenAmountIn);
-                        } else {
-                            valueUSD = tokenOutPrice * parseFloat(swap.tokenAmountOut);
-                        }
+                    if (tokenInPrice > 0) {
+                        valueUSD = tokenInPrice * parseFloat(swap.tokenAmountIn);
+                    } else {
+                        valueUSD = tokenOutPrice * parseFloat(swap.tokenAmountOut);
                     }
 
                     poolIds.add(swap.poolId.id);
