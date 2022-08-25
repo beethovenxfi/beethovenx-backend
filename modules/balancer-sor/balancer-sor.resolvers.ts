@@ -2,14 +2,14 @@ import { Resolvers } from '../../schema';
 import { balancerSorService } from './balancer-sor.service';
 import { tokenService } from '../token/token.service';
 
-const balancerSdkResolvers: Resolvers = {
+const balancerSorResolvers: Resolvers = {
     Query: {
-        sorGetSwaps: async (parent, args, context) => {
+        sorGetSwaps: async (parent, args) => {
             const tokens = await tokenService.getTokens();
 
             return balancerSorService.getSwaps({ ...args, tokens });
         },
-        sorGetBatchSwapForTokensIn: async (parent, args, context) => {
+        sorGetBatchSwapForTokensIn: async (parent, args) => {
             const tokens = await tokenService.getTokens();
 
             return balancerSorService.getBatchSwapForTokensIn({ ...args, tokens });
@@ -17,4 +17,4 @@ const balancerSdkResolvers: Resolvers = {
     },
 };
 
-export default balancerSdkResolvers;
+export default balancerSorResolvers;
