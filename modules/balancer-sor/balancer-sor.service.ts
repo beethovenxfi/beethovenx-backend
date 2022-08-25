@@ -13,7 +13,6 @@ import { AddressZero } from '@ethersproject/constants';
 import { Contract } from '@ethersproject/contracts';
 import VaultAbi from '../pool/abi/Vault.json';
 import { jsonRpcProvider } from '../web3/contract';
-import { balancerSdk } from './src/balancer-sdk';
 
 interface GetSwapsInput {
     tokenIn: string;
