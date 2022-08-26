@@ -62,7 +62,6 @@ export function configureWorkerRoutes(app: Express) {
     // all manual triggered (e.g. fast running) jobs will be handled here
     app.post('/', async (req, res, next) => {
         const job = req.body as WorkerJob;
-        Sentry.configureScope((scope) => scope.setTransactionName(`POST /${job.type} - manual`));
         switch (job.type) {
             case 'sync-pools':
                 await runIfNotAlreadyRunning(
