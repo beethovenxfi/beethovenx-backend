@@ -1,19 +1,24 @@
+import { isFantomNetwork } from '../modules/config/network-config';
+import { createAlertsIfNotExist } from './create-alerts';
+import { fantomJobs } from './fantom-jobs';
+import { optimismJobs } from './optimism-jobs';
 import { workerQueue } from './queue';
 
-export type WokerJobType = 'sync-pools' | 'user-sync-wallet-balances-for-all-pools' | 'user-sync-staked-balances';
-
 export type WorkerJob = {
-    type: WokerJobType;
+    name: string;
+    interval: number;
 };
 
-async function scheduleJobWithInterval(job: WokerJobType, intervalMs: number): Promise<void> {
+async function scheduleJobWithInterval(job: string, intervalMs: number): Promise<void> {
     await workerQueue.sendWithInterval(JSON.stringify({ type: job }), intervalMs);
 }
 
-// all jobs requiring manual scheduling will be handled here (e.g. sub minute crons)
-
-export async function scheduleManualJobs(): Promise<void> {
-    await scheduleJobWithInterval('sync-pools', 15000);
-    await scheduleJobWithInterval('user-sync-wallet-balances-for-all-pools', 10000);
-    await scheduleJobWithInterval('user-sync-staked-balances', 10000);
+export async function scheduleJobsAndAlert(): Promise<void> {
+    if (isFantomNetwork()) {
+        await createAlertsIfNotExist(fantomJobs);
+        fantomJobs.forEach(async (job) => await scheduleJobWithInterval(job.name, job.interval));
+    } else {
+        await createAlertsIfNotExist(optimismJobs);
+        optimismJobs.forEach(async (job) => await scheduleJobWithInterval(job.name, job.interval));
+    }
 }
