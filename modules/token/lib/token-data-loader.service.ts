@@ -89,14 +89,35 @@ export class TokenDataLoaderService {
             });
         }
 
-        //TODO: need to be able to remove whitelist
+        const whiteListedTokens = await prisma.prismaTokenType.findMany({
+            where: {
+                type: 'WHITE_LISTED',
+            },
+        });
+
+        const addToWhitelist = sanityTokens.filter((sanityToken) => {
+            return !whiteListedTokens.some((dbToken) => {
+                return sanityToken.address.toLowerCase() === dbToken.tokenAddress;
+            });
+        });
+
+        const removeFromWhitelist = whiteListedTokens.filter((dbToken) => {
+            return !sanityTokens.some((sanityToken) => {
+                return dbToken.tokenAddress === sanityToken.address.toLowerCase();
+            });
+        });
+
         await prisma.prismaTokenType.createMany({
-            data: sanityTokens.map((token) => ({
+            data: addToWhitelist.map((token) => ({
                 id: `${token.address}-white-listed`,
                 tokenAddress: token.address.toLowerCase(),
                 type: 'WHITE_LISTED' as const,
             })),
             skipDuplicates: true,
+        });
+
+        await prisma.prismaTokenType.deleteMany({
+            where: { id: { in: removeFromWhitelist.map((token) => token.id) } },
         });
 
         await this.syncTokenTypes();
