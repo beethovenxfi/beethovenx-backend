@@ -2,6 +2,7 @@ import { sanityClient } from '../../sanity/sanity';
 import { env } from '../../../app/env';
 import { prisma } from '../../../prisma/prisma-client';
 import { Prisma } from '@prisma/client';
+import { isSameAddress } from '@balancer-labs/sdk';
 
 const SANITY_TOKEN_TYPE_MAP: { [key: string]: string } = {
     '250': 'fantomToken',
@@ -97,13 +98,13 @@ export class TokenDataLoaderService {
 
         const addToWhitelist = sanityTokens.filter((sanityToken) => {
             return !whiteListedTokens.some((dbToken) => {
-                return sanityToken.address.toLowerCase() === dbToken.tokenAddress;
+                isSameAddress(sanityToken.address, dbToken.tokenAddress);
             });
         });
 
         const removeFromWhitelist = whiteListedTokens.filter((dbToken) => {
             return !sanityTokens.some((sanityToken) => {
-                return dbToken.tokenAddress === sanityToken.address.toLowerCase();
+                isSameAddress(dbToken.tokenAddress, sanityToken.address);
             });
         });
 
