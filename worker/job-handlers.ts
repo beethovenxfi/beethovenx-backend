@@ -63,9 +63,9 @@ async function runIfNotAlreadyRunning(
 export function configureWorkerRoutes(app: Express) {
     // all manual triggered (e.g. fast running) jobs will be handled here
     app.post('/', async (req, res, next) => {
-        const job = req.body as WorkerJob;
+        const job = req.body as { name: string };
         switch (job.name) {
-            case 'sync-pools':
+            case 'sync-changed-pools':
                 await runIfNotAlreadyRunning(
                     job.name,
                     () => poolService.syncChangedPools(),
@@ -237,6 +237,7 @@ export function configureWorkerRoutes(app: Express) {
                 );
                 break;
             default:
+                res.sendStatus(400);
                 throw new Error(`Unhandled job type ${job.name}`);
         }
     });

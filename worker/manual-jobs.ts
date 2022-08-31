@@ -10,15 +10,21 @@ export type WorkerJob = {
 };
 
 async function scheduleJobWithInterval(job: string, intervalMs: number): Promise<void> {
-    await workerQueue.sendWithInterval(JSON.stringify({ type: job }), intervalMs);
+    await workerQueue.sendWithInterval(JSON.stringify({ name: job }), intervalMs);
 }
 
-export async function scheduleJobsAndAlert(): Promise<void> {
+export async function scheduleJobs(): Promise<void> {
     if (isFantomNetwork()) {
-        await createAlertsIfNotExist(fantomJobs);
         fantomJobs.forEach(async (job) => await scheduleJobWithInterval(job.name, job.interval));
     } else {
-        await createAlertsIfNotExist(optimismJobs);
         optimismJobs.forEach(async (job) => await scheduleJobWithInterval(job.name, job.interval));
+    }
+}
+
+export async function createAlerts(): Promise<void> {
+    if (isFantomNetwork()) {
+        await createAlertsIfNotExist(fantomJobs);
+    } else {
+        await createAlertsIfNotExist(optimismJobs);
     }
 }
