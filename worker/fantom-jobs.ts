@@ -66,16 +66,16 @@ export const fantomJobs: WorkerJob[] = [
         name: 'update-lifetime-values-for-all-pools',
         interval: every(20, Duration.Minutes),
     },
-    {
-        name: 'sync-pools',
-        interval: every(15, Duration.Seconds),
-    },
-    {
-        name: 'user-sync-wallet-balances-for-all-pools',
-        interval: every(10, Duration.Seconds),
-    },
-    {
-        name: 'user-sync-staked-balances',
-        interval: every(10, Duration.Seconds),
-    },
+    // {
+    //     name: 'sync-changed-pools',
+    //     interval: every(15, Duration.Seconds),
+    // },
+    // {
+    //     name: 'user-sync-wallet-balances-for-all-pools',
+    //     interval: every(10, Duration.Seconds),
+    // },
+    // {
+    //     name: 'user-sync-staked-balances',
+    //     interval: every(10, Duration.Seconds),
+    // },
 ];
