@@ -5,6 +5,7 @@ import {
     PutMetricAlarmCommand,
 } from '@aws-sdk/client-cloudwatch';
 import { env } from '../app/env';
+import { networkConfig } from '../modules/config/network-config';
 import cronRunMetric from '../modules/metrics/cron.metric';
 import { WorkerJob } from './manual-jobs';
 
@@ -36,7 +37,9 @@ export async function createAlertsIfNotExist(jobs: WorkerJob[]): Promise<void> {
         }
 
         const foundAlarm = currentAlarms.MetricAlarms?.find(
-            (alarm) => alarm.AlarmName === `AUTO CRON ALARM: ${cronJob.name}`,
+            (alarm) =>
+                alarm.AlarmName ===
+                `AUTO CRON ALARM: ${cronJob.name} - ${networkConfig.chain.slug} - ${env.DEPLOYMENT_ENV}`,
         );
         if (foundAlarm) {
             if (foundAlarm.Period != periodInSeconds) {
