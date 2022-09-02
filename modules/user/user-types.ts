@@ -25,13 +25,13 @@ export interface UserSyncUserBalanceInput {
 // for portfolio
 export interface UserPortfolioSnapshot {
     timestamp: number;
-    walletBalance: string;
-    gaugeBalance: string;
-    farmBalance: string;
-    totalBalance: string;
-    totalValueUSD: string;
-    fees24h: string;
-    totalFees: string;
+    walletBalance: AmountHumanReadable;
+    gaugeBalance: AmountHumanReadable;
+    farmBalance: AmountHumanReadable;
+    totalBalance: AmountHumanReadable;
+    totalValueUSD: AmountHumanReadable;
+    fees24h: AmountHumanReadable;
+    totalFees: AmountHumanReadable;
     pools: UserPoolSnapshot[];
 
     // totalSwapFees: number;
@@ -46,12 +46,12 @@ export interface UserPoolSnapshot {
     // poolAddress: string;
     // poolName: string;
     percentShare: number;
-    walletBalance: string;
-    gaugeBalance: string;
-    farmBalance: string;
-    totalBalance: string;
-    totalValueUSD: string;
-    fees24h: string;
+    walletBalance: AmountHumanReadable;
+    gaugeBalance: AmountHumanReadable;
+    farmBalance: AmountHumanReadable;
+    totalBalance: AmountHumanReadable;
+    totalValueUSD: AmountHumanReadable;
+    fees24h: AmountHumanReadable;
     // totalFees: string;
     // percentOfPortfolio: number;
     // priceChange24h: number;
@@ -63,3 +63,14 @@ export interface UserPoolSnapshot {
     // swapFees: number;
     // swapVolume: number;
 }
+
+// export interface UserTokenData {
+//     id: string;
+//     address: string;
+//     symbol: string;
+//     name: string;
+//     balance: number;
+//     pricePerToken: number;
+//     totalValue: number;
+//     percentOfPortfolio: number;
+// }

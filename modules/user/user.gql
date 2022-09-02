@@ -5,7 +5,7 @@ extend type Query {
     userGetPoolJoinExits(first: Int = 10, skip: Int = 0, poolId: String!): [GqlPoolJoinExit!]!
     userGetSwaps(first: Int = 10, skip: Int = 0, poolId: String!): [GqlPoolSwap!]!
     userGetPortfolioSnapshots(days: Int!): [GqlUserPortfolioSnapshot!]!
-    userGetPoolSnapshots(poolId: String!, days: Int!): [GqlUserPoolSnapshot!]!
+    userGetPoolSnapshots(poolId: String!, range: GqlUserSnapshotDataRange!): [GqlUserPoolSnapshot!]!
 }
 
 extend type Mutation {
@@ -65,4 +65,12 @@ type GqlUserPoolSnapshot {
     # percentageOfPortfolio: Float!
     # priceChange24h: AmountHumanReadable!
     # priceChangePercent24h: Float!
+}
+
+enum GqlUserSnapshotDataRange {
+    THIRTY_DAYS
+    NINETY_DAYS
+    ONE_HUNDRED_EIGHTY_DAYS
+    ONE_YEAR
+    ALL_TIME
 }

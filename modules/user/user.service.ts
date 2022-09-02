@@ -6,7 +6,7 @@ import { PrismaPoolStaking } from '@prisma/client';
 import { PoolSwapService } from '../pool/lib/pool-swap.service';
 import { tokenService } from '../token/token.service';
 import { balancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer-subgraph.service';
-import { GqlPoolJoinExit, GqlPoolSwap } from '../../schema';
+import { GqlPoolJoinExit, GqlPoolSwap, GqlUserSnapshotDataRange } from '../../schema';
 import { isFantomNetwork } from '../config/network-config';
 import { UserSyncGaugeBalanceService } from './lib/optimism/user-sync-gauge-balance.service';
 import { prisma } from '../../prisma/prisma-client';
@@ -104,12 +104,41 @@ export class UserService {
         await Promise.all(operations);
     }
 
-    public async getPoolSnapshots(accountAddress: string, poolId: string, days: number): Promise<UserPoolSnapshot[]> {
-        return this.snapshotService.getPoolSnapshots(accountAddress, poolId, days);
+    public async getUserBalanceSnapshotsForPool(
+        accountAddress: string,
+        poolId: string,
+        days: GqlUserSnapshotDataRange,
+    ): Promise<UserPoolSnapshot[]> {
+        return this.snapshotService.getUserSnapshotsForPool(accountAddress, poolId, days);
     }
 
-    getPortfolioSnapshots(accountAddress: string, numDays: number): Promise<UserPortfolioSnapshot[]> {
+    public async getPortfolioSnapshotsForUser(
+        accountAddress: string,
+        numDays: number,
+    ): Promise<UserPortfolioSnapshot[]> {
         return this.snapshotService.getPortfolioSnapshots(accountAddress, numDays);
+    }
+
+    public async loadUserBalanceSnapshotsForAllUsers() {
+        await prisma.prismaUserBalanceSnapshot.deleteMany({});
+
+        // TODO is this correct?
+        const usersWithBalances = await prisma.prismaUser.findMany({
+            include: {
+                walletBalances: { where: { poolId: { not: null }, balanceNum: { gt: 0 } } },
+                stakedBalances: {
+                    where: { poolId: { not: null }, balanceNum: { gt: 0 } },
+                },
+            },
+        });
+
+        const userAddressesWithFunds = usersWithBalances.filter((user) => {
+            if (user.stakedBalances.length > 0 || user.walletBalances.length > 0) {
+                return user.address;
+            }
+        });
+
+        this.snapshotService.loadAllUserSnapshotsForUsers(userAddressesWithFunds.map((user) => user.address));
     }
 }
 
