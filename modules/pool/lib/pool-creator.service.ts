@@ -17,7 +17,10 @@ export class PoolCreatorService {
 
         const poolIds: string[] = [];
 
+        let counter = 1;
         for (const subgraphPool of sortedSubgraphPools) {
+            console.log(`Syncing pool ${counter} of ${sortedSubgraphPools.length}`);
+            counter = counter + 1;
             const existsInDb = !!existingPools.find((pool) => pool.id === subgraphPool.id);
 
             if (!existsInDb) {
