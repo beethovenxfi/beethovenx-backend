@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/node';
 import {
     balancerSubgraphService,
     BalancerSubgraphService,
@@ -33,6 +32,41 @@ export class PoolSnapshotService {
             where: { poolId, timestamp: { gte: timestamp } },
             orderBy: { timestamp: 'asc' },
         });
+    }
+
+    public async getOrInferSnapshotForPool(poolId: string, timestamp: number): Promise<PrismaPoolSnapshot> {
+        const poolSnapshotForTimestamp = await prisma.prismaPoolSnapshot.findFirst({
+            where: { poolId, timestamp: timestamp },
+        });
+
+        if (poolSnapshotForTimestamp) {
+            return poolSnapshotForTimestamp;
+        }
+
+        const lastSnapshotBeforeTimestamp = await prisma.prismaPoolSnapshot.findFirst({
+            where: { poolId, timestamp: { lt: timestamp } },
+            orderBy: { timestamp: 'desc' },
+        });
+        if (!lastSnapshotBeforeTimestamp) {
+            // no previous timestamp, return everything 0
+            return {
+                id: `${poolId}-${timestamp}`,
+                timestamp: timestamp,
+                poolId: poolId,
+                amounts: [],
+                holdersCount: 0,
+                sharePrice: 0,
+                swapsCount: 0,
+                volume24h: 0,
+                fees24h: 0,
+                totalLiquidity: 0,
+                totalShares: '0',
+                totalSharesNum: 0,
+                totalSwapFee: 0,
+                totalSwapVolume: 0,
+            };
+        }
+        return this.inferSnapshotFromLast(lastSnapshotBeforeTimestamp, timestamp);
     }
 
     //TODO: this could be optimized
@@ -265,6 +299,39 @@ export class PoolSnapshotService {
             fees24h: Math.max(parseFloat(snapshot.totalSwapFee) - parseFloat(prevTotalSwapFee), 0),
             sharePrice: totalLiquidity > 0 && totalShares > 0 ? totalLiquidity / totalShares : 0,
         };
+    }
+
+    private async inferSnapshotFromLast(
+        lastSnapshot: PrismaPoolSnapshot,
+        timestamp: number,
+    ): Promise<PrismaPoolSnapshot> {
+        const poolTokensAddresses = await prisma.prismaPool.findUniqueOrThrow({
+            where: { id: lastSnapshot.poolId },
+            select: { allTokens: { select: { tokenAddress: true } } },
+        });
+
+        let counter = 0;
+        let totalLiquidity = 0;
+        for (const tokenAddress of poolTokensAddresses.allTokens) {
+            const tokenPriceMap: TokenHistoricalPrices = {};
+            tokenPriceMap[tokenAddress.tokenAddress] = await prisma.prismaTokenPrice.findMany({
+                where: { tokenAddress: tokenAddress.tokenAddress, timestamp: { gte: timestamp } },
+            });
+            const tokenPrices = this.getTokenPricesForTimestamp(timestamp, tokenPriceMap);
+            totalLiquidity += tokenPrices[tokenAddress.tokenAddress] * parseFloat(lastSnapshot.amounts[counter]);
+        }
+
+        lastSnapshot.id = `${lastSnapshot.poolId}-${timestamp}`;
+        lastSnapshot.fees24h = 0;
+        lastSnapshot.volume24h = 0;
+        lastSnapshot.timestamp = timestamp;
+        lastSnapshot.totalLiquidity = totalLiquidity;
+        lastSnapshot.sharePrice =
+            totalLiquidity > 0 && parseFloat(lastSnapshot.totalShares) > 0
+                ? totalLiquidity / parseFloat(lastSnapshot.totalShares)
+                : 0;
+
+        return lastSnapshot;
     }
 
     private getTimestampForRange(range: GqlPoolSnapshotDataRange): number {

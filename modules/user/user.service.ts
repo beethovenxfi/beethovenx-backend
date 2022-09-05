@@ -12,6 +12,8 @@ import { UserSyncGaugeBalanceService } from './lib/optimism/user-sync-gauge-bala
 import { prisma } from '../../prisma/prisma-client';
 import { UserSnapshotService } from './lib/user-snapshot.service';
 import { userSnapshotSubgraphService } from '../subgraphs/user-snapshot-subgraph/user-snapshot-subgraph.service';
+import { PoolSnapshotService } from '../pool/lib/pool-snapshot.service';
+import { coingeckoService } from '../coingecko/coingecko.service';
 
 export class UserService {
     constructor(
@@ -147,5 +149,8 @@ export const userService = new UserService(
     new UserSyncWalletBalanceService(),
     isFantomNetwork() ? new UserSyncMasterchefFarmBalanceService() : new UserSyncGaugeBalanceService(),
     new PoolSwapService(tokenService, balancerSubgraphService),
-    new UserSnapshotService(userSnapshotSubgraphService),
+    new UserSnapshotService(
+        userSnapshotSubgraphService,
+        new PoolSnapshotService(balancerSubgraphService, coingeckoService),
+    ),
 );
