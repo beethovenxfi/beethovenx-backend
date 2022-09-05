@@ -127,12 +127,7 @@ export class PoolService {
     }
 
     public async getSnapshotsForAllPools(range: GqlPoolSnapshotDataRange) {
-        const allPools = await poolService.getGqlPools({});
-        const allSnapshots = [];
-        for (const pool of allPools) {
-            allSnapshots.push(...(await this.getSnapshotsForPool(pool.id, range)));
-        }
-        return allSnapshots;
+        return this.poolSnapshotService.getSnapshotsForAllPools(range);
     }
 
     public async getSnapshotsForPool(poolId: string, range: GqlPoolSnapshotDataRange) {
