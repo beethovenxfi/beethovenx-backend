@@ -4,6 +4,7 @@ import {
     MetricDatum,
     PutMetricDataCommand,
 } from '@aws-sdk/client-cloudwatch';
+import * as Sentry from '@sentry/node';
 import { env } from '../../app/env';
 
 export interface NotificationsCloudwatchMetric {
@@ -11,16 +12,20 @@ export interface NotificationsCloudwatchMetric {
     nameSpace: string;
 }
 
-export abstract class MetricPublisher {
+export class CloudwatchMetricsPublisher {
     protected environment: string;
     protected configuration?: CloudWatchClientConfig;
     private client: CloudWatchClient;
     public namespace: string;
 
-    constructor(configuration?: CloudWatchClientConfig) {
-        this.namespace = 'default';
-        this.environment = env.DEPLOYMENT_ENV;
-        this.client = new CloudWatchClient(this.getOrDefaultConfig());
+    constructor(
+        namespace: string = 'default',
+        environment: string = env.DEPLOYMENT_ENV,
+        configuration?: CloudWatchClientConfig,
+    ) {
+        this.namespace = namespace;
+        this.environment = environment;
+        this.client = new CloudWatchClient({ region: env.AWS_REGION, ...configuration });
     }
 
     public async publish(metricName: string, count?: number): Promise<void> {
@@ -45,16 +50,8 @@ export abstract class MetricPublisher {
 
             await this.client.send(command);
         } catch (err) {
-            console.log('Failed to publish metric ', err);
+            Sentry.captureException(`Failed to publish "${metricName}" in "${this.environment}: ${err}`);
             return;
         }
-    }
-
-    private getOrDefaultConfig(): CloudWatchClientConfig {
-        return this.configuration
-            ? this.configuration
-            : {
-                  region: process.env.AWS_REGION,
-              };
     }
 }

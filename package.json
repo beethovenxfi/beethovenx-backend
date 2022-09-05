@@ -41,7 +41,6 @@
         "graphql-request": "^3.6.1",
         "graphql-type-json": "^0.3.2",
         "helmet": "^5.0.2",
-        "js-yaml": "^4.1.0",
         "limiter": "^2.1.0",
         "lodash": "^4.17.15",
         "memory-cache": "^0.2.0",

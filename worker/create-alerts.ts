@@ -6,12 +6,15 @@ import {
 } from '@aws-sdk/client-cloudwatch';
 import { env } from '../app/env';
 import { networkConfig } from '../modules/config/network-config';
-import cronRunMetric from '../modules/metrics/cron.metric';
+import { cronsMetricPublisher } from '../modules/metrics/cron.metric';
 import { WorkerJob } from './manual-jobs';
+
+const euAlarmTopic = 'arn:aws:sns:eu-central-1:837533371577:Default_CloudWatch_Alarms_Topic';
+const caAlarmTopic = 'arn:aws:sns:ca-central-1:837533371577:Default_CloudWatch_Alarms_Topic';
 
 export async function createAlertsIfNotExist(jobs: WorkerJob[]): Promise<void> {
     const cloudWatchClient = new CloudWatchClient({
-        region: process.env.AWS_REGION,
+        region: env.AWS_REGION,
     });
 
     const currentAlarms = await cloudWatchClient.send(new DescribeAlarmsCommand({}));
@@ -49,14 +52,14 @@ export async function createAlertsIfNotExist(jobs: WorkerJob[]): Promise<void> {
             }
         }
         //make sure metric is available for alarm
-        cronRunMetric.publish(`${cronJob.name}-done`);
+        cronsMetricPublisher.publish(`${cronJob.name}-done`);
 
         const putAlarmCommand = new PutMetricAlarmCommand({
             AlarmName: alarmName,
             AlarmDescription: `The cron job ${cronJob.name} should run every ${cronJob.interval / 1000} seconds. 
             Trigger alarm if the cron ran less than once in ${periodInSeconds} seconds.`,
             ActionsEnabled: true,
-            AlarmActions: ['arn:aws:sns:eu-central-1:837533371577:Default_CloudWatch_Alarms_Topic'],
+            AlarmActions: [env.AWS_REGION === 'eu-central-1' ? euAlarmTopic : caAlarmTopic],
             MetricName: `${cronJob.name}-done`,
             Statistic: 'Sum',
             Dimensions: [{ Name: 'Environment', Value: env.DEPLOYMENT_ENV }],
@@ -66,7 +69,7 @@ export async function createAlertsIfNotExist(jobs: WorkerJob[]): Promise<void> {
             Threshold: threshold,
             ComparisonOperator: 'LessThanOrEqualToThreshold',
             TreatMissingData: 'missing',
-            Namespace: cronRunMetric.namespace,
+            Namespace: cronsMetricPublisher.namespace,
         });
 
         await cloudWatchClient.send(putAlarmCommand);

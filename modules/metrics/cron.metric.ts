@@ -1,17 +1,3 @@
-import { MetricPublisher } from './metrics.client';
+import { CloudwatchMetricsPublisher } from './metrics.client';
 
-class CronRunsMetric extends MetricPublisher {
-    constructor() {
-        super();
-    }
-}
-
-const createCronRunsMetric = (): CronRunsMetric => {
-    const publisher = new CronRunsMetric();
-    publisher.namespace = 'Backend/CronRuns';
-    return publisher;
-};
-
-const cronRunMetric: MetricPublisher = createCronRunsMetric();
-
-export default cronRunMetric;
+export const cronsMetricPublisher: CloudwatchMetricsPublisher = new CloudwatchMetricsPublisher('Backend/CronRuns');

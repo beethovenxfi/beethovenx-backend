@@ -5,9 +5,8 @@ import { poolService } from '../modules/pool/pool.service';
 import { beetsService } from '../modules/beets/beets.service';
 import { blocksSubgraphService } from '../modules/subgraphs/blocks-subgraph/blocks-subgraph.service';
 import { userService } from '../modules/user/user.service';
-import { WorkerJob } from './manual-jobs';
 import { protocolService } from '../modules/protocol/protocol.service';
-import cronRunMetric from '../modules/metrics/cron.metric';
+import { cronsMetricPublisher } from '../modules/metrics/cron.metric';
 
 const runningJobs: Set<string> = new Set();
 
@@ -35,7 +34,7 @@ async function runIfNotAlreadyRunning(
         console.time(id);
         console.log(`Start job ${id}`);
         await fn();
-        cronRunMetric.publish(`${id}-done`);
+        cronsMetricPublisher.publish(`${id}-done`);
         if (Math.random() > samplingRate) {
             transaction.sampled = false;
         }

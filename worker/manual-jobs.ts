@@ -9,15 +9,17 @@ export type WorkerJob = {
     interval: number;
 };
 
-async function scheduleJobWithInterval(job: string, intervalMs: number): Promise<void> {
-    await workerQueue.sendWithInterval(JSON.stringify({ name: job }), intervalMs);
+async function scheduleJobWithInterval(jobs: WorkerJob[]): Promise<void> {
+    for (const job of jobs) {
+        await workerQueue.sendWithInterval(JSON.stringify({ name: job.name }), job.interval);
+    }
 }
 
 export async function scheduleJobs(): Promise<void> {
     if (isFantomNetwork()) {
-        fantomJobs.forEach(async (job) => await scheduleJobWithInterval(job.name, job.interval));
+        await scheduleJobWithInterval(fantomJobs);
     } else {
-        optimismJobs.forEach(async (job) => await scheduleJobWithInterval(job.name, job.interval));
+        await scheduleJobWithInterval(optimismJobs);
     }
 }
 
