@@ -87,7 +87,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             changelog: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/changelog',
             masterchef: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/masterchefv2',
             gauge: 'https://#/',
-            userBalances: 'https://api.thegraph.com/subgraphs/name/danielmkm/user-balances-fantom',
+            userBalances: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/user-bpt-balances-fantom',
         },
         eth: {
             address: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',

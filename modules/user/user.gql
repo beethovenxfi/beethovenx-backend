@@ -18,6 +18,9 @@ extend type Mutation {
 
     userInitStakedBalances: String!
     userSyncStakedBalances: String!
+
+    userSyncLatestSnapshotsForAllUsers(daysToSync: Int): String!
+    userLoadAllUserSnapshots: String!
 }
 
 type GqlUserPoolBalance {

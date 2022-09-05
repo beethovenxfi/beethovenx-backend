@@ -5,6 +5,7 @@ import moment from 'moment-timezone';
 import { UserPortfolioSnapshot, UserPoolSnapshot } from '../user-types';
 import { GqlUserSnapshotDataRange } from '../../../schema';
 import { PoolSnapshotService } from '../../pool/lib/pool-snapshot.service';
+import { formatFixed } from '@ethersproject/bignumber';
 
 export class UserSnapshotService {
     constructor(
@@ -16,9 +17,9 @@ export class UserSnapshotService {
         throw new Error('Method not implemented.');
     }
 
-    public async syncLatestSnapshotsForUsers(daysToSync: number = 1, userAddresses: string[] = []) {
-        let userAddressesToSync = userAddresses;
-        if (userAddressesToSync.length === 0) {
+    public async syncLatestSnapshotsForUsers(daysToSync: number = 1, userAddresses?: string[]) {
+        if (!userAddresses) {
+            //TODO is this correct?
             const usersWithBalances = await prisma.prismaUser.findMany({
                 include: {
                     walletBalances: { where: { poolId: { not: null }, balanceNum: { gt: 0 } } },
@@ -28,8 +29,13 @@ export class UserSnapshotService {
                 },
             });
 
-            userAddressesToSync = usersWithBalances
-                .filter((user) => user.stakedBalances.length > 0 || user.walletBalances.length > 0)
+            userAddresses = usersWithBalances
+                .filter(
+                    (user) =>
+                        (user.stakedBalances.length > 0 || user.walletBalances.length > 0) &&
+                        user.address !== '0x000000000000000000000000000000000000dead' &&
+                        user.address !== '0x0000000000000000000000000000000000000000',
+                )
                 .map((user) => user.address);
         }
 
@@ -38,7 +44,11 @@ export class UserSnapshotService {
             syncFromTimestamp = moment().utc().startOf('day').subtract(daysToSync, 'days').unix();
         }
 
-        for (const userId of userAddressesToSync) {
+        let count = 0;
+
+        for (const userId of userAddresses) {
+            console.log(`Loading user ${count} of ${userAddresses.length}`);
+            count += 1;
             const { snapshots: subgraphUserBalanceSnapshots } =
                 await this.userSnapshotSubgraphService.userBalanceSnapshots({
                     where: {
@@ -57,33 +67,32 @@ export class UserSnapshotService {
                 }),
             });
 
+            const allPoolsFromSnapshot = await prisma.prismaPool.findMany({
+                where: {
+                    OR: [
+                        {
+                            address: {
+                                in: subgraphUserBalanceSnapshots.map((snapshot) => snapshot.walletTokens).flat(),
+                            },
+                        },
+                        {
+                            staking: {
+                                id: {
+                                    in: subgraphUserBalanceSnapshots
+                                        .map((snapshot) => [...snapshot.farms, ...snapshot.gauges])
+                                        .flat(),
+                                },
+                            },
+                        },
+                    ],
+                },
+                include: { staking: true },
+            });
             for (const snapshot of subgraphUserBalanceSnapshots) {
-                const allPoolsFromSnapshot = await prisma.prismaPool.findMany({
-                    where: {
-                        OR: [
-                            {
-                                address: {
-                                    in: subgraphUserBalanceSnapshots.map((snapshot) => snapshot.walletTokens).flat(),
-                                },
-                            },
-                            {
-                                staking: {
-                                    id: {
-                                        in: subgraphUserBalanceSnapshots
-                                            .map((snapshot) => [...snapshot.farms, ...snapshot.gauges])
-                                            .flat(),
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                    include: { staking: true },
-                });
-
                 const prismaInput = [];
                 for (const pool of allPoolsFromSnapshot) {
-                    const bptIdx = snapshot.walletTokens.indexOf(pool.address);
-                    const walletBalance = bptIdx !== -1 ? snapshot.walletBalances[bptIdx] : '0';
+                    const walletIdx = snapshot.walletTokens.indexOf(pool.address);
+                    const walletBalance = walletIdx !== -1 ? snapshot.walletBalances[walletIdx] : '0';
                     const gaugeIdx = snapshot.gauges.indexOf(pool.staking?.id || '');
                     const gaugeBalance = gaugeIdx !== -1 ? snapshot.gaugeBalances[gaugeIdx] : '0';
                     const farmIdx = snapshot.gauges.indexOf(pool.staking?.id || '');
@@ -92,15 +101,16 @@ export class UserSnapshotService {
                         .add(parseUnits(gaugeBalance, 18))
                         .add(parseUnits(farmBalance, 18));
 
-                    if (totalBalanceScaled.toNumber() > 0) {
+                    if (parseFloat(formatFixed(totalBalanceScaled)) > 0) {
                         prismaInput.push({
                             id: `${pool.address}-${snapshot.id}`,
                             userBalanceSnapshotId: snapshot.id,
                             poolId: pool.id,
+                            poolToken: pool.address,
                             walletBalance,
                             gaugeBalance,
                             farmBalance,
-                            totalBalance: totalBalanceScaled.toString(),
+                            totalBalance: formatFixed(totalBalanceScaled),
                         });
                     }
                 }
@@ -109,28 +119,11 @@ export class UserSnapshotService {
                     data: prismaInput,
                 });
             }
-
-            await prisma.prismaUserBalanceSnapshot.createMany({
-                data: subgraphUserBalanceSnapshots.map((snapshot) => {
-                    return {
-                        id: snapshot.id,
-                        userAddress: snapshot.user.id.toLowerCase(),
-                        timestamp: snapshot.timestamp,
-                        walletTokens: snapshot.walletTokens.map((token) => token.toLowerCase()),
-                        walletBalances: snapshot.walletBalances,
-                        gauges: snapshot.gauges,
-                        gaugeBalances: snapshot.gaugeBalances,
-                        farms: snapshot.farms,
-                        farmBalances: snapshot.farmBalances,
-                    };
-                }),
-                skipDuplicates: true,
-            });
         }
     }
 
-    public async loadAllUserSnapshotsForUsers(userIds: string[]) {
-        this.syncLatestSnapshotsForUsers(-1, userIds);
+    public async loadAllUserSnapshotsForUsers(userIds?: string[]) {
+        await this.syncLatestSnapshotsForUsers(-1, userIds);
     }
 
     public async getUserSnapshotsForPool(
@@ -139,7 +132,6 @@ export class UserSnapshotService {
         range: GqlUserSnapshotDataRange,
     ): Promise<UserPoolSnapshot[]> {
         const oldestRequestedSnapshotTimestamp = this.getTimestampForRange(range);
-        const numberOfDays = this.getDaysForRange(range);
 
         const userBalanceSnapshotsForPoolInRange = await prisma.prismaUserBalanceSnapshot.findMany({
             where: {
@@ -219,6 +211,7 @@ export class UserSnapshotService {
         const secondsInADay = 86400;
 
         for (const snapshot of userBalanceSnapshotsForPoolInRange) {
+            console.log(`Getting snapshot ${userPoolSnapshotsCounter} of ${userBalanceSnapshotsForPoolInRange.length}`);
             let snapshotToUse = snapshot;
             // use previous snapshot
             const currentProcessedTimestamp =

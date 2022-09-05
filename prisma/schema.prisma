@@ -525,8 +525,9 @@ model PrismaUserPoolBalanceSnapshot {
     userBalanceSnapshotId   String
     userBalanceSnapshot     PrismaUserBalanceSnapshot @relation(fields:[userBalanceSnapshotId], references:[id])
 
-    poolId                  String
-    pool                    PrismaPool          @relation(fields:[poolId], references:[id])
+    poolToken               String
+    poolId                  String?
+    pool                    PrismaPool?          @relation(fields:[poolId], references:[id])
 
     walletBalance           String
     gaugeBalance            String

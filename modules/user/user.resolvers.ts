@@ -102,6 +102,20 @@ const resolvers: Resolvers = {
 
             return 'success';
         },
+        userLoadAllUserSnapshots: async (parent, {}, context) => {
+            isAdminRoute(context);
+
+            await userService.loadUserBalanceSnapshotsForAllUsers();
+
+            return 'success';
+        },
+        userSyncLatestSnapshotsForAllUsers: async (parent, { daysToSync }, context) => {
+            isAdminRoute(context);
+
+            await userService.syncLatestSnapshotsForAllUsers(daysToSync || undefined);
+
+            return 'success';
+        },
     },
 };
 

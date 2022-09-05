@@ -48,6 +48,35 @@ export class UserSnapshotSubgraphService {
         });
     }
 
+    public async getAllBalanceSnapshotsForLastNDays(numDays: number): Promise<UserBalanceSnapshotsQuery> {
+        let timestamp = 0;
+        if (numDays > 0) {
+            timestamp = moment().utc().startOf('day').subtract(numDays, 'days').unix();
+        }
+
+        let allSnapshots: UserBalanceSnapshotsQuery = {
+            snapshots: [],
+        };
+        let lastId = '';
+        do {
+            const result = await this.sdk.UserBalanceSnapshots({
+                where: { timestamp_gte: timestamp, id_gt: lastId },
+                first: 1000,
+                orderBy: UserBalanceSnapshot_OrderBy.Id,
+                orderDirection: OrderDirection.Asc,
+            });
+            if (result.snapshots.length == 0) {
+                break;
+            }
+            allSnapshots.snapshots = [...allSnapshots.snapshots, ...result.snapshots];
+            console.log(`Got ${result.snapshots.length} from subgraph, now got ${allSnapshots.snapshots.length}`);
+            lastId = result.snapshots[result.snapshots.length - 1].id;
+        } while (true);
+
+        console.log(`Total: ${allSnapshots.snapshots.length}`);
+        return allSnapshots;
+    }
+
     public get sdk() {
         return getSdk(this.client);
     }

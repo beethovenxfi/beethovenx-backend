@@ -121,26 +121,14 @@ export class UserService {
         return this.snapshotService.getPortfolioSnapshots(accountAddress, numDays);
     }
 
+    public async syncLatestSnapshotsForAllUsers(daysToSync?: number) {
+        await this.snapshotService.syncLatestSnapshotsForUsers(daysToSync);
+    }
+
     public async loadUserBalanceSnapshotsForAllUsers() {
+        await prisma.prismaUserPoolBalanceSnapshot.deleteMany({});
         await prisma.prismaUserBalanceSnapshot.deleteMany({});
-
-        // TODO is this correct?
-        const usersWithBalances = await prisma.prismaUser.findMany({
-            include: {
-                walletBalances: { where: { poolId: { not: null }, balanceNum: { gt: 0 } } },
-                stakedBalances: {
-                    where: { poolId: { not: null }, balanceNum: { gt: 0 } },
-                },
-            },
-        });
-
-        const userAddressesWithFunds = usersWithBalances.filter((user) => {
-            if (user.stakedBalances.length > 0 || user.walletBalances.length > 0) {
-                return user.address;
-            }
-        });
-
-        this.snapshotService.loadAllUserSnapshotsForUsers(userAddressesWithFunds.map((user) => user.address));
+        await this.snapshotService.loadAllUserSnapshotsForUsers();
     }
 }
 

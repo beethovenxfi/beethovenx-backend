@@ -318,6 +318,7 @@ export class PoolSnapshotService {
                 where: { tokenAddress: tokenAddress.tokenAddress, timestamp: { gte: timestamp } },
             });
             const tokenPrices = this.getTokenPricesForTimestamp(timestamp, tokenPriceMap);
+            // are these sorted in the same way?
             totalLiquidity += tokenPrices[tokenAddress.tokenAddress] * parseFloat(lastSnapshot.amounts[counter]);
         }
 
