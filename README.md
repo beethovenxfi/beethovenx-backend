@@ -59,3 +59,6 @@ https://backend-optimism-v2.beets-ftm-node.com/graphql
 https://backend-optimism-v2-canary.beets-ftm-node.com/graphql
 
 ## Contributing
+
+To contribute, branch from `v2-main` and open a PR against `v2-canary`. It will
+be reviewed and eventually merged into v2-canary for testing.
