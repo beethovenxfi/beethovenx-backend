@@ -57,6 +57,7 @@ export async function createAlertsIfNotExist(jobs: WorkerJob[]): Promise<void> {
             Trigger alarm if the cron ran less than once in ${periodInSeconds} seconds.`,
             ActionsEnabled: true,
             AlarmActions: [env.AWS_REGION === 'eu-central-1' ? euAlarmTopic : caAlarmTopic],
+            OKActions: [env.AWS_REGION === 'eu-central-1' ? euAlarmTopic : caAlarmTopic],
             MetricName: `${cronJob.name}-done`,
             Statistic: 'Sum',
             Dimensions: [{ Name: 'Environment', Value: env.DEPLOYMENT_ENV }],
