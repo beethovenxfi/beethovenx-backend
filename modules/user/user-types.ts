@@ -45,11 +45,11 @@ export interface UserPoolSnapshot {
     // poolId: string;
     // poolAddress: string;
     // poolName: string;
-    percentShare: number;
     walletBalance: AmountHumanReadable;
     gaugeBalance: AmountHumanReadable;
     farmBalance: AmountHumanReadable;
     totalBalance: AmountHumanReadable;
+    percentShare: number;
     totalValueUSD: AmountHumanReadable;
     fees24h: AmountHumanReadable;
     // totalFees: string;

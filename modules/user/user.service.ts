@@ -14,6 +14,7 @@ import { UserSnapshotService } from './lib/user-snapshot.service';
 import { userSnapshotSubgraphService } from '../subgraphs/user-snapshot-subgraph/user-snapshot-subgraph.service';
 import { PoolSnapshotService } from '../pool/lib/pool-snapshot.service';
 import { coingeckoService } from '../coingecko/coingecko.service';
+import _ from 'lodash';
 
 export class UserService {
     constructor(
@@ -119,16 +120,6 @@ export class UserService {
         numDays: number,
     ): Promise<UserPortfolioSnapshot[]> {
         return this.snapshotService.getPortfolioSnapshots(accountAddress, numDays);
-    }
-
-    public async syncLatestSnapshotsForAllUsers(daysToSync?: number) {
-        await this.snapshotService.syncLatestSnapshotsForUsers(daysToSync);
-    }
-
-    public async loadUserBalanceSnapshotsForAllUsers() {
-        await prisma.prismaUserPoolBalanceSnapshot.deleteMany({});
-        await prisma.prismaUserBalanceSnapshot.deleteMany({});
-        await this.snapshotService.loadAllUserSnapshotsForUsers();
     }
 }
 

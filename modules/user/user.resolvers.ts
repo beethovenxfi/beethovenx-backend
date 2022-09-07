@@ -42,7 +42,11 @@ const resolvers: Resolvers = {
         userGetPoolSnapshots: async (parent, { poolId, range }, context) => {
             const accountAddress = getRequiredAccountAddress(context);
 
-            return userService.getUserBalanceSnapshotsForPool(accountAddress, poolId, range);
+            return userService.getUserBalanceSnapshotsForPool(
+                accountAddress.toLowerCase(),
+                poolId.toLowerCase(),
+                range,
+            );
         },
         userGetPortfolioSnapshots: async (parent, { days }, context) => {
             const accountAddress = getRequiredAccountAddress(context);
@@ -99,20 +103,6 @@ const resolvers: Resolvers = {
             const accountAddress = getRequiredAccountAddress(context);
 
             await userService.syncUserBalanceAllPools(accountAddress);
-
-            return 'success';
-        },
-        userLoadAllUserSnapshots: async (parent, {}, context) => {
-            isAdminRoute(context);
-
-            await userService.loadUserBalanceSnapshotsForAllUsers();
-
-            return 'success';
-        },
-        userSyncLatestSnapshotsForAllUsers: async (parent, { daysToSync }, context) => {
-            isAdminRoute(context);
-
-            await userService.syncLatestSnapshotsForAllUsers(daysToSync || undefined);
 
             return 'success';
         },

@@ -6,8 +6,11 @@ import { UserPortfolioSnapshot, UserPoolSnapshot } from '../user-types';
 import { GqlUserSnapshotDataRange } from '../../../schema';
 import { PoolSnapshotService } from '../../pool/lib/pool-snapshot.service';
 import { formatFixed } from '@ethersproject/bignumber';
+import { UserBalanceSnapshotsQuery } from '../../subgraphs/user-snapshot-subgraph/generated/user-snapshot-subgraph-types';
 
 export class UserSnapshotService {
+    private readonly SECONDS_IN_DAY: number = 86400;
+
     constructor(
         private readonly userSnapshotSubgraphService: UserSnapshotSubgraphService,
         private readonly poolSnapshotService: PoolSnapshotService,
@@ -17,125 +20,207 @@ export class UserSnapshotService {
         throw new Error('Method not implemented.');
     }
 
-    public async syncLatestSnapshotsForUsers(daysToSync: number = 1, userAddresses?: string[]) {
-        if (!userAddresses) {
-            //TODO is this correct?
-            const usersWithBalances = await prisma.prismaUser.findMany({
-                include: {
-                    walletBalances: { where: { poolId: { not: null }, balanceNum: { gt: 0 } } },
-                    stakedBalances: {
-                        where: { poolId: { not: null }, balanceNum: { gt: 0 } },
-                    },
-                },
-            });
-
-            userAddresses = usersWithBalances
-                .filter(
-                    (user) =>
-                        (user.stakedBalances.length > 0 || user.walletBalances.length > 0) &&
-                        user.address !== '0x000000000000000000000000000000000000dead' &&
-                        user.address !== '0x0000000000000000000000000000000000000000',
-                )
-                .map((user) => user.address);
-        }
-
-        let syncFromTimestamp = 0;
-        if (daysToSync > 0) {
-            syncFromTimestamp = moment().utc().startOf('day').subtract(daysToSync, 'days').unix();
-        }
-
-        let count = 0;
-
-        for (const userId of userAddresses) {
-            console.log(`Loading user ${count} of ${userAddresses.length}`);
-            count += 1;
-            const { snapshots: subgraphUserBalanceSnapshots } =
-                await this.userSnapshotSubgraphService.userBalanceSnapshots({
-                    where: {
-                        user: userId,
-                        timestamp_gte: syncFromTimestamp,
-                    },
-                });
-
-            await prisma.prismaUserBalanceSnapshot.createMany({
-                data: subgraphUserBalanceSnapshots.map((snapshot) => {
-                    return {
-                        id: snapshot.id,
-                        userAddress: snapshot.user.id.toLowerCase(),
-                        timestamp: snapshot.timestamp,
-                    };
-                }),
-            });
-
-            const allPoolsFromSnapshot = await prisma.prismaPool.findMany({
-                where: {
-                    OR: [
-                        {
-                            address: {
-                                in: subgraphUserBalanceSnapshots.map((snapshot) => snapshot.walletTokens).flat(),
-                            },
-                        },
-                        {
-                            staking: {
-                                id: {
-                                    in: subgraphUserBalanceSnapshots
-                                        .map((snapshot) => [...snapshot.farms, ...snapshot.gauges])
-                                        .flat(),
-                                },
-                            },
-                        },
-                    ],
-                },
-                include: { staking: true },
-            });
-            for (const snapshot of subgraphUserBalanceSnapshots) {
-                const prismaInput = [];
-                for (const pool of allPoolsFromSnapshot) {
-                    const walletIdx = snapshot.walletTokens.indexOf(pool.address);
-                    const walletBalance = walletIdx !== -1 ? snapshot.walletBalances[walletIdx] : '0';
-                    const gaugeIdx = snapshot.gauges.indexOf(pool.staking?.id || '');
-                    const gaugeBalance = gaugeIdx !== -1 ? snapshot.gaugeBalances[gaugeIdx] : '0';
-                    const farmIdx = snapshot.gauges.indexOf(pool.staking?.id || '');
-                    const farmBalance = farmIdx !== -1 ? snapshot.farmBalances[farmIdx] : '0';
-                    const totalBalanceScaled = parseUnits(walletBalance, 18)
-                        .add(parseUnits(gaugeBalance, 18))
-                        .add(parseUnits(farmBalance, 18));
-
-                    if (parseFloat(formatFixed(totalBalanceScaled)) > 0) {
-                        prismaInput.push({
-                            id: `${pool.address}-${snapshot.id}`,
-                            userBalanceSnapshotId: snapshot.id,
-                            poolId: pool.id,
-                            poolToken: pool.address,
-                            walletBalance,
-                            gaugeBalance,
-                            farmBalance,
-                            totalBalance: formatFixed(totalBalanceScaled),
-                        });
-                    }
-                }
-
-                await prisma.prismaUserPoolBalanceSnapshot.createMany({
-                    data: prismaInput,
-                });
-            }
-        }
-    }
-
-    public async loadAllUserSnapshotsForUsers(userIds?: string[]) {
-        await this.syncLatestSnapshotsForUsers(-1, userIds);
+    public async syncUserSnapshots() {
+        // sync all snapshots that we have stored
     }
 
     public async getUserSnapshotsForPool(
-        accountAddress: string,
+        userAddress: string,
         poolId: string,
         range: GqlUserSnapshotDataRange,
     ): Promise<UserPoolSnapshot[]> {
         const oldestRequestedSnapshotTimestamp = this.getTimestampForRange(range);
 
-        const userBalanceSnapshotsForPoolInRange = await prisma.prismaUserBalanceSnapshot.findMany({
+        // TODO this now has a snapshot for every day since pool launch and lots of 0 snapshots at the front. need to only get snapshots after user has entered pool
+        let storedUserSnapshotsFromRange = await this.getStoredSnapshotsForUserForPoolFromTimestamp(
+            userAddress,
+            oldestRequestedSnapshotTimestamp,
+            poolId,
+        );
+
+        if (storedUserSnapshotsFromRange.length === 0) {
+            const userSnapshotsFromSubgraphForAllPools = await this.userSnapshotSubgraphService.getUserBalanceSnapshots(
+                0,
+                moment().unix(),
+                userAddress,
+            );
+            const pool = await prisma.prismaPool.findUniqueOrThrow({
+                where: {
+                    id: poolId,
+                },
+                include: {
+                    staking: true,
+                },
+            });
+            const userSnapshotsForPools = userSnapshotsFromSubgraphForAllPools.snapshots.filter((snapshot) => {
+                if (pool.staking) {
+                    return (
+                        snapshot.walletTokens.includes(pool.address) ||
+                        snapshot.farms.includes(pool.staking?.id) ||
+                        snapshot.gauges.includes(pool.staking?.id)
+                    );
+                }
+                return snapshot.walletTokens.includes(pool.address);
+            });
+            userSnapshotsFromSubgraphForAllPools.snapshots = userSnapshotsForPools;
+
+            if (userSnapshotsFromSubgraphForAllPools.snapshots.length === 0) {
+                return [];
+            }
+
+            // need to fill in missing snapshots (doesn't work to infer up to NOW)
+            const userSnapshotsToPersist: UserBalanceSnapshotsQuery = {
+                snapshots: [],
+            };
+            userSnapshotsToPersist.snapshots.push(userSnapshotsFromSubgraphForAllPools.snapshots[0]);
+            let firstIteration = true;
+            for (const snapshot of userSnapshotsFromSubgraphForAllPools.snapshots) {
+                if (firstIteration) {
+                    firstIteration = false;
+                    continue;
+                }
+                while (
+                    userSnapshotsToPersist.snapshots[userSnapshotsToPersist.snapshots.length - 1].timestamp +
+                        this.SECONDS_IN_DAY <
+                    snapshot.timestamp
+                ) {
+                    //need to infer from last snapshot
+                    const lastSnapshot = userSnapshotsToPersist.snapshots[userSnapshotsToPersist.snapshots.length - 1];
+                    userSnapshotsToPersist.snapshots.push({
+                        id: `${userAddress}-${lastSnapshot.timestamp + this.SECONDS_IN_DAY}`,
+                        timestamp: lastSnapshot.timestamp + this.SECONDS_IN_DAY,
+                        user: {
+                            id: userAddress,
+                        },
+                        walletTokens: lastSnapshot.walletTokens,
+                        walletBalances: lastSnapshot.walletBalances,
+                        farms: lastSnapshot.farms,
+                        farmBalances: lastSnapshot.farmBalances,
+                        gauges: lastSnapshot.gauges,
+                        gaugeBalances: lastSnapshot.gaugeBalances,
+                    });
+                }
+                userSnapshotsToPersist.snapshots.push(snapshot);
+            }
+            // TODO or up to the day before??
+            // check if we need to infer up to today (or up to yesterday??)
+            while (
+                userSnapshotsToPersist.snapshots[userSnapshotsToPersist.snapshots.length - 1].timestamp <
+                moment().startOf('day').unix()
+            ) {
+                const lastSnapshot = userSnapshotsToPersist.snapshots[userSnapshotsToPersist.snapshots.length - 1];
+                userSnapshotsToPersist.snapshots.push({
+                    id: `${userAddress}-${lastSnapshot.timestamp + this.SECONDS_IN_DAY}`,
+                    timestamp: lastSnapshot.timestamp + this.SECONDS_IN_DAY,
+                    user: {
+                        id: userAddress,
+                    },
+                    walletTokens: lastSnapshot.walletTokens,
+                    walletBalances: lastSnapshot.walletBalances,
+                    farms: lastSnapshot.farms,
+                    farmBalances: lastSnapshot.farmBalances,
+                    gauges: lastSnapshot.gauges,
+                    gaugeBalances: lastSnapshot.gaugeBalances,
+                });
+            }
+            await this.enrichAndPersistSnapshotsForPool(userSnapshotsToPersist, poolId);
+        }
+
+        storedUserSnapshotsFromRange = await this.getStoredSnapshotsForUserForPoolFromTimestamp(
+            userAddress,
+            oldestRequestedSnapshotTimestamp,
+            poolId,
+        );
+
+        return storedUserSnapshotsFromRange.map((snapshot) => ({
+            id: snapshot.id,
+            timestamp: snapshot.timestamp,
+            walletBalance: snapshot.userPoolBalanceSnapshots[0].walletBalance,
+            farmBalance: snapshot.userPoolBalanceSnapshots[0].farmBalance,
+            fees24h: snapshot.userPoolBalanceSnapshots[0].fees24h,
+            gaugeBalance: snapshot.userPoolBalanceSnapshots[0].gaugeBalance,
+            percentShare: parseFloat(snapshot.userPoolBalanceSnapshots[0].percentShare),
+            totalBalance: snapshot.userPoolBalanceSnapshots[0].totalBalance,
+            totalValueUSD: snapshot.userPoolBalanceSnapshots[0].totalValueUSD,
+        }));
+    }
+
+    private async enrichAndPersistSnapshotsForPool(
+        userBalanceSnapshotsQuery: UserBalanceSnapshotsQuery,
+        poolId: string,
+    ) {
+        const { snapshots: userBalanceSnapshots } = userBalanceSnapshotsQuery;
+
+        await prisma.prismaUserBalanceSnapshot.createMany({
+            data: userBalanceSnapshots.map((snapshot) => {
+                return {
+                    id: snapshot.id,
+                    userAddress: snapshot.user.id.toLowerCase(),
+                    timestamp: snapshot.timestamp,
+                };
+            }),
+            skipDuplicates: true,
+        });
+
+        const poolInSnapshots = await prisma.prismaPool.findUniqueOrThrow({
             where: {
-                userAddress: accountAddress,
+                id: poolId,
+            },
+            include: {
+                staking: true,
+            },
+        });
+
+        const prismaInput = [];
+        for (const snapshot of userBalanceSnapshots) {
+            const poolSnapshotForTimestamp = await this.poolSnapshotService.getOrInferSnapshotForPool(
+                poolId,
+                snapshot.timestamp,
+            );
+
+            const walletIdx = snapshot.walletTokens.indexOf(poolInSnapshots.address);
+            const walletBalance = walletIdx !== -1 ? snapshot.walletBalances[walletIdx] : '0';
+            const gaugeIdx = snapshot.gauges.indexOf(poolInSnapshots.staking?.id || '');
+            const gaugeBalance = gaugeIdx !== -1 ? snapshot.gaugeBalances[gaugeIdx] : '0';
+            const farmIdx = snapshot.farms.indexOf(poolInSnapshots.staking?.id || '');
+            const farmBalance = farmIdx !== -1 ? snapshot.farmBalances[farmIdx] : '0';
+            const totalBalanceScaled = parseUnits(walletBalance, 18)
+                .add(parseUnits(gaugeBalance, 18))
+                .add(parseUnits(farmBalance, 18));
+
+            const percentShare =
+                parseFloat(formatFixed(totalBalanceScaled, 18)) / poolSnapshotForTimestamp.totalSharesNum;
+
+            prismaInput.push({
+                id: `${poolInSnapshots.address}-${snapshot.id}`,
+                userBalanceSnapshotId: snapshot.id,
+                poolId: poolInSnapshots.id,
+                poolToken: poolInSnapshots.address,
+                walletBalance,
+                gaugeBalance,
+                farmBalance,
+                percentShare: `${percentShare}`,
+                totalBalance: formatFixed(totalBalanceScaled, 18),
+                totalValueUSD: `${
+                    parseFloat(formatFixed(totalBalanceScaled, 18)) * (poolSnapshotForTimestamp?.sharePrice || 0)
+                }`,
+                // TODO reduce by share taken from protocol (0.7 and 0.5 respectively)
+                fees24h: `${percentShare * (poolSnapshotForTimestamp?.fees24h || 0) * 0.7}`,
+            });
+        }
+        await prisma.prismaUserPoolBalanceSnapshot.createMany({
+            data: prismaInput,
+        });
+    }
+
+    private async getStoredSnapshotsForUserForPoolFromTimestamp(
+        userAddress: string,
+        oldestRequestedSnapshotTimestamp: number,
+        poolId: string,
+    ) {
+        return await prisma.prismaUserBalanceSnapshot.findMany({
+            where: {
+                userAddress: userAddress,
                 timestamp: {
                     gte: oldestRequestedSnapshotTimestamp,
                 },
@@ -145,111 +230,9 @@ export class UserSnapshotService {
                     },
                 },
             },
-            // select: {
-            //     id: true,
-            //     userAddress: true,
-            //     timestamp: true,
-            //     userPoolBalanceSnapshots: {
-            //         select: {
-            //             farmBalance: true,
-            //             gaugeBalance: true,
-            //             walletBalance: true,
-            //             poolId: true,
-            //             totalBalance: true,
-            //             pool: {
-            //                 select: {
-            //                     snapshots: {
-            //                         where: {
-            //                             timestamp: {
-            //                                 gte: oldestRequestedSnapshotTimestamp,
-            //                             },
-            //                         },
-            //                     },
-            //                 },
-            //             },
-            //         },
-            //     },
-            // },
             include: { userPoolBalanceSnapshots: true },
-            // include: { userPoolBalanceSnapshots: {include: { pool: {include: {snapshots: true}}}} },
             orderBy: { timestamp: 'asc' },
         });
-
-        if (userBalanceSnapshotsForPoolInRange.length === 0) {
-            return [];
-        }
-
-        //oldest snapshot is not old enough, let's see if we find an older one
-        if (userBalanceSnapshotsForPoolInRange[0].timestamp !== oldestRequestedSnapshotTimestamp) {
-            const olderUserBalanceSnapshotsForPool = await prisma.prismaUserBalanceSnapshot.findFirst({
-                where: {
-                    userAddress: accountAddress,
-                    timestamp: {
-                        lt: oldestRequestedSnapshotTimestamp,
-                    },
-                    userPoolBalanceSnapshots: {
-                        some: {
-                            poolId: poolId,
-                        },
-                    },
-                },
-                include: { userPoolBalanceSnapshots: true },
-                orderBy: { timestamp: 'desc' },
-            });
-
-            // found one, adjust timestamp and pool snapshots, else, we just don't have em
-            if (olderUserBalanceSnapshotsForPool) {
-                olderUserBalanceSnapshotsForPool.timestamp = oldestRequestedSnapshotTimestamp;
-                olderUserBalanceSnapshotsForPool.id = `poolId-${olderUserBalanceSnapshotsForPool.userAddress}-${oldestRequestedSnapshotTimestamp}`;
-                // put at the front of the array
-                userBalanceSnapshotsForPoolInRange.unshift(olderUserBalanceSnapshotsForPool);
-            }
-        }
-
-        const userPoolSnapshots = [];
-        let userPoolSnapshotsCounter = 0;
-        const secondsInADay = 86400;
-
-        for (const snapshot of userBalanceSnapshotsForPoolInRange) {
-            console.log(`Getting snapshot ${userPoolSnapshotsCounter} of ${userBalanceSnapshotsForPoolInRange.length}`);
-            let snapshotToUse = snapshot;
-            // use previous snapshot
-            const currentProcessedTimestamp =
-                oldestRequestedSnapshotTimestamp + userPoolSnapshotsCounter * secondsInADay;
-            if (snapshot.timestamp !== currentProcessedTimestamp) {
-                snapshotToUse = userBalanceSnapshotsForPoolInRange[userPoolSnapshotsCounter];
-                snapshotToUse.timestamp = currentProcessedTimestamp;
-                snapshotToUse.id = `poolId-${snapshotToUse.userAddress}-${currentProcessedTimestamp}`;
-            }
-
-            const poolSnapshotForTimestamp = await this.poolSnapshotService.getOrInferSnapshotForPool(
-                poolId,
-                currentProcessedTimestamp,
-            );
-
-            const percentShare = poolSnapshotForTimestamp
-                ? parseFloat(snapshot.userPoolBalanceSnapshots[0].totalBalance) /
-                  poolSnapshotForTimestamp.totalSharesNum
-                : 0;
-
-            userPoolSnapshots.push({
-                id: snapshot.id,
-                timestamp: snapshot.timestamp,
-                walletBalance: snapshot.userPoolBalanceSnapshots[0].walletBalance,
-                gaugeBalance: snapshot.userPoolBalanceSnapshots[0].gaugeBalance,
-                farmBalance: snapshot.userPoolBalanceSnapshots[0].farmBalance,
-                totalBalance: snapshot.userPoolBalanceSnapshots[0].totalBalance,
-                percentShare: percentShare,
-                totalValueUSD: `${
-                    parseFloat(snapshot.userPoolBalanceSnapshots[0].totalBalance) *
-                    (poolSnapshotForTimestamp?.sharePrice || 0)
-                }`,
-                fees24h: `${percentShare * (poolSnapshotForTimestamp?.fees24h || 0)}`,
-            });
-            userPoolSnapshotsCounter++;
-        }
-
-        return userPoolSnapshots;
     }
 
     private getTimestampForRange(range: GqlUserSnapshotDataRange): number {
@@ -264,21 +247,6 @@ export class UserSnapshotService {
                 return moment().startOf('day').subtract(365, 'days').unix();
             case 'ALL_TIME':
                 return 0;
-        }
-    }
-
-    private getDaysForRange(range: GqlUserSnapshotDataRange): number {
-        switch (range) {
-            case 'THIRTY_DAYS':
-                return 30;
-            case 'NINETY_DAYS':
-                return 90;
-            case 'ONE_HUNDRED_EIGHTY_DAYS':
-                return 180;
-            case 'ONE_YEAR':
-                return 365;
-            case 'ALL_TIME':
-                return -1;
         }
     }
 }

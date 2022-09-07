@@ -48,7 +48,34 @@ export class UserSnapshotSubgraphService {
         });
     }
 
-    public async getAllBalanceSnapshotsForLastNDays(numDays: number): Promise<UserBalanceSnapshotsQuery> {
+    public async getUserBalanceSnapshots(
+        fromTimestamp: number,
+        toTimestamp: number,
+        userAddress: string,
+    ): Promise<UserBalanceSnapshotsQuery> {
+        let allSnapshots: UserBalanceSnapshotsQuery = {
+            snapshots: [],
+        };
+        do {
+            const result = await this.sdk.UserBalanceSnapshots({
+                where: { timestamp_gte: fromTimestamp, timestamp_lte: toTimestamp, user: userAddress.toLowerCase() },
+                first: 1000,
+                orderBy: UserBalanceSnapshot_OrderBy.Timestamp,
+                orderDirection: OrderDirection.Asc,
+            });
+            if (result.snapshots.length === 0) {
+                break;
+            }
+            allSnapshots.snapshots = [...allSnapshots.snapshots, ...result.snapshots];
+            console.log(`Got ${result.snapshots.length} from subgraph, now got ${allSnapshots.snapshots.length}`);
+            fromTimestamp = result.snapshots[result.snapshots.length - 1].timestamp + 1;
+        } while (true);
+
+        console.log(`Total: ${allSnapshots.snapshots.length}`);
+        return allSnapshots;
+    }
+
+    public async getAllUserBalanceSnapshots(numDays: number): Promise<UserBalanceSnapshotsQuery> {
         let timestamp = 0;
         if (numDays > 0) {
             timestamp = moment().utc().startOf('day').subtract(numDays, 'days').unix();

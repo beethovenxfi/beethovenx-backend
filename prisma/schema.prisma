@@ -533,4 +533,7 @@ model PrismaUserPoolBalanceSnapshot {
     gaugeBalance            String
     farmBalance             String
     totalBalance            String
+    percentShare            String
+    totalValueUSD           String
+    fees24h                 String
 }
