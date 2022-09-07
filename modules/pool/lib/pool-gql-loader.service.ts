@@ -59,14 +59,16 @@ export class PoolGqlLoaderService {
             include: prismaPoolMinimal.include,
         });
 
-        return pools.map((pool) => {
-            return {
-                ...pool,
-                decimals: 18,
-                dynamicData: this.getPoolDynamicData(pool),
-                allTokens: this.mapAllTokens(pool),
-            };
-        });
+        return pools.map((pool) => this.mapToMinimalGqlPool(pool));
+    }
+
+    public mapToMinimalGqlPool(pool: PrismaPoolMinimal): GqlPoolMinimal {
+        return {
+            ...pool,
+            decimals: 18,
+            dynamicData: this.getPoolDynamicData(pool),
+            allTokens: this.mapAllTokens(pool),
+        };
     }
 
     public async getPoolsCount(args: QueryPoolGetPoolsArgs): Promise<number> {
@@ -156,6 +158,38 @@ export class PoolGqlLoaderService {
 
         const where = args.where;
         const textSearch = args.textSearch ? { contains: args.textSearch, mode: 'insensitive' as const } : undefined;
+
+        const allTokensFilter = [];
+        where?.tokensIn?.forEach((token) => {
+            allTokensFilter.push({
+                allTokens: {
+                    some: {
+                        token: {
+                            address: {
+                                equals: token,
+                                mode: 'insensitive' as const,
+                            },
+                        },
+                    },
+                },
+            });
+        });
+
+        if (where?.tokensNotIn) {
+            allTokensFilter.push({
+                allTokens: {
+                    every: {
+                        token: {
+                            address: {
+                                notIn: where.tokensNotIn || undefined,
+                                mode: 'insensitive' as const,
+                            },
+                        },
+                    },
+                },
+            });
+        }
+
         const filterArgs: Prisma.PrismaPoolWhereInput = {
             dynamicData: {
                 totalSharesNum: {
@@ -166,28 +200,7 @@ export class PoolGqlLoaderService {
                 in: where?.poolTypeIn || undefined,
                 notIn: where?.poolTypeNotIn || undefined,
             },
-            allTokens: {
-                ...(where?.tokensNotIn
-                    ? {
-                          every: {
-                              token: {
-                                  address: {
-                                      notIn: where?.tokensNotIn || undefined,
-                                      mode: 'insensitive',
-                                  },
-                              },
-                          },
-                      }
-                    : {}),
-                some: {
-                    token: {
-                        address: {
-                            in: where?.tokensIn || undefined,
-                            mode: 'insensitive',
-                        },
-                    },
-                },
-            },
+            AND: allTokensFilter,
             id: {
                 in: where?.idIn || undefined,
                 notIn: where?.idNotIn || undefined,
@@ -287,9 +300,15 @@ export class PoolGqlLoaderService {
         //TODO: may need to build out the types here still
         switch (pool.type) {
             case 'STABLE':
-            case 'META_STABLE':
                 return {
                     __typename: 'GqlPoolStable',
+                    ...mappedData,
+                    amp: pool.stableDynamicData?.amp || '0',
+                    tokens: mappedData.tokens as GqlPoolToken[],
+                };
+            case 'META_STABLE':
+                return {
+                    __typename: 'GqlPoolMetaStable',
                     ...mappedData,
                     amp: pool.stableDynamicData?.amp || '0',
                     tokens: mappedData.tokens as GqlPoolToken[],
@@ -376,7 +395,7 @@ export class PoolGqlLoaderService {
             fees24hAth,
             fees24hAtlTimestamp,
         } = pool.dynamicData!;
-        const aprItems = pool.aprItems?.filter(item => item.apr > 0) || [];
+        const aprItems = pool.aprItems?.filter((item) => item.apr > 0) || [];
         const swapAprItems = aprItems.filter((item) => item.type == 'SWAP_FEE');
         const nativeRewardAprItems = aprItems.filter((item) => item.type === 'NATIVE_REWARD');
         const thirdPartyRewardAprItems = aprItems.filter((item) => item.type === 'THIRD_PARTY_REWARD');
@@ -439,6 +458,7 @@ export class PoolGqlLoaderService {
                         }
 
                         return {
+                            id: group,
                             title,
                             apr: `${apr}`,
                             subItems,
@@ -461,7 +481,7 @@ export class PoolGqlLoaderService {
 
         return {
             //TODO could flag these as disabled in sanity
-            proportionalEnabled: pool.type !== 'PHANTOM_STABLE',
+            proportionalEnabled: pool.type !== 'PHANTOM_STABLE' && pool.type !== 'META_STABLE',
             singleAssetEnabled: true,
             options,
         };

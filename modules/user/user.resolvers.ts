@@ -39,12 +39,17 @@ const resolvers: Resolvers = {
 
             return userService.getUserStaking(accountAddress);
         },
+        userGetPoolSnapshots: async (parent, args, context) => {
+            const userAddress = getRequiredAccountAddress(context);
+
+            return userService.getPoolSnapshots({ ...args, userAddress });
+        },
     },
     Mutation: {
-        userSyncWalletBalancesForAllPools: async (parent, {}, context) => {
+        userSyncChangedWalletBalancesForAllPools: async (parent, {}, context) => {
             isAdminRoute(context);
 
-            await userService.initWalletBalancesForAllPools();
+            await userService.syncChangedWalletBalancesForAllPools();
 
             return 'success';
         },
@@ -69,10 +74,10 @@ const resolvers: Resolvers = {
 
             return 'success';
         },
-        userSyncStakedBalances: async (parent, {}, context) => {
+        userSyncChangedStakedBalances: async (parent, {}, context) => {
             isAdminRoute(context);
 
-            await userService.syncStakedBalances();
+            await userService.syncChangedStakedBalances();
 
             return 'success';
         },

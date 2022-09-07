@@ -67,22 +67,6 @@ generates:
         schema: ${BEETS_BAR_SUBGRAPH}
         plugins:
             - schema-ast
-    modules/subgraphs/changelog-subgraph/generated/changelog-subgraph-types.ts:
-        schema: ${CHANGELOG_SUBGRAPH}
-        documents: 'modules/subgraphs/changelog-subgraph/changelog-subgraph-queries.graphql'
-        plugins:
-            - typescript
-            - typescript-operations
-            - typescript-graphql-request
-        config:
-            scalars:
-                BigInt: string
-                Bytes: string
-                BigDecimal: string
-    modules/subgraphs/changelog-subgraph/generated/changelog-subgraph-schema.graphql:
-        schema: ${CHANGELOG_SUBGRAPH}
-        plugins:
-            - schema-ast
     modules/subgraphs/gauge-subgraph/generated/gauge-subgraph-types.ts:
         schema: ${GAUGE_SUBGRAPH}
         documents: 'modules/subgraphs/gauge-subgraph/gauge-subgraph-queries.graphql'
@@ -97,6 +81,22 @@ generates:
                 BigDecimal: string
     modules/subgraphs/gauge-subgraph/generated/gauge-subgraph-schema.graphql:
         schema: ${GAUGE_SUBGRAPH}
+        plugins:
+            - schema-ast
+    modules/subgraphs/user-snapshot-subgraph/generated/user-snapshot-subgraph-types.ts:
+        schema: ${USER_SNAPSHOT_SUBGRPAH}
+        documents: 'modules/subgraphs/user-snapshot-subgraph/user-snapshot-subgraph-queries.graphql'
+        plugins:
+            - typescript
+            - typescript-operations
+            - typescript-graphql-request
+        config:
+            scalars:
+                BigInt: string
+                Bytes: string
+                BigDecimal: string
+    modules/subgraphs/user-snapshot-subgraph/generated/user-snapshot-schema.graphql:
+        schema: ${USER_SNAPSHOT_SUBGRPAH}
         plugins:
             - schema-ast
     graphql_schema_generated.ts:

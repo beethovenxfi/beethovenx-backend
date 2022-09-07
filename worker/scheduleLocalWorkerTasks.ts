@@ -111,7 +111,7 @@ export function scheduleLocalWorkerTasks() {
 
     //every 30 seconds
     scheduleJob('*/30 * * * * *', 'poolUpdateLiquidityValuesForAllPools', TWO_MINUTES_IN_MS, async () => {
-        await poolService.updateLiquidityValuesForAllPools();
+        await poolService.updateLiquidityValuesForPools();
         await poolService.updatePoolAprs();
     });
 
@@ -280,10 +280,10 @@ export function scheduleLocalWorkerTasks() {
     }).catch((error) => console.log('Error starting syncChangedPools...', error));
 
     addRpcListener('userSyncWalletBalancesForAllPools', 'block', ONE_MINUTE_IN_MS, async () => {
-        await userService.syncWalletBalancesForAllPools();
+        await userService.syncChangedWalletBalancesForAllPools();
     });
 
     addRpcListener('userSyncStakedBalances', 'block', ONE_MINUTE_IN_MS, async () => {
-        await userService.syncStakedBalances();
+        await userService.syncChangedStakedBalances();
     });
 }

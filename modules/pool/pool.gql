@@ -23,6 +23,7 @@ extend type Query {
     poolGetUserSwapVolume(first: Int, skip: Int, where: GqlUserSwapVolumeFilter): [GqlPoolUserSwapVolume!]!
     poolGetFeaturedPoolGroups: [GqlPoolFeaturedPoolGroup!]!
     poolGetSnapshots(id: String!, range: GqlPoolSnapshotDataRange!): [GqlPoolSnapshot!]!
+    poolGetAllPoolsSnapshots(range: GqlPoolSnapshotDataRange!): [GqlPoolSnapshot!]!
 }
 
 extend type Mutation {
@@ -46,6 +47,7 @@ extend type Mutation {
     poolUpdateLifetimeValuesForAllPools: String!
     poolInitializeSnapshotsForPool(poolId: String!): String!
     poolSyncPool(poolId: String!): String!
+    poolReloadPoolNestedTokens(poolId: String!): String!
 }
 
 type GqlPoolMinimal {
@@ -231,6 +233,25 @@ type GqlPoolStable implements GqlPoolBase {
     staking: GqlPoolStaking
 }
 
+type GqlPoolMetaStable implements GqlPoolBase {
+    id: ID!
+    name: String!
+    symbol: String!
+    address: Bytes!
+    decimals: Int!
+    owner: Bytes!
+    factory: Bytes
+    createTime: Int!
+    investConfig: GqlPoolInvestConfig!
+    withdrawConfig: GqlPoolWithdrawConfig!
+    dynamicData: GqlPoolDynamicData!
+    allTokens: [GqlPoolTokenExpanded!]!
+
+    tokens: [GqlPoolToken!]!
+    amp: BigInt!
+    staking: GqlPoolStaking
+}
+
 type GqlPoolPhantomStable implements GqlPoolBase {
     id: ID!
     name: String!
@@ -336,6 +357,7 @@ type GqlPoolPhantomStableNested {
 union GqlPoolUnion =
       GqlPoolWeighted
     | GqlPoolStable
+    | GqlPoolMetaStable
     | GqlPoolLinear
     | GqlPoolPhantomStable
     | GqlPoolElement
@@ -643,12 +665,14 @@ type GqlPoolJoinExitAmount {
 }
 
 type GqlBalancePoolAprItem {
+    id: ID!
     title: String!
     apr: BigDecimal!
     subItems: [GqlBalancePoolAprSubItem!]
 }
 
 type GqlBalancePoolAprSubItem {
+    id: ID!
     title: String!
     apr: BigDecimal!
 }

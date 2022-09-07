@@ -9,6 +9,7 @@ env:
         SUBGRAPH_ORIG: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beets-bar'
         CHANGELOG_SUBGRAPH: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/changelog'
         GAUGE_SUBGRAPH: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/balancer-gauges-optimism'
+        USER_SNAPSHOT_SUBGRPAH: 'https://api.thegraph.com/subgraphs/name/danielmkm/user-balances-fantom'
 phases:
     install:
         commands:
@@ -21,8 +22,6 @@ phases:
             - yarn build
     post_build:
         commands:
-            - echo Set cron.yaml for chain $CHAIN_SLUG
-            - mv ./worker/cron-$CHAIN_SLUG.yaml ./cron.yaml
             - echo Build completed on `date`
 #      - echo Pushing to graph cdn
 #      - npx graphcdn push

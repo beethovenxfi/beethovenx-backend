@@ -48,6 +48,21 @@ const balancerResolvers: Resolvers = {
                 holdersCount: `${snapshot.holdersCount}`,
             }));
         },
+        poolGetAllPoolsSnapshots: async (parent, { range }, context) => {
+            const snapshots = await poolService.getSnapshotsForAllPools(range);
+
+            return snapshots.map((snapshot) => ({
+                ...snapshot,
+                totalLiquidity: `${snapshot.totalLiquidity}`,
+                sharePrice: `${snapshot.sharePrice}`,
+                volume24h: `${snapshot.volume24h}`,
+                fees24h: `${snapshot.fees24h}`,
+                totalSwapVolume: `${snapshot.totalSwapVolume}`,
+                totalSwapFee: `${snapshot.totalSwapFee}`,
+                swapsCount: `${snapshot.swapsCount}`,
+                holdersCount: `${snapshot.holdersCount}`,
+            }));
+        },
     },
     Mutation: {
         poolSyncAllPoolsFromSubgraph: async (parent, {}, context) => {
@@ -70,7 +85,7 @@ const balancerResolvers: Resolvers = {
         poolUpdateLiquidityValuesForAllPools: async (parent, {}, context) => {
             isAdminRoute(context);
 
-            await poolService.updateLiquidityValuesForAllPools();
+            await poolService.updateLiquidityValuesForPools();
 
             return 'success';
         },
@@ -191,6 +206,13 @@ const balancerResolvers: Resolvers = {
 
             const latestBlockNumber = await jsonRpcProvider.getBlockNumber();
             await poolService.updateOnChainDataForPools([poolId], latestBlockNumber);
+
+            return 'success';
+        },
+        poolReloadPoolNestedTokens: async (parent, { poolId }, context) => {
+            isAdminRoute(context);
+
+            await poolService.reloadPoolNestedTokens(poolId);
 
             return 'success';
         },
