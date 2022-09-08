@@ -302,26 +302,23 @@ export class PoolSnapshotService {
     }
 
     private async inferSnapshotFromLast(
-        // TODO extend PrismaPoolSnapshot with tokens[] to get amounts for tokens
         lastSnapshot: PrismaPoolSnapshot,
         timestamp: number,
     ): Promise<PrismaPoolSnapshot> {
         const poolTokensAddresses = await prisma.prismaPool.findUniqueOrThrow({
             where: { id: lastSnapshot.poolId },
-            select: { allTokens: { select: { tokenAddress: true } } },
+            select: { tokens: { select: { address: true, index: true } } },
         });
 
-        let counter = 0;
         let totalLiquidity = 0;
-        for (const token of poolTokensAddresses.allTokens) {
+        for (const token of poolTokensAddresses.tokens) {
             const tokenPriceMap: TokenHistoricalPrices = {};
             // TODO how far back are token prices saved?
-            tokenPriceMap[token.tokenAddress] = await prisma.prismaTokenPrice.findMany({
-                where: { tokenAddress: token.tokenAddress, timestamp: { gte: timestamp } },
+            tokenPriceMap[token.address] = await prisma.prismaTokenPrice.findMany({
+                where: { tokenAddress: token.address, timestamp: { gte: timestamp } },
             });
             const tokenPrices = this.getTokenPricesForTimestamp(timestamp, tokenPriceMap);
-            // TODO are these sorted in the same way? No... need to change
-            totalLiquidity += tokenPrices[token.tokenAddress] * parseFloat(lastSnapshot.amounts[counter]);
+            totalLiquidity += tokenPrices[token.address] * parseFloat(lastSnapshot.amounts[token.index]);
         }
 
         lastSnapshot.id = `${lastSnapshot.poolId}-${timestamp}`;
