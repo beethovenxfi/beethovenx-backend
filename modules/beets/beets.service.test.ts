@@ -1,9 +1,13 @@
 import { prisma } from '../../prisma/prisma-client';
 import { isFantomNetwork } from '../config/network-config';
-import { createTestDb, TestDatabase } from '../tests-helper/jest-test-helpers';
+import { createSchemaForTest } from '../tests-helper/jest-test-helpers';
 import { server } from '../tests-helper/mocks/server';
 import { beetsService } from './beets.service';
 import { rpcHandlers } from './mock-handlers/rpc';
+
+beforeAll(async () => {
+    await createSchemaForTest();
+});
 
 beforeEach(async () => {
     server.use(...rpcHandlers);
@@ -43,4 +47,8 @@ test('retrieve updated fBeets ratio', async () => {
     } else {
         expect(ratio).toBe('1.0');
     }
+});
+
+afterAll(async () => {
+    prisma.$disconnect();
 });

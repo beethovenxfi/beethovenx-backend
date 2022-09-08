@@ -1,9 +1,9 @@
-import { createTestDb, TestDatabase } from './jest-test-helpers';
+import { startTestDb, TestDatabase } from './jest-test-helpers';
 import { server } from './mocks/server';
 let db: TestDatabase;
 
 beforeAll(async () => {
-    db = await createTestDb();
+    db = await startTestDb();
     server.listen();
 }, 60000);
 // Reset any request handlers that we may add during the tests,
@@ -12,6 +12,6 @@ afterEach(() => server.resetHandlers());
 
 // Clean up after the tests are finished.
 afterAll(async () => {
+    db.stop();
     server.close();
-    await db.stop();
 });
