@@ -1,6 +1,6 @@
-import { startTestDb, TestDatabase } from './jest-test-helpers';
+import { startTestDb, TestDatabaseContainer } from './jest-test-helpers';
 import { server } from './mocks/server';
-let db: TestDatabase;
+let db: TestDatabaseContainer;
 
 beforeAll(async () => {
     db = await startTestDb();
