@@ -6,6 +6,7 @@ import { PrismaPoolType } from '@prisma/client';
 import _ from 'lodash';
 import { prismaPoolWithExpandedNesting } from '../../../prisma/prisma-types';
 import { UserService } from '../../user/user.service';
+import { isStablePool } from './pool-utils';
 
 export class PoolCreatorService {
     constructor(private readonly userService: UserService) {}
@@ -187,19 +188,15 @@ export class PoolCreatorService {
                               },
                           }
                         : undefined,
-                stableDynamicData:
-                    poolType === 'STABLE' ||
-                    poolType === 'PHANTOM_STABLE' ||
-                    poolType === 'COMPOSABLE_STABLE' ||
-                    poolType === 'META_STABLE'
-                        ? {
-                              create: {
-                                  id: pool.id,
-                                  amp: pool.amp || '',
-                                  blockNumber,
-                              },
-                          }
-                        : undefined,
+                stableDynamicData: isStablePool(poolType)
+                    ? {
+                          create: {
+                              id: pool.id,
+                              amp: pool.amp || '',
+                              blockNumber,
+                          },
+                      }
+                    : undefined,
                 dynamicData: {
                     create: {
                         id: pool.id,
