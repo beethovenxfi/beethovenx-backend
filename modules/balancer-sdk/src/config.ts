@@ -207,6 +207,8 @@ function mapPoolTypeToSubgraphPoolType(poolType: PrismaPoolType): string {
             return 'MetaStable';
         case 'PHANTOM_STABLE':
             return 'StablePhantom';
+        case 'COMPOSABLE_STABLE':
+            return 'ComposableStable';
         case 'LINEAR':
             return 'Linear';
         case 'ELEMENT':

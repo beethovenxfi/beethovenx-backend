@@ -319,6 +319,12 @@ export class PoolGqlLoaderService {
                     ...mappedData,
                     amp: pool.stableDynamicData?.amp || '0',
                 };
+            case 'COMPOSABLE_STABLE':
+                return {
+                    __typename: 'GqlPoolComposableStable',
+                    ...mappedData,
+                    amp: pool.stableDynamicData?.amp || '0',
+                };
             case 'LINEAR':
                 return {
                     __typename: 'GqlPoolLinear',
@@ -472,7 +478,7 @@ export class PoolGqlLoaderService {
 
     private getPoolInvestConfig(pool: PrismaPoolWithExpandedNesting): GqlPoolInvestConfig {
         const poolTokens = pool.tokens.filter((token) => token.address !== pool.address);
-        const supportsNativeAssetDeposit = pool.type !== 'PHANTOM_STABLE';
+        const supportsNativeAssetDeposit = pool.type !== 'PHANTOM_STABLE' && pool.type !== 'COMPOSABLE_STABLE';
         let options: GqlPoolInvestOption[] = [];
 
         for (const poolToken of poolTokens) {
@@ -481,7 +487,8 @@ export class PoolGqlLoaderService {
 
         return {
             //TODO could flag these as disabled in sanity
-            proportionalEnabled: pool.type !== 'PHANTOM_STABLE' && pool.type !== 'META_STABLE',
+            proportionalEnabled:
+                pool.type !== 'PHANTOM_STABLE' && pool.type !== 'COMPOSABLE_STABLE' && pool.type !== 'META_STABLE',
             singleAssetEnabled: true,
             options,
         };

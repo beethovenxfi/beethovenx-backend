@@ -6,7 +6,7 @@ export class BoostedPoolAprService implements PoolAprService {
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
         const boostedPools = pools.filter(
             (pool) =>
-                (pool.type === 'PHANTOM_STABLE' || pool.type === 'WEIGHTED') &&
+                (pool.type === 'PHANTOM_STABLE' || pool.type === 'COMPOSABLE_STABLE' || pool.type === 'WEIGHTED') &&
                 pool.tokens.find((token) => token.nestedPool),
         );
 
@@ -17,16 +17,25 @@ export class BoostedPoolAprService implements PoolAprService {
                 }
 
                 //for phantom stable pools, the linear apr items have already been set
-                if (pool.type === 'PHANTOM_STABLE') {
-                    return token.nestedPool?.type === 'PHANTOM_STABLE';
+                if (pool.type === 'PHANTOM_STABLE' || pool.type === 'COMPOSABLE_STABLE') {
+                    return (
+                        token.nestedPool?.type === 'PHANTOM_STABLE' || token.nestedPool?.type === 'COMPOSABLE_STABLE'
+                    );
                 }
 
-                return token.nestedPool?.type === 'LINEAR' || token.nestedPool?.type === 'PHANTOM_STABLE';
+                return (
+                    token.nestedPool?.type === 'LINEAR' ||
+                    token.nestedPool?.type === 'PHANTOM_STABLE' ||
+                    token.nestedPool?.type === 'COMPOSABLE_STABLE'
+                );
             });
 
             const poolIds = tokens.map((token) => token.nestedPool?.id || '');
             const aprItems = await prisma.prismaPoolAprItem.findMany({
-                where: { poolId: { in: poolIds }, type: { in: ['LINEAR_BOOSTED', 'PHANTOM_STABLE_BOOSTED'] } },
+                where: {
+                    poolId: { in: poolIds },
+                    type: { in: ['LINEAR_BOOSTED', 'PHANTOM_STABLE_BOOSTED', 'COMPOSABLE_STABLE_BOOSTED'] },
+                },
             });
 
             for (const token of tokens) {

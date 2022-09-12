@@ -82,7 +82,10 @@ export class PoolCreatorService {
             const nestedPool = subgraphPools.find((nestedPool) => {
                 const poolType = this.mapSubgraphPoolTypeToPoolType(nestedPool.poolType || '');
 
-                return nestedPool.address === token.address && (poolType === 'LINEAR' || poolType === 'PHANTOM_STABLE');
+                return (
+                    nestedPool.address === token.address &&
+                    (poolType === 'LINEAR' || poolType === 'PHANTOM_STABLE' || poolType === 'COMPOSABLE_STABLE')
+                );
             });
 
             if (nestedPool) {
@@ -137,7 +140,9 @@ export class PoolCreatorService {
 
                                 return (
                                     nestedPool.address === token.address &&
-                                    (poolType === 'LINEAR' || poolType === 'PHANTOM_STABLE')
+                                    (poolType === 'LINEAR' ||
+                                        poolType === 'PHANTOM_STABLE' ||
+                                        poolType === 'COMPOSABLE_STABLE')
                                 );
                             });
 
@@ -183,7 +188,10 @@ export class PoolCreatorService {
                           }
                         : undefined,
                 stableDynamicData:
-                    poolType === 'STABLE' || poolType === 'PHANTOM_STABLE' || poolType === 'META_STABLE'
+                    poolType === 'STABLE' ||
+                    poolType === 'PHANTOM_STABLE' ||
+                    poolType === 'COMPOSABLE_STABLE' ||
+                    poolType === 'META_STABLE'
                         ? {
                               create: {
                                   id: pool.id,
@@ -259,7 +267,7 @@ export class PoolCreatorService {
 
             if (poolType === 'LINEAR') {
                 return 0;
-            } else if (poolType === 'PHANTOM_STABLE') {
+            } else if (poolType === 'PHANTOM_STABLE' || poolType === 'COMPOSABLE_STABLE') {
                 //if the phantom stable has a nested phantom stable, it needs to appear later in the list
                 const nestedPhantomStableToken = (pool.tokens || []).find((token) => {
                     if (token.address === pool.address) {
@@ -269,7 +277,7 @@ export class PoolCreatorService {
                     const nestedPool = subgraphPools.find((nestedPool) => nestedPool.address === token.address);
                     const nestedPoolType = this.mapSubgraphPoolTypeToPoolType(nestedPool?.poolType || '');
 
-                    return nestedPoolType === 'PHANTOM_STABLE';
+                    return nestedPoolType === 'PHANTOM_STABLE' || nestedPoolType === 'COMPOSABLE_STABLE';
                 });
 
                 return nestedPhantomStableToken ? 2 : 1;
@@ -291,6 +299,8 @@ export class PoolCreatorService {
                 return 'META_STABLE';
             case 'StablePhantom':
                 return 'PHANTOM_STABLE';
+            case 'ComposableStable':
+                return 'COMPOSABLE_STABLE';
             case 'Linear':
                 return 'LINEAR';
             case 'Element':
