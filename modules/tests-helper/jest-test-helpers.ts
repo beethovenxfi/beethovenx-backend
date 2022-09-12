@@ -102,7 +102,12 @@ const defaultWeightedPool: Prisma.PrismaPoolCreateInput = {
     },
 };
 
-export async function createWeightedPoolFromDefault(pool: DeepPartial<Prisma.PrismaPoolCreateInput>) {
+export async function createWeightedPoolFromDefault(
+    pool: DeepPartial<Prisma.PrismaPoolCreateInput>,
+    tokens: DeepPartial<Prisma.PrismaTokenCreateInput>[],
+) {
+    createDefaultTokens(tokens);
+
     _.merge(defaultWeightedPool, pool);
 
     await prisma.prismaPool.create({

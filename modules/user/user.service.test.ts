@@ -5,6 +5,9 @@ import {
     createWeightedPoolFromDefault,
     createWeightedPoolSnapshotFromDefault,
 } from '../tests-helper/jest-test-helpers';
+import { server } from '../tests-helper/mocks/server';
+import { subgraphHandlers } from './mock-handlers/subgraph';
+import { userService } from './user.service';
 
 // need to intercept graphql requests to user-bpt-subgraph
 // need to prepare DB (pool(s), snapshots)
@@ -12,12 +15,16 @@ import {
 beforeAll(async () => {
     await createSchemaForTest();
     // add pool(s) to DB -> including pricing
-    await createDefaultTokens([]);
-    await createWeightedPoolFromDefault({
-        name: 'Test pool 1',
-    });
+    // await createDefaultTokens([]);
+    await createWeightedPoolFromDefault(
+        {
+            name: 'Test pool 1',
+        },
+        [],
+    );
 
     await createWeightedPoolSnapshotFromDefault({});
+    server.use(...subgraphHandlers);
     // add some snapshots for pool to db -> also pricing
 }, 60000);
 
@@ -37,6 +44,12 @@ test('user request snapshots that are present', async () => {
         console.log(snapshot.id);
         console.log(snapshot.pool.name);
     }
+    const snapshots = await userService.getUserBalanceSnapshotsForPool(
+        '0x0000000000000000000000000000000000000001',
+        '0xf3a602d30dcb723a74a0198313a7551feaca7dac00010000000000000000005f',
+        'THIRTY_DAYS',
+    );
+    expect(snapshots.length).toBeGreaterThan(0);
 });
 
 test('user requests more snapshots than present', async () => {});
