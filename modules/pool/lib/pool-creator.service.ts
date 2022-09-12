@@ -268,7 +268,7 @@ export class PoolCreatorService {
             if (poolType === 'LINEAR') {
                 return 0;
             } else if (poolType === 'PHANTOM_STABLE' || poolType === 'COMPOSABLE_STABLE') {
-                //if the phantom stable has a nested phantom stable, it needs to appear later in the list
+                //if its nested, it needs to appear later in the list
                 const nestedPhantomStableToken = (pool.tokens || []).find((token) => {
                     if (token.address === pool.address) {
                         return false;
