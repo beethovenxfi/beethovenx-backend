@@ -374,6 +374,23 @@ type GqlPoolPhantomStableNested {
     swapFee: BigDecimal!
 }
 
+type GqlPoolComposableStableNested {
+    id: ID!
+    name: String!
+    symbol: String!
+    address: Bytes!
+    owner: Bytes!
+    factory: Bytes
+    createTime: Int!
+    tokens: [GqlPoolTokenComposableStableNestedUnion!]!
+    nestingType: GqlPoolNestingType!
+
+    totalShares: BigDecimal!
+    totalLiquidity: BigDecimal!
+    amp: BigInt!
+    swapFee: BigDecimal!
+}
+
 union GqlPoolUnion =
       GqlPoolWeighted
     | GqlPoolStable
@@ -383,10 +400,10 @@ union GqlPoolUnion =
     | GqlPoolComposableStable
     | GqlPoolElement
     | GqlPoolLiquidityBootstrapping
-union GqlPoolNestedUnion = GqlPoolLinearNested | GqlPoolPhantomStableNested
 
 union GqlPoolTokenUnion = GqlPoolToken | GqlPoolTokenPhantomStable | GqlPoolTokenLinear
 union GqlPoolTokenPhantomStableNestedUnion = GqlPoolToken | GqlPoolTokenLinear
+union GqlPoolTokenComposableStableNestedUnion = GqlPoolToken | GqlPoolTokenLinear
 
 interface GqlPoolTokenBase {
     id: ID!
@@ -433,6 +450,20 @@ type GqlPoolTokenLinear implements GqlPoolTokenBase {
 }
 
 type GqlPoolTokenPhantomStable implements GqlPoolTokenBase {
+    id: ID!
+    address: String!
+    balance: BigDecimal!
+    decimals: Int!
+    name: String!
+    symbol: String!
+    index: Int!
+    priceRate: BigDecimal!
+    weight: BigDecimal
+
+    pool: GqlPoolPhantomStableNested!
+}
+
+type GqlPoolTokenComposableStable implements GqlPoolTokenBase {
     id: ID!
     address: String!
     balance: BigDecimal!
