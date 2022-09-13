@@ -89,7 +89,7 @@ export const BALANCER_SDK_CONFIG: { [chainId: string]: BalancerSdkConfig } = {
                         ...pool.linearDynamicData,
                         totalLiquidity: `${pool.dynamicData!.totalLiquidity}`,
                         factory: pool.factory || undefined,
-                        poolType: mapPoolTypeToSubgraphPoolType(pool.type, pool.factory),
+                        poolType: mapPoolTypeToSubgraphPoolType(pool.type),
                         tokensList: pool.tokens.map((token) => token.address),
                         totalWeight: '1', //TODO: properly calculate this
                         tokens: pool.tokens.map((token) => ({
@@ -179,7 +179,7 @@ export const BALANCER_SDK_CONFIG: { [chainId: string]: BalancerSdkConfig } = {
                         ...pool.linearDynamicData,
                         totalLiquidity: `${pool.dynamicData!.totalLiquidity}`,
                         factory: pool.factory || undefined,
-                        poolType: mapPoolTypeToSubgraphPoolType(pool.type, pool.factory),
+                        poolType: mapPoolTypeToSubgraphPoolType(pool.type),
                         tokensList: pool.tokens.map((token) => token.address),
                         totalWeight: '1', //TODO: properly calculate this
                         tokens: pool.tokens.map((token) => ({
@@ -195,7 +195,7 @@ export const BALANCER_SDK_CONFIG: { [chainId: string]: BalancerSdkConfig } = {
     },
 };
 
-function mapPoolTypeToSubgraphPoolType(poolType: PrismaPoolType, factory: string | null): string {
+function mapPoolTypeToSubgraphPoolType(poolType: PrismaPoolType): string {
     switch (poolType) {
         case 'WEIGHTED':
             return 'Weighted';
@@ -205,12 +205,8 @@ function mapPoolTypeToSubgraphPoolType(poolType: PrismaPoolType, factory: string
             return 'Stable';
         case 'META_STABLE':
             return 'MetaStable';
-        case 'PHANTOM_STABLE': {
-            if (factory === networkConfig.balancer.coposableStablePoolFactory) {
-                return 'ComposableStable';
-            }
+        case 'PHANTOM_STABLE':
             return 'StablePhantom';
-        }
         case 'LINEAR':
             return 'Linear';
         case 'ELEMENT':
