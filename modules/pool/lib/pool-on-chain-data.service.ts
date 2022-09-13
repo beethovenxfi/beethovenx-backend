@@ -158,6 +158,7 @@ export class PoolOnChainDataService {
                     multiPool.call(`${pool.id}.totalSupply`, pool.address, 'getVirtualSupply');
                 }
 
+                // token rates for linear pools are already handled above
                 if (pool.type !== 'LINEAR') {
                     const tokenAddresses = pool.tokens.map((token) => token.address);
 
