@@ -1,13 +1,14 @@
+import { connect } from 'http2';
+import moment from 'moment-timezone';
 import { graphql } from 'msw';
 import { prisma } from '../../prisma/prisma-client';
 import {
-    createDefaultTokens,
     createSchemaForTest as createDedicatedSchemaForTest,
     createWeightedPoolFromDefault,
-    createWeightedPoolSnapshotFromDefault,
+    defaultTokens,
+    createRandomSnapshotsForPool,
 } from '../tests-helper/jest-test-helpers';
 import { server } from '../tests-helper/mocks/server';
-import { subgraphHandlers } from './mock-handlers/user-subgraph';
 import { userService } from './user.service';
 
 // need to intercept graphql requests to user-bpt-subgraph
@@ -23,14 +24,23 @@ beforeAll(async () => {
             name: 'Test pool 1',
             address: '0x001',
         },
-        [],
+        [defaultTokens.usdc, defaultTokens.wftm, defaultTokens.wbtc, defaultTokens.beets],
     );
 
-    await createWeightedPoolSnapshotFromDefault({});
+    // create 20 snapshots over the last 30 days for pool 0x001a
+    await createRandomSnapshotsForPool('0x001a', 4, 20, 30);
 
-    server.use(...subgraphHandlers);
+    // await createDefaultWeightedPoolSnapshotForPool({
+    //     timestamp: moment().startOf('day').subtract(1, 'days').unix(),
+    //     pool: { connect: { id: '0x001a' } },
+    // });
+
     // add some snapshots for pool to db -> also pricing
 }, 60000);
+
+afterEach(async () => {
+    server.resetHandlers();
+});
 
 beforeEach(async () => {});
 
@@ -50,24 +60,26 @@ test('user request snapshots that are present', async () => {
                     ctx.data({
                         snapshots: [
                             {
+                                id: '0x0000000000000000000000000000000000000001-1662768000',
                                 user: {
                                     id: '0x0000000000000000000000000000000000000001',
                                 },
-                                timestamp: 1643414400,
-                                walletTokens: ['0x001'],
-                                walletBalances: ['1'],
+                                timestamp: 1662768000,
+                                walletTokens: ['0x001', '0x002'],
+                                walletBalances: ['1.5', '1'],
                                 gauges: [],
                                 gaugeBalances: [],
                                 farms: [],
                                 farmBalances: [],
                             },
                             {
+                                id: '0x0000000000000000000000000000000000000001-1662940800',
                                 user: {
                                     id: '0x0000000000000000000000000000000000000001',
                                 },
-                                timestamp: 1650153600,
-                                walletTokens: ['0x001', '0x002'],
-                                walletBalances: ['1.5', '1'],
+                                timestamp: 1662940800,
+                                walletTokens: ['0x001'],
+                                walletBalances: ['1'],
                                 gauges: [],
                                 gaugeBalances: [],
                                 farms: [],
@@ -93,9 +105,10 @@ test('user request snapshots that are present', async () => {
         console.log(snapshot.id);
         console.log(snapshot.pool.name);
     }
+
     const snapshots = await userService.getUserBalanceSnapshotsForPool(
         '0x0000000000000000000000000000000000000001',
-        '0xf3a602d30dcb723a74a0198313a7551feaca7dac00010000000000000000005f',
+        '0x001a',
         'THIRTY_DAYS',
     );
     expect(snapshots.length).toBeGreaterThan(0);

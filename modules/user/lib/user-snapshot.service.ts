@@ -39,6 +39,7 @@ export class UserSnapshotService {
         );
 
         if (storedUserSnapshotsFromRange.length === 0) {
+            // probably not good to get ALL and persist ALL, lots of data
             const userSnapshotsFromSubgraphForAllPools = await this.userSnapshotSubgraphService.getUserBalanceSnapshots(
                 0,
                 moment().unix(),
@@ -150,6 +151,13 @@ export class UserSnapshotService {
         poolId: string,
     ) {
         const { snapshots: userBalanceSnapshots } = userBalanceSnapshotsQuery;
+
+        // make sure users exists
+        await prisma.prismaUser.create({
+            data: {
+                address: userBalanceSnapshots[0].user.id,
+            },
+        });
 
         await prisma.prismaUserBalanceSnapshot.createMany({
             data: userBalanceSnapshots.map((snapshot) => {
