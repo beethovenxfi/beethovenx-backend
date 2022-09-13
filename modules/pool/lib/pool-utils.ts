@@ -17,7 +17,3 @@ export function isWeightedPoolV2(pool: PoolWithTypeAndFactory): boolean {
 export function isComposableStablePool(pool: PoolWithTypeAndFactory) {
     return pool.type === 'PHANTOM_STABLE' && pool.factory === networkConfig.balancer.coposableStablePoolFactory;
 }
-
-export function isPoolWithPreMintedBpt(pool: PoolWithTypeAndFactory) {
-    return pool.type === 'PHANTOM_STABLE' || pool.type === 'LINEAR' || isWeightedPoolV2(pool);
-}
