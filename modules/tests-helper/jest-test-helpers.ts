@@ -49,6 +49,8 @@ export async function createDefaultTokens(tokens: DeepPartial<Prisma.PrismaToken
     });
 }
 
+// TODO create farm
+
 const defaultWeightedPool: Prisma.PrismaPoolCreateInput = {
     id: '0xf3a602d30dcb723a74a0198313a7551feaca7dac00010000000000000000005f',
     createTime: moment().subtract(10, 'days').unix(),
@@ -102,8 +104,10 @@ const defaultWeightedPool: Prisma.PrismaPoolCreateInput = {
     },
 };
 
+createWeightedPoolFromDefault('poolId', [createToken('0x123', 'btc'), createToken('weth')]);
+
 export async function createWeightedPoolFromDefault(
-    pool: DeepPartial<Prisma.PrismaPoolCreateInput>,
+    pool: DeepPartial<Prisma.PrismaPoolCreateInput> & { id: string },
     tokens: DeepPartial<Prisma.PrismaTokenCreateInput>[],
 ) {
     createDefaultTokens(tokens);

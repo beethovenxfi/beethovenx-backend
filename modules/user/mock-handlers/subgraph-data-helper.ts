@@ -1,6 +1,10 @@
-import { graphql } from 'msw';
+import { GraphQLRequest } from "apollo-server-core";
+import { graphql, GraphQLHandler, GraphQLVariables } from "msw";
+import { UserBalanceSnapshotsQuery } from "../../subgraphs/user-snapshot-subgraph/generated/user-snapshot-subgraph-types";
+import { DeepPartial } from "../../tests-helper/jest-test-helpers";
 
-export const subgraphHandlers = [
+
+export function createUserBalanceSnapshotsHandler(snapshots: DeepPartial<UserBalanceSnapshotsQuery): GraphQLHandler<GraphQLRequest<GraphQLVariables>>[]{
     graphql.query('UserBalanceSnapshots', async (req, res, ctx) => {
         const requestJson = await req.json();
         if (requestJson.variables.where.timestamp_gte > 1650153600) {
@@ -44,4 +48,4 @@ export const subgraphHandlers = [
             }),
         );
     }),
-];
+}
