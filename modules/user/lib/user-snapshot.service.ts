@@ -7,6 +7,7 @@ import { GqlUserSnapshotDataRange } from '../../../schema';
 import { PoolSnapshotService } from '../../pool/lib/pool-snapshot.service';
 import { formatFixed } from '@ethersproject/bignumber';
 import { UserBalanceSnapshotsQuery } from '../../subgraphs/user-snapshot-subgraph/generated/user-snapshot-subgraph-types';
+import { networkConfig } from '../../config/network-config';
 
 export class UserSnapshotService {
     private readonly SECONDS_IN_DAY: number = 86400;
@@ -31,7 +32,8 @@ export class UserSnapshotService {
     ): Promise<UserPoolSnapshot[]> {
         const oldestRequestedSnapshotTimestamp = this.getTimestampForRange(range);
 
-        // TODO this now has a snapshot for every day since pool launch and lots of 0 snapshots at the front. need to only get snapshots after user has entered pool
+        // TODO this now has a snapshot for every day since pool launch and lots of 0 snapshots at the front.
+        // need to only get snapshots after user has entered pool
         let storedUserSnapshotsFromRange = await this.getStoredSnapshotsForUserForPoolFromTimestamp(
             userAddress,
             oldestRequestedSnapshotTimestamp,
@@ -40,11 +42,12 @@ export class UserSnapshotService {
 
         if (storedUserSnapshotsFromRange.length === 0) {
             // probably not good to get ALL and persist ALL, lots of data
-            const userSnapshotsFromSubgraphForAllPools = await this.userSnapshotSubgraphService.getUserBalanceSnapshots(
-                0,
-                moment().unix(),
-                userAddress,
-            );
+            const userSnapshotsFromSubgraphForAllPools =
+                await this.userSnapshotSubgraphService.getUserBalanceSnapshotsWithPaging(
+                    0,
+                    moment().unix(),
+                    userAddress,
+                );
             const pool = await prisma.prismaPool.findUniqueOrThrow({
                 where: {
                     id: poolId,
@@ -73,6 +76,12 @@ export class UserSnapshotService {
             const userSnapshotsToPersist: UserBalanceSnapshotsQuery = {
                 snapshots: [],
             };
+
+            /*
+                option to skip first! 
+                const prevTotalSwapVolume = index === 0 ? startTotalSwapVolume : snapshots[index - 1].totalSwapVolume;
+                const prevTotalSwapFee = index === 0 ? startTotalSwapFee : snapshots[index - 1].totalSwapFee;
+            */
             userSnapshotsToPersist.snapshots.push(userSnapshotsFromSubgraphForAllPools.snapshots[0]);
             let firstIteration = true;
             for (const snapshot of userSnapshotsFromSubgraphForAllPools.snapshots) {
@@ -153,10 +162,10 @@ export class UserSnapshotService {
         const { snapshots: userBalanceSnapshots } = userBalanceSnapshotsQuery;
 
         // make sure users exists
-        await prisma.prismaUser.create({
-            data: {
-                address: userBalanceSnapshots[0].user.id,
-            },
+        await prisma.prismaUser.upsert({
+            where: { address: userBalanceSnapshots[0].user.id },
+            update: {},
+            create: { address: userBalanceSnapshots[0].user.id },
         });
 
         await prisma.prismaUserBalanceSnapshot.createMany({
@@ -212,8 +221,11 @@ export class UserSnapshotService {
                 totalValueUSD: `${
                     parseFloat(formatFixed(totalBalanceScaled, 18)) * (poolSnapshotForTimestamp?.sharePrice || 0)
                 }`,
-                // TODO reduce by share taken from protocol (0.7 and 0.5 respectively)
-                fees24h: `${percentShare * (poolSnapshotForTimestamp?.fees24h || 0) * 0.7}`,
+                fees24h: `${
+                    percentShare *
+                    (poolSnapshotForTimestamp?.fees24h || 0) *
+                    (1 - networkConfig.balancer.protocolFeePercent)
+                }`,
             });
         }
         await prisma.prismaUserPoolBalanceSnapshot.createMany({

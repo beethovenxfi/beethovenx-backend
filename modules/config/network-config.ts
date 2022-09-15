@@ -54,6 +54,7 @@ export interface NetworkConfig {
     };
     balancer: {
         vault: string;
+        protocolFeePercent: number;
     };
     multicall: string;
     masterchef: {
@@ -130,6 +131,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         balancer: {
             vault: '0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce',
+            protocolFeePercent: 0.3,
         },
         multicall: '0x66335d7ad8011f6aa3f48aadcb523b62b38ed961',
         masterchef: {
@@ -215,6 +217,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         balancer: {
             vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+            protocolFeePercent: 0.5,
         },
         multicall: '0x2DC0E2aa608532Da689e89e237dF582B783E552C',
         masterchef: {

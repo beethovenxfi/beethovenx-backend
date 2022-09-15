@@ -48,7 +48,7 @@ export class UserSnapshotSubgraphService {
         });
     }
 
-    public async getUserBalanceSnapshots(
+    public async getUserBalanceSnapshotsWithPaging(
         fromTimestamp: number,
         toTimestamp: number,
         userAddress: string,

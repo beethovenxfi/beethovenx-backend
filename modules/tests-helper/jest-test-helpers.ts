@@ -4,7 +4,7 @@ import * as path from 'path';
 import { Prisma, PrismaClient, PrismaPool, PrismaPoolType } from '@prisma/client';
 import { commandSync } from 'execa';
 import { prisma, setPrisma } from '../../prisma/prisma-client';
-import _ from 'lodash';
+import _, { merge } from 'lodash';
 import moment from 'moment';
 
 export type DeepPartial<T> = {
@@ -16,7 +16,9 @@ export type TestDatabaseContainer = {
     stop: () => Promise<void>;
 };
 
-export const defaultTokens: Record<string, Prisma.PrismaTokenCreateInput> = {
+type DefaulToken = 'usdc' | 'wftm' | 'wbtc' | 'weth' | 'beets' | 'dai' | 'boo' | 'fba';
+
+export const defaultTokens: Record<DefaulToken, Prisma.PrismaTokenCreateInput> = {
     usdc: {
         address: '0x04068da6c83afcfa0e13ba15a6696662335d5b75',
         symbol: 'USDC',
@@ -85,32 +87,7 @@ const defaultWeightedPool: Prisma.PrismaPoolCreateInput = {
     type: PrismaPoolType.WEIGHTED,
     owner: '0x0000000000000000000000000000000000000000',
     factory: '0x92b377187bccc6556fced2f1e6dad65850c20630',
-    tokens: {
-        createMany: {
-            data: [
-                {
-                    id: '0xf3a602d30dcb723a74a0198313a7551feaca7dac00010000000000000000005f-0x04068da6c83afcfa0e13ba15a6696662335d5b75',
-                    address: '0x04068da6c83afcfa0e13ba15a6696662335d5b75',
-                    index: 0,
-                },
-                {
-                    id: '0xf3a602d30dcb723a74a0198313a7551feaca7dac00010000000000000000005f-0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83',
-                    address: '0x21be370d5312f44cb42ce377bc9b8a0cef1a4c83',
-                    index: 1,
-                },
-                {
-                    id: '0xf3a602d30dcb723a74a0198313a7551feaca7dac00010000000000000000005f-0x321162cd933e2be498cd2267a90534a804051b11',
-                    address: '0x321162cd933e2be498cd2267a90534a804051b11',
-                    index: 2,
-                },
-                {
-                    id: '0xf3a602d30dcb723a74a0198313a7551feaca7dac00010000000000000000005f-0x74b23882a30290451a17c44f4f05243b6b58c76d',
-                    address: '0x74b23882a30290451a17c44f4f05243b6b58c76d',
-                    index: 3,
-                },
-            ],
-        },
-    },
+    tokens: {},
     dynamicData: {
         create: {
             id: '0xf3a602d30dcb723a74a0198313a7551feaca7dac00010000000000000000005f',
@@ -126,6 +103,13 @@ const defaultWeightedPool: Prisma.PrismaPoolCreateInput = {
             fees48h: 2705,
         },
     },
+    staking: {
+        create: {
+            id: '17',
+            address: '0x8166994d9ebbe5829ec86bd81258149b87facfd3',
+            type: 'MASTER_CHEF',
+        },
+    },
 };
 
 export async function createWeightedPoolFromDefault(
@@ -134,7 +118,16 @@ export async function createWeightedPoolFromDefault(
 ) {
     await prisma.prismaToken.createMany({
         data: tokens,
+        skipDuplicates: true,
     });
+
+    if (defaultWeightedPool.dynamicData?.create) {
+        defaultWeightedPool.dynamicData.create.id = pool.id;
+    }
+
+    if (defaultWeightedPool.staking?.create) {
+        defaultWeightedPool.staking.create.id = `${pool.id}-stake`;
+    }
 
     const mergedPoolPartial = _.merge(defaultWeightedPool, pool);
 
@@ -156,7 +149,15 @@ export async function createWeightedPoolFromDefault(
     await prisma.prismaPool.create({
         data: mergedPoolPartial,
     });
-    // return mergedPoolPartial;
+
+    return prisma.prismaPool.findFirstOrThrow({
+        where: { id: pool.id },
+        include: {
+            staking: true,
+            dynamicData: true,
+            tokens: true,
+        },
+    });
 }
 
 const defaultWeightedPoolSnapshot: Prisma.PrismaPoolSnapshotCreateInput = {
@@ -190,19 +191,11 @@ function randomNumberFromInterval(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
-export async function createRandomSnapshotsForPool(
-    poolId: string,
-    numTokensInPool: number,
-    numSnapshots: number,
-    numDays: number,
-) {
-    const allDays = Array.from({ length: numDays }, (e, i) => i);
-    const randomDays = allDays.sort(() => 0.5 - Math.random());
-
+export async function createRandomSnapshotsForPool(poolId: string, tokenCount: number, numSnapshots: number) {
     for (let i = 0; i < numSnapshots; i++) {
-        const timestamp = moment().startOf('day').subtract(randomDays[i], 'days').unix();
+        const timestamp = moment().startOf('day').subtract(i, 'days').unix();
         const totlaShares = randomNumberFromInterval(100000, 3000000);
-        const amounts = Array.from({ length: numTokensInPool }, () => randomNumberFromInterval(10, 50).toString());
+        const amounts = Array.from({ length: tokenCount }, () => randomNumberFromInterval(10, 50).toString());
         await prisma.prismaPoolSnapshot.create({
             data: {
                 id: `${poolId}-${timestamp}`,
