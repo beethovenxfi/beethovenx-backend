@@ -1,11 +1,11 @@
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
-import { Prisma, PrismaClient, PrismaPool, PrismaPoolType } from '@prisma/client';
+import { Prisma, PrismaClient, PrismaPoolType } from '@prisma/client';
 import { commandSync } from 'execa';
 import { prisma, setPrisma } from '../../prisma/prisma-client';
-import _, { merge } from 'lodash';
 import moment from 'moment';
+import _ from 'lodash';
 
 export type DeepPartial<T> = {
     [P in keyof T]?: DeepPartial<T[P]>;
@@ -74,8 +74,6 @@ export async function createTokens(tokens: Prisma.PrismaTokenCreateInput[]) {
         data: tokens,
     });
 }
-
-// TODO create farm
 
 const defaultWeightedPool: Prisma.PrismaPoolCreateInput = {
     id: '0xf3a602d30dcb723a74a0198313a7551feaca7dac00010000000000000000005f',
@@ -219,6 +217,36 @@ export async function createRandomSnapshotsForPool(poolId: string, tokenCount: n
             },
         });
     }
+}
+
+const defaultUserBalanceSnapshot: Omit<Prisma.PrismaUserPoolBalanceSnapshotCreateInput, 'id'> = {
+    // id: `0x001a-0x0000000000000000000000000000000000000001-${moment().unix()}`,
+    timestamp: moment().unix(),
+    user: {
+        create: {
+            address: '0x0000000000000000000000000000000000000001',
+        },
+    },
+    poolToken: '0x001',
+    pool: { connect: { id: '0x001a' } },
+    walletBalance: '1',
+    farmBalance: '1',
+    gaugeBalance: '0',
+    totalBalance: '2',
+    percentShare: '0.01',
+    totalValueUSD: '10',
+    fees24h: '1',
+};
+
+export async function createUserPoolBalanceSnapshot(
+    snapshot: DeepPartial<Prisma.PrismaUserPoolBalanceSnapshotCreateInput> & {
+        id: string;
+        pool: { connect: { id: string } };
+    },
+) {
+    await prisma.prismaUserPoolBalanceSnapshot.create({
+        data: _.merge(defaultUserBalanceSnapshot, snapshot),
+    });
 }
 
 export type TestDatabasePrismaConfig = {

@@ -106,6 +106,10 @@ export class UserService {
         await Promise.all(operations);
     }
 
+    public async syncUserBalanceSnapshots() {
+        await this.snapshotService.syncUserSnapshots();
+    }
+
     public async getUserBalanceSnapshotsForPool(
         accountAddress: string,
         poolId: string,
