@@ -1940,20 +1940,21 @@
     "@babel/helper-validator-identifier" "^7.18.6"
     to-fast-properties "^2.0.0"
 
-"@balancer-labs/sdk@github:beethovenxfi/balancer-sdk#daniel/sor-generic-path-algo":
+"@balancer-labs/sdk@github:beethovenxfi/balancer-sdk#beethovenx-master":
   version "0.1.1"
-  resolved "https://codeload.github.com/beethovenxfi/balancer-sdk/tar.gz/111db25484314ab21e61b486a30f72230ec288bb"
+  resolved "https://codeload.github.com/beethovenxfi/balancer-sdk/tar.gz/18cb9ff9ebda45735fedb4f772991d6171ba13aa"
   dependencies:
-    "@balancer-labs/sor" "github:beethovenxfi/balancer-sor#daniel/generic-path-algo-build"
+    "@balancer-labs/sor" "github:beethovenxfi/balancer-sor#beethovenx-master"
     axios "^0.24.0"
     graphql "^15.6.1"
     graphql-request "^3.5.0"
     lodash "^4.17.21"
 
-"@balancer-labs/sor@github:beethovenxfi/balancer-sor#daniel/generic-path-algo-build":
-  version "3.0.0-beta.0"
-  resolved "https://codeload.github.com/beethovenxfi/balancer-sor/tar.gz/01df0ee7adf62be36adffa73a1436cbaba777115"
+"@balancer-labs/sor@github:beethovenxfi/balancer-sor#beethovenx-master":
+  version "4.0.1-beta.5"
+  resolved "https://codeload.github.com/beethovenxfi/balancer-sor/tar.gz/f3ddb11893e631bf6432be6ef0ccec13d3102f4c"
   dependencies:
+    graphology "^0.24.1"
     isomorphic-fetch "^2.2.1"
 
 "@bcoe/v8-coverage@^0.2.3":
@@ -6005,6 +6006,14 @@ graceful-fs@^4.1.2, graceful-fs@^4.2.0, graceful-fs@^4.2.4:
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.8.tgz#e412b8d33f5e006593cbd3cee6df9f2cebbe802a"
   integrity sha512-qkIilPUYcNhJpd33n0GBXTB1MMPp14TxEsEs0pTrsSVucApsYzW5V+Q8Qxhik6KU3evy+qkAAowTByymK0avdg==
 
+graphology@^0.24.1:
+  version "0.24.1"
+  resolved "https://registry.yarnpkg.com/graphology/-/graphology-0.24.1.tgz#035e452e294b01168cf5c85d5dd0a4b7e4837d87"
+  integrity sha512-6lNz1PNTAe9Q6ioHKrXu0Lp047sgvOoHa4qmP/8mnJWCGv2iIZPQkuHPUb2/OWDWCqHpw2hKgJLJ55X/66xmHg==
+  dependencies:
+    events "^3.3.0"
+    obliterator "^2.0.2"
+
 graceful-fs@^4.2.9:
   version "4.2.10"
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.10.tgz#147d3a006da4ca3ce14728c7aefc287c367d7a6c"
@@ -6990,8 +6999,24 @@ jest-leak-detector@^28.1.3:
   resolved "https://registry.yarnpkg.com/jest-leak-detector/-/jest-leak-detector-28.1.3.tgz#a6685d9b074be99e3adee816ce84fd30795e654d"
   integrity sha512-WFVJhnQsiKtDEo5lG2mM0v40QWnBM+zMdHHyJs8AWZ7J0QZJS59MsyKeJHWhpBZBH32S48FOVvGyOFT1h0DlqA==
   dependencies:
-    jest-get-type "^28.0.2"
-    pretty-format "^28.1.3"
+    "@babel/traverse" "^7.1.0"
+    "@jest/environment" "^27.4.4"
+    "@jest/source-map" "^27.4.0"
+    "@jest/test-result" "^27.4.2"
+    "@jest/types" "^27.4.2"
+    "@types/node" "*"
+    chalk "^4.0.0"
+    co "^4.6.0"
+    expect "^27.4.2"
+    is-generator-fn "^2.0.0"
+    jest-each "^27.4.2"
+    jest-matcher-utils "^27.4.2"
+    jest-message-util "^27.4.2"
+    jest-runtime "^27.4.5"
+    jest-snapshot "^27.4.5"
+    jest-util "^27.4.2"
+    pretty-format "^27.4.2"
+    throat "^6.0.1"
 
 jest-matcher-utils@^28.1.3:
   version "28.1.3"
@@ -7133,6 +7158,7 @@ jest-runtime@^28.1.3:
     jest-util "^28.1.3"
     slash "^3.0.0"
     strip-bom "^4.0.0"
+    yargs "^16.2.0"
 
 jest-snapshot@^28.1.3:
   version "28.1.3"
@@ -8017,6 +8043,11 @@ object.assign@^4.1.0:
     define-properties "^1.1.3"
     has-symbols "^1.0.1"
     object-keys "^1.1.1"
+
+obliterator@^2.0.2:
+  version "2.0.4"
+  resolved "https://registry.yarnpkg.com/obliterator/-/obliterator-2.0.4.tgz#fa650e019b2d075d745e44f1effeb13a2adbe816"
+  integrity sha512-lgHwxlxV1qIg1Eap7LgIeoBWIMFibOjbrYPIPJZcI1mmGAI2m3lNYpK12Y+GBdPQ0U1hRwSord7GIaawz962qQ==
 
 object.assign@^4.1.4:
   version "4.1.4"
