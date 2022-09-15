@@ -19,16 +19,14 @@ export class BalancerPriceService {
         for (const address of addresses) {
             const token = tokens.find((token) => token.address === address);
 
-            if (token) {
-                if (token.latestPrice?.pricingAsset && coingeckoPrices[token.latestPrice.pricingAsset]) {
+            if (token && token.latestPrice && token.latestUSDPrice) {
+                if (coingeckoPrices[token.latestPrice.pricingAsset]) {
                     balancerTokenPrices[address] = {
-                        usd:
-                            (coingeckoPrices[token.latestPrice.pricingAsset]?.usd || 0) *
-                            parseFloat(token.latestPrice.price),
+                        usd: coingeckoPrices[token.latestPrice.pricingAsset].usd * parseFloat(token.latestPrice.price),
                     };
                 } else {
                     balancerTokenPrices[address] = {
-                        usd: parseFloat(token.latestUSDPrice || '0'),
+                        usd: parseFloat(token.latestUSDPrice),
                     };
                 }
             }
