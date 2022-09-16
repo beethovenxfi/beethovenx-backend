@@ -105,7 +105,7 @@ async function startServer() {
 
     if (process.env.NODE_ENV === 'local') {
         try {
-            scheduleLocalWorkerTasks();
+            // scheduleLocalWorkerTasks();
         } catch (e) {
             console.log(`Fatal error happened during cron scheduling.`, e);
         }
