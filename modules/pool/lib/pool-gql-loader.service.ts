@@ -643,6 +643,7 @@ export class PoolGqlLoaderService {
             balance: poolToken.dynamicData?.balance || '0',
             index: poolToken.index,
             weight: poolToken.dynamicData?.weight,
+            totalBalance: poolToken.dynamicData?.balance || '0',
         };
     }
 
@@ -660,17 +661,20 @@ export class PoolGqlLoaderService {
             ...pool.linearDynamicData!,
             tokens: pool.tokens
                 .filter((token) => token.address !== pool.address)
-                .map((token) =>
-                    this.mapPoolTokenToGql({
-                        ...token,
-                        dynamicData: token.dynamicData
-                            ? {
-                                  ...token.dynamicData,
-                                  balance: `${parseFloat(token.dynamicData.balance) * percentOfSupplyNested}`,
-                              }
-                            : null,
-                    }),
-                ),
+                .map((token) => {
+                    return {
+                        ...this.mapPoolTokenToGql({
+                            ...token,
+                            dynamicData: token.dynamicData
+                                ? {
+                                      ...token.dynamicData,
+                                      balance: `${parseFloat(token.dynamicData.balance) * percentOfSupplyNested}`,
+                                  }
+                                : null,
+                        }),
+                        totalBalance: token.dynamicData?.balance || '0',
+                    };
+                }),
             totalLiquidity: `${totalLiquidity}`,
             totalShares: pool.dynamicData?.totalShares || '0',
             bptPriceRate: bpt?.dynamicData?.priceRate || '1.0',
@@ -711,6 +715,7 @@ export class PoolGqlLoaderService {
                                 nestedPool,
                                 percentOfSupplyNested * percentOfLinearSupplyNested,
                             ),
+                            totalBalance: token.dynamicData?.balance || '0',
                         };
                     }
 
