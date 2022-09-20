@@ -15,7 +15,7 @@ import { userService } from './user.service';
 
 /*
 TEST SETUP:
-- Two different weighted pools, both with random snapshots (complete, one spanshot per day)
+- Two different weighted pools, one with 30 random snapshots (complete, one spanshot per day) one with only 2 snapshots
 - pool1 has also a farm specified
 - One user 
 
@@ -61,8 +61,8 @@ beforeAll(async () => {
         [defaultTokens.usdc, defaultTokens.beets],
     );
 
-    // create 30 snapshots for pool2
-    await createRandomSnapshotsForPool(pool2.id, pool2.tokens.length, 30);
+    // create 30 snapshotsfor pool1
+    await createRandomSnapshotsForPool(pool2.id, pool2.tokens.length, 2);
 
     // create user
     await prisma.prismaUser.create({
@@ -74,6 +74,7 @@ beforeAll(async () => {
 
 afterEach(async () => {
     server.resetHandlers();
+    await prisma.prismaUserPoolBalanceSnapshot.deleteMany({});
 });
 
 beforeEach(async () => {});
@@ -93,7 +94,7 @@ test('The user requests the user stats for the first time, requesting from snaps
     Behaviour under test:
     - Snapshot inference that a fourth snapshot is created for missing day two days ago
     - Snapshots are retrieved from subgraph and persisted in DB
-    - Only snapshots for requested pool are persisted in DB
+    - Only snapshots for requested pool and without inferred snapshot are persisted in DB (three snapshots)
     - Balances are correctly returned and summarized (farmbalance + walletbalance = totalbalance)
     - USD values are correctly calculated based on pool snapshot values
     */
@@ -172,8 +173,8 @@ test('The user requests the user stats for the first time, requesting from snaps
         include: { pool: true },
     });
 
-    // check if the 4 snapshots have been persisted
-    expect(snapshotsFromDb.length).toBe(4);
+    // check if the 3 snapshots have been persisted
+    expect(snapshotsFromDb.length).toBe(3);
 
     // check if balances are calculated correctly
     expect(snapshotsFromService[0].walletBalance).toBe('1');
@@ -217,6 +218,319 @@ test('The user requests the user stats for the first time, requesting from snaps
         //make sure we have a pool snapshot for each user snapshot
         expect(foundPoolSnapshot).toBe(true);
     }
+});
+
+test('user leaves pool and joins pool again', async () => {
+    /*
+Scenario: 
+- The user requests the user stats for the first time
+- The user joined pool1 three days ago, left the pool two days ago and joined again one day ago
+
+Mock data for user-balance-subgraph (important that timestamps are ASC, as this is requested like this form the function under test):
+- Create three snapshots for user
+- First snapshot from three days ago, where he only has 1 bpts from pool1 in his wallet
+- Seconds snapshot from two days ago, where he has no balance
+- Third snapshot from yesterday, where he has 1 bpt from pool1 in his wallet
+
+Behaviour under test:
+- Snapshot inference that he has the same amount today as yesterday
+- 0 balance snapshots are correctly returned
+*/
+    const today = moment().startOf('day').unix();
+    const oneDayInSeconds = 86400;
+    const newestSnapshotTimestamp = today;
+    const threeDaysAgo = today - 3 * oneDayInSeconds;
+    const twoDaysAgo = today - 2 * oneDayInSeconds;
+    const oneDayAgo = today - 1 * oneDayInSeconds;
+
+    server.use(
+        ...[
+            graphql.query('UserBalanceSnapshots', async (req, res, ctx) => {
+                const requestJson = await req.json();
+                if (requestJson.variables.where.timestamp_gte > newestSnapshotTimestamp) {
+                    return res(
+                        ctx.data({
+                            snapshots: [],
+                        }),
+                    );
+                }
+                // important, sort snapshots ASC
+                return res(
+                    ctx.data({
+                        snapshots: [
+                            {
+                                id: `${userAddress}-${threeDaysAgo}`,
+                                user: {
+                                    id: userAddress,
+                                },
+                                timestamp: threeDaysAgo,
+                                walletTokens: [poolAddress1],
+                                walletBalances: ['1'],
+                                gauges: [],
+                                gaugeBalances: [],
+                                farms: [],
+                                farmBalances: [],
+                            },
+                            {
+                                id: `${userAddress}-${twoDaysAgo}`,
+                                user: {
+                                    id: userAddress,
+                                },
+                                timestamp: twoDaysAgo,
+                                walletTokens: [],
+                                walletBalances: [],
+                                gauges: [],
+                                gaugeBalances: [],
+                                farms: [],
+                                farmBalances: [],
+                            },
+                            {
+                                id: `${userAddress}-${oneDayAgo}`,
+                                user: {
+                                    id: userAddress,
+                                },
+                                timestamp: oneDayAgo,
+                                walletTokens: [poolAddress1],
+                                walletBalances: ['1'],
+                                gauges: [],
+                                gaugeBalances: [],
+                                farms: [],
+                                farmBalances: [],
+                            },
+                        ],
+                    }),
+                );
+            }),
+        ],
+    );
+
+    const snapshotsFromService = await userService.getUserBalanceSnapshotsForPool(userAddress, poolId1, 'THIRTY_DAYS');
+    //check if 4th snapshot has been inferred from three present ones
+    expect(snapshotsFromService.length).toBe(4);
+    const snapshotsFromDb = await prisma.prismaUserPoolBalanceSnapshot.findMany({
+        where: {
+            userAddress: userAddress,
+        },
+        include: { pool: true },
+    });
+
+    // check if the 3 snapshots have been persisted
+    expect(snapshotsFromDb.length).toBe(3);
+
+    // check if balances are calculated correctly
+    expect(snapshotsFromService[0].timestamp).toBe(threeDaysAgo);
+    expect(snapshotsFromService[0].walletBalance).toBe('1');
+    expect(snapshotsFromService[1].timestamp).toBe(twoDaysAgo);
+    expect(snapshotsFromService[1].walletBalance).toBe('0');
+    expect(snapshotsFromService[1].totalValueUSD).toBe('0');
+    expect(snapshotsFromService[1].fees24h).toBe('0');
+    expect(snapshotsFromService[1].percentShare).toBe(0);
+
+    expect(snapshotsFromService[2].timestamp).toBe(oneDayAgo);
+    expect(snapshotsFromService[2].walletBalance).toBe('1');
+
+    expect(snapshotsFromService[3].timestamp).toBe(today);
+    expect(snapshotsFromService[3].walletBalance).toBe('1');
+
+    const poolSnapshots = await prisma.prismaPoolSnapshot.findMany({
+        where: { poolId: poolId1 },
+    });
+
+    // check if usd value, percent share of the pool and fees are correctly calculated based on poolsnapshots
+    for (const userBalanceSnapshot of snapshotsFromService) {
+        let foundPoolSnapshot = false;
+        for (const poolSnapshot of poolSnapshots) {
+            if (poolSnapshot.timestamp === userBalanceSnapshot.timestamp) {
+                expect(userBalanceSnapshot.totalValueUSD).toBe(
+                    `${poolSnapshot.sharePrice * parseFloat(userBalanceSnapshot.totalBalance)}`,
+                );
+                expect(userBalanceSnapshot.percentShare).toBe(
+                    parseFloat(userBalanceSnapshot.totalBalance) / poolSnapshot.totalSharesNum,
+                );
+                expect(userBalanceSnapshot.fees24h).toBe(
+                    `${
+                        userBalanceSnapshot.percentShare *
+                        poolSnapshot.fees24h *
+                        (1 - networkConfig.balancer.protocolFeePercent)
+                    }`,
+                );
+                foundPoolSnapshot = true;
+            }
+        }
+        //make sure we have a pool snapshot for each user snapshot
+        expect(foundPoolSnapshot).toBe(true);
+    }
+});
+
+test('user left pool, no 0 snapshots returned', async () => {
+    /*
+Scenario: 
+- The user requests the user stats for the first time
+- The user joined pool1 three days ago, left the pool two days ago
+
+Mock data for user-balance-subgraph (important that timestamps are ASC, as this is requested like this form the function under test):
+- Create two snapshots for user
+- First snapshot from three days ago, where he only has 1 bpts from pool1 in his wallet
+- Seconds snapshot from two days ago, where he has no balance
+
+Behaviour under test:
+- That once he leaves, those 0 balance snapshots are neither persisted nor returned
+*/
+    const today = moment().startOf('day').unix();
+    const oneDayInSeconds = 86400;
+    const newestSnapshotTimestamp = today;
+    const threeDaysAgo = today - 3 * oneDayInSeconds;
+    const twoDaysAgo = today - 2 * oneDayInSeconds;
+    const oneDayAgo = today - 1 * oneDayInSeconds;
+
+    server.use(
+        ...[
+            graphql.query('UserBalanceSnapshots', async (req, res, ctx) => {
+                const requestJson = await req.json();
+                if (requestJson.variables.where.timestamp_gte > newestSnapshotTimestamp) {
+                    return res(
+                        ctx.data({
+                            snapshots: [],
+                        }),
+                    );
+                }
+                // important, sort snapshots ASC
+                return res(
+                    ctx.data({
+                        snapshots: [
+                            {
+                                id: `${userAddress}-${threeDaysAgo}`,
+                                user: {
+                                    id: userAddress,
+                                },
+                                timestamp: threeDaysAgo,
+                                walletTokens: [poolAddress1],
+                                walletBalances: ['1'],
+                                gauges: [],
+                                gaugeBalances: [],
+                                farms: [],
+                                farmBalances: [],
+                            },
+                            {
+                                id: `${userAddress}-${twoDaysAgo}`,
+                                user: {
+                                    id: userAddress,
+                                },
+                                timestamp: twoDaysAgo,
+                                walletTokens: [],
+                                walletBalances: [],
+                                gauges: [],
+                                gaugeBalances: [],
+                                farms: [],
+                                farmBalances: [],
+                            },
+                        ],
+                    }),
+                );
+            }),
+        ],
+    );
+
+    const snapshotsFromService = await userService.getUserBalanceSnapshotsForPool(userAddress, poolId1, 'THIRTY_DAYS');
+    //check if 4th snapshot has been inferred from three present ones
+    expect(snapshotsFromService.length).toBe(2);
+    const snapshotsFromDb = await prisma.prismaUserPoolBalanceSnapshot.findMany({
+        where: {
+            userAddress: userAddress,
+        },
+        include: { pool: true },
+    });
+
+    // check if the 3 snapshots have been persisted
+    expect(snapshotsFromDb.length).toBe(2);
+
+    // check if balances are calculated correctly
+    expect(snapshotsFromService[0].timestamp).toBe(threeDaysAgo);
+    expect(snapshotsFromService[0].walletBalance).toBe('1');
+    expect(snapshotsFromService[1].timestamp).toBe(twoDaysAgo);
+    expect(snapshotsFromService[1].walletBalance).toBe('0');
+    expect(snapshotsFromService[1].totalValueUSD).toBe('0');
+    expect(snapshotsFromService[1].fees24h).toBe('0');
+    expect(snapshotsFromService[1].percentShare).toBe(0);
+});
+
+test('no user snapshots if there is no pool snapshot', async () => {
+    /*
+    Scenario: 
+    - The user requests the user stats for the first time
+    - The user joined pool2 three days ago and is still in the pool
+
+    Mock data for user-balance-subgraph (important that timestamps are ASC, as this is requested like this form the function under test):
+    - Create one snapshots for user
+    - First snapshot from three days ago, where he has 1 bpts from pool1 in his wallet
+   
+
+    Behaviour under test:
+    - Pool2 has only two snapshots, so only for the last two days and today a usersnapshot is returned and none for three days ago
+    */
+    const today = moment().startOf('day').unix();
+    const oneDayInSeconds = 86400;
+    const newestSnapshotTimestamp = today;
+    const threeDaysAgo = today - 3 * oneDayInSeconds;
+    const twoDaysAgo = today - 2 * oneDayInSeconds;
+    const oneDayAgo = today - 1 * oneDayInSeconds;
+
+    server.use(
+        ...[
+            graphql.query('UserBalanceSnapshots', async (req, res, ctx) => {
+                const requestJson = await req.json();
+                if (requestJson.variables.where.timestamp_gte > newestSnapshotTimestamp) {
+                    return res(
+                        ctx.data({
+                            snapshots: [],
+                        }),
+                    );
+                }
+                // important, sort snapshots ASC
+                return res(
+                    ctx.data({
+                        snapshots: [
+                            {
+                                id: `${userAddress}-${threeDaysAgo}`,
+                                user: {
+                                    id: userAddress,
+                                },
+                                timestamp: threeDaysAgo,
+                                walletTokens: [poolAddress1],
+                                walletBalances: ['1'],
+                                gauges: [],
+                                gaugeBalances: [],
+                                farms: [],
+                                farmBalances: [],
+                            },
+                        ],
+                    }),
+                );
+            }),
+        ],
+    );
+
+    const snapshotsFromService = await userService.getUserBalanceSnapshotsForPool(userAddress, poolId1, 'THIRTY_DAYS');
+    //check if 4th snapshot has been inferred from three present ones
+    expect(snapshotsFromService.length).toBe(3);
+    const snapshotsFromDb = await prisma.prismaUserPoolBalanceSnapshot.findMany({
+        where: {
+            userAddress: userAddress,
+        },
+        include: { pool: true },
+    });
+
+    // check if the 1 snapshots have been persisted (others are inferred on query)
+    expect(snapshotsFromDb.length).toBe(1);
+
+    // check if balances are calculated correctly
+    expect(snapshotsFromService[0].timestamp).toBe(twoDaysAgo);
+    expect(snapshotsFromService[0].walletBalance).toBe('1');
+    expect(snapshotsFromService[1].timestamp).toBe(oneDayAgo);
+    expect(snapshotsFromService[1].walletBalance).toBe('1');
+
+    expect(snapshotsFromService[2].timestamp).toBe(today);
+    expect(snapshotsFromService[2].walletBalance).toBe('1');
 });
 
 test('Persisted user snapshots are synced', async () => {

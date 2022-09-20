@@ -2,16 +2,16 @@ import { UserSnapshotSubgraphService } from '../../subgraphs/user-snapshot-subgr
 import { prisma } from '../../../prisma/prisma-client';
 import { parseUnits } from 'ethers/lib/utils';
 import moment from 'moment-timezone';
-import { UserPortfolioSnapshot, UserPoolSnapshot } from '../user-types';
+import { UserPoolSnapshot, UserPortfolioSnapshot } from '../user-types';
 import { GqlUserSnapshotDataRange } from '../../../schema';
 import { PoolSnapshotService } from '../../pool/lib/pool-snapshot.service';
 import { formatFixed } from '@ethersproject/bignumber';
 import { UserBalanceSnapshotsQuery } from '../../subgraphs/user-snapshot-subgraph/generated/user-snapshot-subgraph-types';
 import { networkConfig } from '../../config/network-config';
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaPoolSnapshot } from '@prisma/client';
 
 export class UserSnapshotService {
-    private readonly SECONDS_IN_DAY: number = 86400;
+    private readonly ONE_DAY_IN_SECONDS: number = 86400;
 
     constructor(
         private readonly userSnapshotSubgraphService: UserSnapshotSubgraphService,
@@ -33,16 +33,14 @@ export class UserSnapshotService {
     ): Promise<UserPoolSnapshot[]> {
         const oldestRequestedSnapshotTimestamp = this.getTimestampForRange(range);
 
-        // TODO this now has a snapshot for every day since pool launch and lots of 0 snapshots at the front.
-        // need to only get snapshots after user has entered pool
         let storedUserSnapshotsFromRange = await this.getStoredSnapshotsForUserForPoolFromTimestamp(
             userAddress,
             oldestRequestedSnapshotTimestamp,
             poolId,
         );
 
+        // no stored snapshots, retrieve from subgraph and store all non-0 snapshots
         if (storedUserSnapshotsFromRange.length === 0) {
-            // probably not good to get ALL and persist ALL, lots of data
             const userSnapshotsFromSubgraphForAllPools =
                 await this.userSnapshotSubgraphService.getUserBalanceSnapshotsWithPaging(
                     0,
@@ -57,7 +55,7 @@ export class UserSnapshotService {
                     staking: true,
                 },
             });
-            const userSnapshotsForPools = userSnapshotsFromSubgraphForAllPools.snapshots.filter((snapshot) => {
+            const userSnapshotsForPool = userSnapshotsFromSubgraphForAllPools.snapshots.filter((snapshot) => {
                 if (pool.staking) {
                     return (
                         snapshot.walletTokens.includes(pool.address) ||
@@ -67,74 +65,14 @@ export class UserSnapshotService {
                 }
                 return snapshot.walletTokens.includes(pool.address);
             });
-            userSnapshotsFromSubgraphForAllPools.snapshots = userSnapshotsForPools;
 
-            if (userSnapshotsFromSubgraphForAllPools.snapshots.length === 0) {
+            // user does not have any snapshots
+            if (userSnapshotsForPool.length === 0) {
                 return [];
             }
 
-            // need to fill in missing snapshots (doesn't work to infer up to NOW)
-            const userSnapshotsToPersist: UserBalanceSnapshotsQuery = {
-                snapshots: [],
-            };
-
-            /*
-                option to skip first! 
-                const prevTotalSwapVolume = index === 0 ? startTotalSwapVolume : snapshots[index - 1].totalSwapVolume;
-                const prevTotalSwapFee = index === 0 ? startTotalSwapFee : snapshots[index - 1].totalSwapFee;
-            */
-            userSnapshotsToPersist.snapshots.push(userSnapshotsFromSubgraphForAllPools.snapshots[0]);
-            let firstIteration = true;
-            for (const snapshot of userSnapshotsFromSubgraphForAllPools.snapshots) {
-                if (firstIteration) {
-                    firstIteration = false;
-                    continue;
-                }
-                while (
-                    userSnapshotsToPersist.snapshots[userSnapshotsToPersist.snapshots.length - 1].timestamp +
-                        this.SECONDS_IN_DAY <
-                    snapshot.timestamp
-                ) {
-                    //need to infer from last snapshot
-                    const lastSnapshot = userSnapshotsToPersist.snapshots[userSnapshotsToPersist.snapshots.length - 1];
-                    userSnapshotsToPersist.snapshots.push({
-                        id: `${userAddress}-${lastSnapshot.timestamp + this.SECONDS_IN_DAY}`,
-                        timestamp: lastSnapshot.timestamp + this.SECONDS_IN_DAY,
-                        user: {
-                            id: userAddress,
-                        },
-                        walletTokens: lastSnapshot.walletTokens,
-                        walletBalances: lastSnapshot.walletBalances,
-                        farms: lastSnapshot.farms,
-                        farmBalances: lastSnapshot.farmBalances,
-                        gauges: lastSnapshot.gauges,
-                        gaugeBalances: lastSnapshot.gaugeBalances,
-                    });
-                }
-                userSnapshotsToPersist.snapshots.push(snapshot);
-            }
-            // TODO or up to the day before??
-            // check if we need to infer up to today (or up to yesterday??)
-            while (
-                userSnapshotsToPersist.snapshots[userSnapshotsToPersist.snapshots.length - 1].timestamp <
-                moment().startOf('day').unix()
-            ) {
-                const lastSnapshot = userSnapshotsToPersist.snapshots[userSnapshotsToPersist.snapshots.length - 1];
-                userSnapshotsToPersist.snapshots.push({
-                    id: `${userAddress}-${lastSnapshot.timestamp + this.SECONDS_IN_DAY}`,
-                    timestamp: lastSnapshot.timestamp + this.SECONDS_IN_DAY,
-                    user: {
-                        id: userAddress,
-                    },
-                    walletTokens: lastSnapshot.walletTokens,
-                    walletBalances: lastSnapshot.walletBalances,
-                    farms: lastSnapshot.farms,
-                    farmBalances: lastSnapshot.farmBalances,
-                    gauges: lastSnapshot.gauges,
-                    gaugeBalances: lastSnapshot.gaugeBalances,
-                });
-            }
-            await this.enrichAndPersistSnapshotsForPool(userSnapshotsToPersist, poolId);
+            // persists what we have in the subgraph
+            await this.enrichAndPersistSnapshotsForPool({ snapshots: userSnapshotsForPool }, poolId);
 
             storedUserSnapshotsFromRange = await this.getStoredSnapshotsForUserForPoolFromTimestamp(
                 userAddress,
@@ -143,17 +81,92 @@ export class UserSnapshotService {
             );
         }
 
-        return storedUserSnapshotsFromRange.map((snapshot) => ({
-            id: snapshot.id,
-            timestamp: snapshot.timestamp,
-            walletBalance: snapshot.walletBalance,
-            farmBalance: snapshot.farmBalance,
-            fees24h: snapshot.fees24h,
-            gaugeBalance: snapshot.gaugeBalance,
-            percentShare: parseFloat(snapshot.percentShare),
-            totalBalance: snapshot.totalBalance,
-            totalValueUSD: snapshot.totalValueUSD,
-        }));
+        const poolSnapshots = await this.poolSnapshotService.getSnapshotsForPool(poolId, range);
+        // find and fill in any gaps from first to last snapshot
+
+        const userPoolSnapshots: UserPoolSnapshot[] = [];
+
+        userPoolSnapshots.push({
+            timestamp: storedUserSnapshotsFromRange[0].timestamp,
+            walletBalance: storedUserSnapshotsFromRange[0].walletBalance,
+            farmBalance: storedUserSnapshotsFromRange[0].farmBalance,
+            gaugeBalance: storedUserSnapshotsFromRange[0].gaugeBalance,
+            totalBalance: storedUserSnapshotsFromRange[0].totalBalance,
+            totalValueUSD: storedUserSnapshotsFromRange[0].totalValueUSD,
+            fees24h: storedUserSnapshotsFromRange[0].fees24h,
+            percentShare: parseFloat(storedUserSnapshotsFromRange[0].percentShare),
+        });
+        let firstIteration = true;
+        for (const snapshot of storedUserSnapshotsFromRange) {
+            // skip first
+            if (firstIteration) {
+                firstIteration = false;
+                continue;
+            }
+            while (
+                userPoolSnapshots[userPoolSnapshots.length - 1].timestamp + this.ONE_DAY_IN_SECONDS <
+                snapshot.timestamp
+            ) {
+                //need to fill the gap from last snapshot
+                const previousUserSnapshot = userPoolSnapshots[userPoolSnapshots.length - 1];
+                const currentTimestamp = previousUserSnapshot.timestamp + this.ONE_DAY_IN_SECONDS;
+                const poolSnapshot = poolSnapshots.find((snapshot) => snapshot.timestamp === currentTimestamp);
+                if (!poolSnapshot) {
+                    continue;
+                }
+                const percentShare = parseFloat(previousUserSnapshot.totalBalance) / poolSnapshot.totalSharesNum;
+                userPoolSnapshots.push({
+                    timestamp: currentTimestamp,
+                    walletBalance: previousUserSnapshot.walletBalance,
+                    farmBalance: previousUserSnapshot.farmBalance,
+                    gaugeBalance: previousUserSnapshot.gaugeBalance,
+                    totalBalance: previousUserSnapshot.totalBalance,
+                    percentShare: percentShare,
+                    totalValueUSD: `${parseFloat(previousUserSnapshot.totalBalance) * (poolSnapshot.sharePrice || 0)}`,
+                    fees24h: `${
+                        percentShare * (poolSnapshot.fees24h || 0) * (1 - networkConfig.balancer.protocolFeePercent)
+                    }`,
+                });
+            }
+            userPoolSnapshots.push({
+                timestamp: snapshot.timestamp,
+                walletBalance: snapshot.walletBalance,
+                farmBalance: snapshot.farmBalance,
+                gaugeBalance: snapshot.gaugeBalance,
+                totalBalance: snapshot.totalBalance,
+                totalValueUSD: snapshot.totalValueUSD,
+                fees24h: snapshot.fees24h,
+                percentShare: parseFloat(snapshot.percentShare),
+            });
+        }
+
+        // find and fill gap from last snapshot to today (if its balance is > 0)
+        while (userPoolSnapshots[userPoolSnapshots.length - 1].timestamp < moment().startOf('day').unix()) {
+            const lastSnapshot = userPoolSnapshots[userPoolSnapshots.length - 1];
+            if (parseFloat(lastSnapshot.totalBalance) > 0) {
+                const previousUserSnapshot = userPoolSnapshots[userPoolSnapshots.length - 1];
+                const currentTimestamp = previousUserSnapshot.timestamp + this.ONE_DAY_IN_SECONDS;
+                const poolSnapshot = poolSnapshots.find((snapshot) => snapshot.timestamp === currentTimestamp);
+                if (!poolSnapshot) {
+                    continue;
+                }
+                const percentShare = parseFloat(previousUserSnapshot.totalBalance) / poolSnapshot.totalSharesNum;
+                userPoolSnapshots.push({
+                    timestamp: currentTimestamp,
+                    walletBalance: previousUserSnapshot.walletBalance,
+                    farmBalance: previousUserSnapshot.farmBalance,
+                    gaugeBalance: previousUserSnapshot.gaugeBalance,
+                    totalBalance: previousUserSnapshot.totalBalance,
+                    percentShare: percentShare,
+                    totalValueUSD: `${parseFloat(previousUserSnapshot.totalBalance) * (poolSnapshot.sharePrice || 0)}`,
+                    fees24h: `${
+                        percentShare * (poolSnapshot.fees24h || 0) * (1 - networkConfig.balancer.protocolFeePercent)
+                    }`,
+                });
+            }
+        }
+
+        return userPoolSnapshots;
     }
 
     private async enrichAndPersistSnapshotsForPool(
@@ -180,10 +193,15 @@ export class UserSnapshotService {
 
         const prismaInput: Prisma.PrismaUserPoolBalanceSnapshotCreateManyInput[] = [];
         for (const snapshot of userBalanceSnapshots) {
-            const poolSnapshotForTimestamp = await this.poolSnapshotService.getOrInferSnapshotForPool(
+            const poolSnapshotForTimestamp = await this.poolSnapshotService.getSnapshotForPool(
                 poolId,
                 snapshot.timestamp,
             );
+
+            // if we don't have a snapshot for the pool, we can't calculate user snapshot -> skip
+            if (!poolSnapshotForTimestamp) {
+                continue;
+            }
 
             const walletIdx = snapshot.walletTokens.indexOf(poolInSnapshots.address);
             const walletBalance = walletIdx !== -1 ? snapshot.walletBalances[walletIdx] : '0';

@@ -18,7 +18,7 @@ import { CoingeckoService } from '../../coingecko/coingecko.service';
 import { TokenHistoricalPrices } from '../../../legacy/token-price/token-price-types';
 import { blocksSubgraphService } from '../../subgraphs/blocks-subgraph/blocks-subgraph.service';
 import { sleep } from '../../common/promise';
-
+import { time } from 'console';
 export class PoolSnapshotService {
     constructor(
         private readonly balancerSubgraphService: BalancerSubgraphService,
@@ -34,40 +34,46 @@ export class PoolSnapshotService {
         });
     }
 
-    public async getOrInferSnapshotForPool(poolId: string, timestamp: number): Promise<PrismaPoolSnapshot> {
-        const poolSnapshotForTimestamp = await prisma.prismaPoolSnapshot.findFirst({
-            where: { poolId, timestamp: timestamp },
+    public async getSnapshotForPool(poolId: string, timestamp: number) {
+        return prisma.prismaPoolSnapshot.findUnique({
+            where: { id: `${poolId}-${timestamp}` },
         });
-
-        if (poolSnapshotForTimestamp) {
-            return poolSnapshotForTimestamp;
-        }
-
-        const lastSnapshotBeforeTimestamp = await prisma.prismaPoolSnapshot.findFirst({
-            where: { poolId, timestamp: { lt: timestamp } },
-            orderBy: { timestamp: 'desc' },
-        });
-        if (!lastSnapshotBeforeTimestamp) {
-            // no previous timestamp, return everything 0
-            return {
-                id: `${poolId}-${timestamp}`,
-                timestamp: timestamp,
-                poolId: poolId,
-                amounts: [],
-                holdersCount: 0,
-                sharePrice: 0,
-                swapsCount: 0,
-                volume24h: 0,
-                fees24h: 0,
-                totalLiquidity: 0,
-                totalShares: '0',
-                totalSharesNum: 0,
-                totalSwapFee: 0,
-                totalSwapVolume: 0,
-            };
-        }
-        return this.inferSnapshotFromLast(lastSnapshotBeforeTimestamp, timestamp);
     }
+
+    // public async getOrInferSnapshotForPool(poolId: string, timestamp: number): Promise<PrismaPoolSnapshot> {
+    //     const poolSnapshotForTimestamp = await prisma.prismaPoolSnapshot.findFirst({
+    //         where: { poolId, timestamp: timestamp },
+    //     });
+
+    //     if (poolSnapshotForTimestamp) {
+    //         return poolSnapshotForTimestamp;
+    //     }
+
+    //     const lastSnapshotBeforeTimestamp = await prisma.prismaPoolSnapshot.findFirst({
+    //         where: { poolId, timestamp: { lt: timestamp } },
+    //         orderBy: { timestamp: 'desc' },
+    //     });
+    //     if (!lastSnapshotBeforeTimestamp) {
+    //         // no previous timestamp, return everything 0
+    //         return {
+    //             id: `${poolId}-${timestamp}`,
+    //             timestamp: timestamp,
+    //             poolId: poolId,
+    //             amounts: [],
+    //             holdersCount: 0,
+    //             sharePrice: 0,
+    //             swapsCount: 0,
+    //             volume24h: 0,
+    //             fees24h: 0,
+    //             totalLiquidity: 0,
+    //             totalShares: '0',
+    //             totalSharesNum: 0,
+    //             totalSwapFee: 0,
+    //             totalSwapVolume: 0,
+    //         };
+    //     }
+    //     return this.inferSnapshotFromLast(lastSnapshotBeforeTimestamp, timestamp);
+    // }
 
     //TODO: this could be optimized
     public async syncLatestSnapshotsForAllPools(daysToSync = 1) {
@@ -300,38 +306,38 @@ export class PoolSnapshotService {
         };
     }
 
-    private async inferSnapshotFromLast(
-        lastSnapshot: PrismaPoolSnapshot,
-        timestamp: number,
-    ): Promise<PrismaPoolSnapshot> {
-        const poolTokensAddresses = await prisma.prismaPool.findUniqueOrThrow({
-            where: { id: lastSnapshot.poolId },
-            select: { tokens: { select: { address: true, index: true } } },
-        });
+    // private async inferSnapshotFromLast(
+    //     lastSnapshot: PrismaPoolSnapshot,
+    //     timestamp: number,
+    // ): Promise<PrismaPoolSnapshot> {
+    //     const poolTokensAddresses = await prisma.prismaPool.findUniqueOrThrow({
+    //         where: { id: lastSnapshot.poolId },
+    //         select: { tokens: { select: { address: true, index: true } } },
+    //     });
 
-        let totalLiquidity = 0;
-        for (const token of poolTokensAddresses.tokens) {
-            const tokenPriceMap: TokenHistoricalPrices = {};
-            // TODO how far back are token prices saved?
-            tokenPriceMap[token.address] = await prisma.prismaTokenPrice.findMany({
-                where: { tokenAddress: token.address, timestamp: { gte: timestamp } },
-            });
-            const tokenPrices = this.getTokenPricesForTimestamp(timestamp, tokenPriceMap);
-            totalLiquidity += tokenPrices[token.address] * parseFloat(lastSnapshot.amounts[token.index]);
-        }
+    //     let totalLiquidity = 0;
+    //     for (const token of poolTokensAddresses.tokens) {
+    //         const tokenPriceMap: TokenHistoricalPrices = {};
+    //         // TODO how far back are token prices saved?
+    //         tokenPriceMap[token.address] = await prisma.prismaTokenPrice.findMany({
+    //             where: { tokenAddress: token.address, timestamp: { gte: timestamp } },
+    //         });
+    //         const tokenPrices = this.getTokenPricesForTimestamp(timestamp, tokenPriceMap);
+    //         totalLiquidity += tokenPrices[token.address] * parseFloat(lastSnapshot.amounts[token.index]);
+    //     }
 
-        lastSnapshot.id = `${lastSnapshot.poolId}-${timestamp}`;
-        lastSnapshot.fees24h = 0;
-        lastSnapshot.volume24h = 0;
-        lastSnapshot.timestamp = timestamp;
-        lastSnapshot.totalLiquidity = totalLiquidity;
-        lastSnapshot.sharePrice =
-            totalLiquidity > 0 && parseFloat(lastSnapshot.totalShares) > 0
-                ? totalLiquidity / parseFloat(lastSnapshot.totalShares)
-                : 0;
+    //     lastSnapshot.id = `${lastSnapshot.poolId}-${timestamp}`;
+    //     lastSnapshot.fees24h = 0;
+    //     lastSnapshot.volume24h = 0;
+    //     lastSnapshot.timestamp = timestamp;
+    //     lastSnapshot.totalLiquidity = totalLiquidity;
+    //     lastSnapshot.sharePrice =
+    //         totalLiquidity > 0 && parseFloat(lastSnapshot.totalShares) > 0
+    //             ? totalLiquidity / parseFloat(lastSnapshot.totalShares)
+    //             : 0;
 
-        return lastSnapshot;
-    }
+    //     return lastSnapshot;
+    // }
 
     private getTimestampForRange(range: GqlPoolSnapshotDataRange): number {
         switch (range) {

@@ -40,7 +40,7 @@ export interface UserPortfolioSnapshot {
 }
 
 export interface UserPoolSnapshot {
-    id: string;
+    // id: string;
     timestamp: number;
     // poolId: string;
     // poolAddress: string;
