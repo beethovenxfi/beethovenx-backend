@@ -70,7 +70,7 @@ interface YearnVaultTvl {
 
 type YearnVaultType = 'v2';
 
-export interface ReaperVault {
+export interface ReaperCrypt {
     _id: string;
     provider: ReaperProvider;
     cryptContent: ReaperCryptContent;
