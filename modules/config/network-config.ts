@@ -72,6 +72,9 @@ export interface NetworkConfig {
         wstEthContract: string;
         wstEthAprEndpoint: string;
     };
+    reaper?: {
+        vaultsEndpoint: string;
+    };
     avgBlockSpeed: number;
     sor: {
         [key in DeploymentEnv]: {
@@ -254,6 +257,9 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         lido: {
             wstEthAprEndpoint: 'https://stake.lido.fi/api/steth-apr',
             wstEthContract: '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
+        },
+        reaper: {
+            vaultsEndpoint: 'https://yzo0r3ahok.execute-api.us-east-1.amazonaws.com/dev/api/optimism/crypts',
         },
         copper: {
             proxyAddress: '0x0000000000000000000000000000000000000000',
