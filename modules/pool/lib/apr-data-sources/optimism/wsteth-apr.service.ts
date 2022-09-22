@@ -13,7 +13,7 @@ export class WstethAprService implements PoolAprService {
             if (pool.tokens.map((token) => token.address).includes(this.wstethContractAddress)) {
                 if (!apr) {
                     const { data } = await axios.get<string>(this.wstethAprEndpoint);
-                    apr = parseFloat(data);
+                    apr = parseFloat(data) / 100;
                 }
                 await prisma.prismaPoolAprItem.upsert({
                     where: { id: itemId },
