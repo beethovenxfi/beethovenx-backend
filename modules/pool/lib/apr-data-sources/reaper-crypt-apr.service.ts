@@ -9,8 +9,7 @@ export class ReaperCryptAprService implements PoolAprService {
 
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
         const { data } = await axios.get<{ data: ReaperCrypt[] }>(this.reaperCryptsEndpoint);
-
-        const beethovenCrypts = data.data.filter((crypt) => crypt.cryptContent.exchange === 'beethoven');
+        const crypts = data.data;
 
         for (const pool of pools) {
             const itemId = `${pool.id}-reaper-crypt`;
@@ -22,7 +21,7 @@ export class ReaperCryptAprService implements PoolAprService {
             const linearData = pool.linearData;
             const wrappedToken = pool.tokens[linearData.wrappedIndex];
 
-            const crypt = beethovenCrypts.find(
+            const crypt = crypts.find(
                 (crypt) => crypt.cryptContent.vault.address.toLowerCase() === wrappedToken.address.toLowerCase(),
             );
 
