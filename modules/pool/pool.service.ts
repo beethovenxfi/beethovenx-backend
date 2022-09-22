@@ -51,6 +51,8 @@ import { coingeckoService } from '../coingecko/coingecko.service';
 import { StaderStakedFtmAprService } from './lib/apr-data-sources/fantom/stader-staked-ftm-apr.service';
 import { RocketPoolStakedEthAprService } from './lib/apr-data-sources/optimism/rocket-pool-staked-eth-apr.service';
 import { id } from 'ethers/lib/utils';
+import { WstethAprService } from './lib/apr-data-sources/optimism/wsteth-apr.service';
+import { ReaperVaultAprService } from './lib/apr-data-sources/reaper-vault-apr.service';
 
 const FEATURED_POOL_GROUPS_CACHE_KEY = 'pool:featuredPoolGroups';
 
@@ -288,7 +290,11 @@ export const poolService = new PoolService(
                   new YearnVaultAprService(tokenService),
                   new StaderStakedFtmAprService(tokenService),
               ]
-            : [new RocketPoolStakedEthAprService(tokenService)]),
+            : [
+                  new RocketPoolStakedEthAprService(tokenService),
+                  new WstethAprService(networkConfig.lido!.wstEthAprEndpoint, networkConfig.lido!.wstEthContract),
+                  new ReaperVaultAprService(networkConfig.reaper!.vaultsEndpoint),
+              ]),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(),
