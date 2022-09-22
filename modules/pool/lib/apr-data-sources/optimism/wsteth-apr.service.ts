@@ -24,7 +24,7 @@ export class WstethAprService implements PoolAprService {
                         apr,
                         type: 'IB_YIELD',
                     },
-                    update: { apr, type: 'IB_YIELD' },
+                    update: { apr },
                 });
             }
         }

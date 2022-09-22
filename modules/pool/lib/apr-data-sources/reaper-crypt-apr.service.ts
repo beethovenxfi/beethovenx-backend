@@ -41,7 +41,7 @@ export class ReaperCryptAprService implements PoolAprService {
                     group: 'REAPER',
                     type: 'LINEAR_BOOSTED',
                 },
-                update: { apr, type: 'LINEAR_BOOSTED' },
+                update: { apr },
             });
         }
     }
