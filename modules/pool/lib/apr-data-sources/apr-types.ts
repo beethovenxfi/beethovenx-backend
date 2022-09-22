@@ -22,12 +22,12 @@ interface YearnVaultApy {
     type: YearnVaultApyType;
     gross_apr: number;
     net_apy: number;
-    fees: ReaperFees;
-    points: Points;
+    fees: YearnFees;
+    points: YearnPoints;
     composite: null;
 }
 
-interface ReaperFees {
+interface YearnFees {
     performance: number;
     withdrawal: number | null;
     management: number | null;
@@ -35,7 +35,7 @@ interface ReaperFees {
     cvx_keep_crv: null;
 }
 
-interface Points {
+interface YearnPoints {
     week_ago: number;
     month_ago: number;
     inception: number;
