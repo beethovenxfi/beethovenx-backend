@@ -284,6 +284,8 @@ export class PoolGqlLoaderService {
     }
 
     private mapPoolToGqlPool(pool: PrismaPoolWithExpandedNesting): GqlPoolUnion {
+        const bpt = pool.tokens.find((token) => token.address === pool.address);
+
         const mappedData = {
             ...pool,
             decimals: 18,
@@ -318,6 +320,7 @@ export class PoolGqlLoaderService {
                     __typename: 'GqlPoolPhantomStable',
                     ...mappedData,
                     amp: pool.stableDynamicData?.amp || '0',
+                    bptPriceRate: bpt?.dynamicData?.priceRate || '1.0',
                 };
             case 'LINEAR':
                 return {
@@ -328,6 +331,7 @@ export class PoolGqlLoaderService {
                     wrappedIndex: pool.linearData?.wrappedIndex || 0,
                     lowerTarget: pool.linearDynamicData?.lowerTarget || '0',
                     upperTarget: pool.linearDynamicData?.upperTarget || '0',
+                    bptPriceRate: bpt?.dynamicData?.priceRate || '1.0',
                 };
             case 'ELEMENT':
                 return {
@@ -685,6 +689,8 @@ export class PoolGqlLoaderService {
         pool: PrismaNestedPoolWithSingleLayerNesting,
         percentOfSupplyNested: number,
     ): GqlPoolPhantomStableNested {
+        const bpt = pool.tokens.find((token) => token.address === pool.address);
+
         return {
             __typename: 'GqlPoolPhantomStableNested',
             ...pool,
@@ -725,6 +731,7 @@ export class PoolGqlLoaderService {
             totalShares: pool.dynamicData?.totalShares || '0',
             swapFee: pool.dynamicData?.swapFee || '0',
             amp: pool.stableDynamicData?.amp || '0',
+            bptPriceRate: bpt?.dynamicData?.priceRate || '1.0',
         };
     }
 
