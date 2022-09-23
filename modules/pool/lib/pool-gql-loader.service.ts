@@ -32,6 +32,7 @@ import { prisma } from '../../../prisma/prisma-client';
 import { networkConfig } from '../../config/network-config';
 import { Prisma } from '@prisma/client';
 import { ContentService } from '../../content/content.service';
+import { isWeightedPoolV2 } from './pool-utils';
 
 export class PoolGqlLoaderService {
     constructor(private readonly configService: ContentService) {}
@@ -459,6 +460,8 @@ export class PoolGqlLoaderService {
                             case 'YEARN':
                                 title = 'Yearn boosted APR';
                                 break;
+                            case 'REAPER':
+                                title = 'Reaper boosted APR';
                         }
 
                         return {
@@ -496,7 +499,7 @@ export class PoolGqlLoaderService {
         let options: GqlPoolWithdrawOption[] = [];
 
         for (const poolToken of poolTokens) {
-            options = [...options, ...this.getActionOptionsForPoolToken(pool, poolToken, false)];
+            options = [...options, ...this.getActionOptionsForPoolToken(pool, poolToken, false, true)];
         }
 
         return {
@@ -511,6 +514,7 @@ export class PoolGqlLoaderService {
         pool: PrismaPoolWithExpandedNesting,
         poolToken: PrismaPoolTokenWithExpandedNesting,
         supportsNativeAsset: boolean,
+        isWithdraw?: boolean,
     ): { poolTokenAddress: string; poolTokenIndex: number; tokenOptions: GqlPoolToken[] }[] {
         const nestedPool = poolToken.nestedPool;
         const options: GqlPoolInvestOption[] = [];
@@ -543,8 +547,10 @@ export class PoolGqlLoaderService {
         } else if (nestedPool && nestedPool.type === 'PHANTOM_STABLE') {
             const nestedTokens = nestedPool.tokens.filter((token) => token.address !== nestedPool.address);
 
-            if (pool.type === 'PHANTOM_STABLE') {
+            if (pool.type === 'PHANTOM_STABLE' || (isWithdraw && isWeightedPoolV2(pool))) {
                 //when nesting a phantom stable inside a phantom stable, all of the underlying tokens can be used when investing
+                //when withdrawing from a v2 weighted pool, we withdraw into all underlying assets.
+                // ie: USDC/DAI/USDT for nested bbaUSD
                 for (const nestedToken of nestedTokens) {
                     options.push({
                         poolTokenIndex: poolToken.index,
