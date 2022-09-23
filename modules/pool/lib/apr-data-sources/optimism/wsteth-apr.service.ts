@@ -7,7 +7,7 @@ export class WstethAprService implements PoolAprService {
     constructor(
         private readonly wstethAprEndpoint: string,
         private readonly wstethContractAddress: string,
-        private readonly yieldFeePercentage: number,
+        private readonly yieldProtocolFeePercentage: number,
     ) {}
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
         let growthApr: number | undefined;
@@ -17,7 +17,7 @@ export class WstethAprService implements PoolAprService {
             if (pool.tokens.map((token) => token.address).includes(this.wstethContractAddress)) {
                 if (!growthApr) {
                     const { data } = await axios.get<string>(this.wstethAprEndpoint);
-                    growthApr = (parseFloat(data) / 100) * this.yieldFeePercentage;
+                    growthApr = (parseFloat(data) / 100) * this.yieldProtocolFeePercentage;
                 }
                 await prisma.prismaPoolAprItem.upsert({
                     where: { id: itemId },

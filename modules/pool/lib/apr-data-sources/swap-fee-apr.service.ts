@@ -4,7 +4,7 @@ import { prisma } from '../../../../prisma/prisma-client';
 import { prismaBulkExecuteOperations } from '../../../../prisma/prisma-util';
 
 export class SwapFeeAprService implements PoolAprService {
-    constructor(private readonly protocolFeePercentage: number) {}
+    constructor(private readonly swapProtocolFeePercentage: number) {}
 
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
         const operations: any[] = [];
@@ -16,7 +16,7 @@ export class SwapFeeAprService implements PoolAprService {
                         ? (pool.dynamicData.fees24h * 365) / pool.dynamicData.totalLiquidity
                         : 0;
 
-                const growthApr = apr * this.protocolFeePercentage;
+                const growthApr = apr * this.swapProtocolFeePercentage;
 
                 operations.push(
                     prisma.prismaPoolAprItem.upsert({

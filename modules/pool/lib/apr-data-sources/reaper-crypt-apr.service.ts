@@ -10,6 +10,7 @@ export class ReaperCryptAprService implements PoolAprService {
         private readonly tokenService: TokenService,
         private readonly reaperCryptsEndpoint: string,
         private readonly cryptsOverrides: Record<string, string> = {},
+        private readonly yieldProtocolFeePercentage: number,
     ) {}
 
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
@@ -42,6 +43,7 @@ export class ReaperCryptAprService implements PoolAprService {
             const poolWrappedLiquidity = wrappedTokens * priceRate * tokenPrice;
             const totalLiquidity = pool.dynamicData.totalLiquidity;
             const apr = totalLiquidity > 0 ? crypt.analytics.yields.year * (poolWrappedLiquidity / totalLiquidity) : 0;
+            const growthApr = apr * this.yieldProtocolFeePercentage;
 
             await prisma.prismaPoolAprItem.upsert({
                 where: { id: itemId },
@@ -49,11 +51,11 @@ export class ReaperCryptAprService implements PoolAprService {
                     id: itemId,
                     poolId: pool.id,
                     title: `${crypt.cryptContent.symbol} APR`,
-                    apr,
+                    apr: growthApr,
                     group: 'REAPER',
                     type: 'LINEAR_BOOSTED',
                 },
-                update: { apr },
+                update: { apr: growthApr },
             });
         }
     }

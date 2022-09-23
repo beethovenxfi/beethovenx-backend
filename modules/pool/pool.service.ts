@@ -286,22 +286,27 @@ export const poolService = new PoolService(
         //order matters for the boosted pool aprs: linear, phantom stable, then boosted
         ...(isFantomNetwork()
             ? [
-                  new SpookySwapAprService(tokenService),
-                  new YearnVaultAprService(tokenService),
-                  new StaderStakedFtmAprService(tokenService),
+                  new SpookySwapAprService(tokenService, networkConfig.balancer.yieldProtocolFeePercentage),
+                  new YearnVaultAprService(tokenService, networkConfig.balancer.yieldProtocolFeePercentage),
+                  new StaderStakedFtmAprService(tokenService, networkConfig.balancer.yieldProtocolFeePercentage),
               ]
             : [
-                  new RocketPoolStakedEthAprService(tokenService),
-                  new WstethAprService(networkConfig.lido!.wstEthAprEndpoint, networkConfig.lido!.wstEthContract),
+                  new RocketPoolStakedEthAprService(tokenService, networkConfig.balancer.yieldProtocolFeePercentage),
+                  new WstethAprService(
+                      networkConfig.lido!.wstEthAprEndpoint,
+                      networkConfig.lido!.wstEthContract,
+                      networkConfig.balancer.yieldProtocolFeePercentage,
+                  ),
                   new ReaperCryptAprService(
                       tokenService,
                       networkConfig.reaper!.cryptsEndpoint,
                       networkConfig.reaper?.cryptsOverrides,
+                      networkConfig.balancer.yieldProtocolFeePercentage,
                   ),
               ]),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
-        new SwapFeeAprService(),
+        new SwapFeeAprService(networkConfig.balancer.swapProtocolFeePercentage),
         ...(isFantomNetwork()
             ? [new MasterchefFarmAprService()]
             : [

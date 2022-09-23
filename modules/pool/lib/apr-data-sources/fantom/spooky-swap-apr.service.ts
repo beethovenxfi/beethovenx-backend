@@ -7,7 +7,7 @@ import { TokenService } from '../../../../token/token.service';
 const BOO_TOKEN_ADDRESS = '0x841FAD6EAe12c286d1Fd18d1d525DFfA75C7EFFE'.toLowerCase();
 
 export class SpookySwapAprService implements PoolAprService {
-    constructor(private readonly tokenService: TokenService, private readonly yieldFeePercentage: number) {}
+    constructor(private readonly tokenService: TokenService, private readonly yieldProtocolFeePercentage: number) {}
 
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
         const tokenPrices = await this.tokenService.getTokenPrices();
@@ -32,7 +32,7 @@ export class SpookySwapAprService implements PoolAprService {
             const poolWrappedLiquidity = wrappedTokens * priceRate * tokenPrice;
             const totalLiquidity = pool.dynamicData.totalLiquidity;
             const apr = totalLiquidity > 0 ? xBooApr * (poolWrappedLiquidity / totalLiquidity) : 0;
-            const growthApr = apr * this.yieldFeePercentage;
+            const growthApr = apr * this.yieldProtocolFeePercentage;
 
             operations.push(
                 prisma.prismaPoolAprItem.upsert({

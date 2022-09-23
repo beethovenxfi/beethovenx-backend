@@ -8,7 +8,7 @@ export class StaderStakedFtmAprService implements PoolAprService {
     private readonly SFTMX_ADDRESS = '0xd7028092c830b5c8fce061af2e593413ebbc1fc1';
     private readonly SFTMX_APR = 0.125;
 
-    constructor(private readonly tokenService: TokenService, private readonly yieldFeePercentage: number) {}
+    constructor(private readonly tokenService: TokenService, private readonly yieldProtocolFeePercentage: number) {}
 
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
         const tokenPrices = await this.tokenService.getTokenPrices();
@@ -20,7 +20,7 @@ export class StaderStakedFtmAprService implements PoolAprService {
             if (sftmxTokenBalance && pool.dynamicData) {
                 const sftmxPercentage = (parseFloat(sftmxTokenBalance) * sftmxPrice) / pool.dynamicData.totalLiquidity;
                 const sftmxApr = pool.dynamicData.totalLiquidity > 0 ? this.SFTMX_APR * sftmxPercentage : 0;
-                const sftmxGrowthApr = sftmxApr * this.yieldFeePercentage;
+                const sftmxGrowthApr = sftmxApr * this.yieldProtocolFeePercentage;
 
                 operations.push(
                     prisma.prismaPoolAprItem.upsert({
