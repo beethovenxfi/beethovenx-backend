@@ -29,7 +29,9 @@ export class ReaperCryptAprService implements PoolAprService {
             const mainToken = pool.tokens[linearData.mainIndex];
             const cryptAddress = this.cryptsOverrides[wrappedToken.address] ?? wrappedToken.address;
 
-            const crypt = crypts.find((crypt) => crypt.cryptContent.vault.address.toLowerCase() === cryptAddress);
+            const crypt = crypts.find(
+                (crypt) => crypt.cryptContent.vault.address.toLowerCase() === cryptAddress.toLowerCase(),
+            );
 
             if (!crypt) {
                 continue;
