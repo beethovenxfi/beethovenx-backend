@@ -293,7 +293,11 @@ export const poolService = new PoolService(
             : [
                   new RocketPoolStakedEthAprService(tokenService),
                   new WstethAprService(networkConfig.lido!.wstEthAprEndpoint, networkConfig.lido!.wstEthContract),
-                  new ReaperCryptAprService(networkConfig.reaper!.cryptsEndpoint),
+                  new ReaperCryptAprService(
+                      tokenService,
+                      networkConfig.reaper!.cryptsEndpoint,
+                      networkConfig.reaper?.cryptsOverrides,
+                  ),
               ]),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
