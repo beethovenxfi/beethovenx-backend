@@ -2,6 +2,8 @@ import { prisma } from '../../../../../prisma/prisma-client';
 import { PrismaPoolWithExpandedNesting } from '../../../../../prisma/prisma-types';
 import { TokenService } from '../../../../token/token.service';
 import { PoolAprService } from '../../../pool-types';
+import { networkConfig } from '../../../../config/network-config';
+import { isComposableStablePool, isWeightedPoolV2 } from '../../pool-utils';
 
 export class RocketPoolStakedEthAprService implements PoolAprService {
     private readonly RETH_ADDRESS = '0x9bcef72be871e61ed4fbbc7630889bee758eb81d';
@@ -19,14 +21,18 @@ export class RocketPoolStakedEthAprService implements PoolAprService {
             if (rethTokenBalance && pool.dynamicData) {
                 const rethPercentage = (parseFloat(rethTokenBalance) * rethPrice) / pool.dynamicData.totalLiquidity;
                 const rethApr = pool.dynamicData.totalLiquidity > 0 ? this.RETH_APR * rethPercentage : 0;
+                const grossApr = rethApr * networkConfig.balancer.yieldProtocolFeePercentage;
+                const collectsProtocolYieldFee =
+                    isWeightedPoolV2(pool) || isComposableStablePool(pool) || pool.type === 'META_STABLE';
+
                 operations.push(
                     prisma.prismaPoolAprItem.upsert({
                         where: { id: `${pool.id}-reth-apr` },
-                        update: { apr: rethApr },
+                        update: { apr: collectsProtocolYieldFee ? grossApr : rethApr },
                         create: {
                             id: `${pool.id}-reth-apr`,
                             poolId: pool.id,
-                            apr: rethApr,
+                            apr: collectsProtocolYieldFee ? grossApr : rethApr,
                             title: 'rETH APR',
                             type: 'IB_YIELD',
                         },
