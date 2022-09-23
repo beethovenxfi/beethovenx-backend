@@ -5,7 +5,7 @@ import { PoolAprService } from '../../../pool-types';
 
 export class RocketPoolStakedEthAprService implements PoolAprService {
     private readonly RETH_ADDRESS = '0x9bcef72be871e61ed4fbbc7630889bee758eb81d';
-    private readonly RETH_APR = 0.0403;
+    private readonly RETH_APR = 0.0513;
 
     constructor(private readonly tokenService: TokenService) {}
 
