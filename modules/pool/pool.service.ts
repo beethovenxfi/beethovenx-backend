@@ -291,8 +291,13 @@ export const poolService = new PoolService(
                   new StaderStakedFtmAprService(tokenService),
               ]
             : [
-                  new RocketPoolStakedEthAprService(tokenService),
-                  new WstethAprService(networkConfig.lido!.wstEthAprEndpoint, networkConfig.lido!.wstEthContract),
+                  new RocketPoolStakedEthAprService(tokenService, networkConfig.balancer.yieldProtocolFeePercentage),
+                  new WstethAprService(
+                      tokenService,
+                      networkConfig.lido!.wstEthAprEndpoint,
+                      networkConfig.lido!.wstEthContract,
+                      networkConfig.balancer.yieldProtocolFeePercentage,
+                  ),
                   new ReaperCryptAprService(networkConfig.reaper!.cryptsEndpoint),
               ]),
         new PhantomStableAprService(),
