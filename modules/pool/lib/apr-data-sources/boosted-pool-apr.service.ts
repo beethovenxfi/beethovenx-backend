@@ -39,13 +39,14 @@ export class BoostedPoolAprService implements PoolAprService {
                     continue;
                 }
 
+                const collectsYieldFee = isWeightedPoolV2(pool) || isComposableStablePool(pool);
                 for (const aprItem of tokenAprItems) {
                     const itemId = `${pool.id}-${aprItem.id}`;
                     const { totalShares } = token.nestedPool.dynamicData;
                     const tokenBalance = parseFloat(token.dynamicData.balance);
                     const apr = aprItem.apr * (tokenBalance / parseFloat(totalShares));
                     let grossApr = apr;
-                    if (isWeightedPoolV2(pool) || isComposableStablePool(pool)) {
+                    if (collectsYieldFee) {
                         grossApr = apr * this.yieldProtocolFeePercentage;
                     }
 
