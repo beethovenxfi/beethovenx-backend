@@ -296,8 +296,8 @@ export const poolService = new PoolService(
                   new ReaperCryptAprService(networkConfig.reaper!.cryptsEndpoint),
               ]),
         new PhantomStableAprService(),
-        new BoostedPoolAprService(),
-        new SwapFeeAprService(),
+        new BoostedPoolAprService(networkConfig.balancer.yieldProtocolFeePercentage),
+        new SwapFeeAprService(networkConfig.balancer.swapProtocolFeePercentage),
         ...(isFantomNetwork()
             ? [new MasterchefFarmAprService()]
             : [
