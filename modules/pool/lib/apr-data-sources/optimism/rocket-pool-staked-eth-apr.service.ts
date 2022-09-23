@@ -22,17 +22,17 @@ export class RocketPoolStakedEthAprService implements PoolAprService {
                 const rethPercentage = (parseFloat(rethTokenBalance) * rethPrice) / pool.dynamicData.totalLiquidity;
                 const rethApr = pool.dynamicData.totalLiquidity > 0 ? this.RETH_APR * rethPercentage : 0;
                 const grossApr = rethApr * networkConfig.balancer.yieldProtocolFeePercentage;
-                const collectsYieldFee =
+                const collectsProtocolYieldFee =
                     isWeightedPoolV2(pool) || isComposableStablePool(pool) || pool.type === 'META_STABLE';
 
                 operations.push(
                     prisma.prismaPoolAprItem.upsert({
                         where: { id: `${pool.id}-reth-apr` },
-                        update: { apr: collectsYieldFee ? grossApr : rethApr },
+                        update: { apr: collectsProtocolYieldFee ? grossApr : rethApr },
                         create: {
                             id: `${pool.id}-reth-apr`,
                             poolId: pool.id,
-                            apr: collectsYieldFee ? grossApr : rethApr,
+                            apr: collectsProtocolYieldFee ? grossApr : rethApr,
                             title: 'rETH APR',
                             type: 'IB_YIELD',
                         },
