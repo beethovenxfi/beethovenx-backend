@@ -20,7 +20,7 @@ export class StaderStakedFtmAprService implements PoolAprService {
             if (sftmxTokenBalance && pool.dynamicData) {
                 const sftmxPercentage = (parseFloat(sftmxTokenBalance) * sftmxPrice) / pool.dynamicData.totalLiquidity;
                 const sftmxApr = pool.dynamicData.totalLiquidity > 0 ? this.SFTMX_APR * sftmxPercentage : 0;
-                const sftmxGrowthApr = sftmxApr * this.yieldProtocolFeePercentage;
+                const sftmxGrossApr = sftmxApr * this.yieldProtocolFeePercentage;
 
                 operations.push(
                     prisma.prismaPoolAprItem.upsert({
@@ -29,7 +29,7 @@ export class StaderStakedFtmAprService implements PoolAprService {
                         create: {
                             id: `${pool.id}-sftmx-apr`,
                             poolId: pool.id,
-                            apr: sftmxGrowthApr,
+                            apr: sftmxGrossApr,
                             title: 'sFTMx APR',
                             type: 'IB_YIELD',
                         },

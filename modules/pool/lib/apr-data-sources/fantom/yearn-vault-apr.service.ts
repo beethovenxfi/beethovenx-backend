@@ -36,7 +36,7 @@ export class YearnVaultAprService implements PoolAprService {
             const poolWrappedLiquidity = wrappedTokens * priceRate * tokenPrice;
             const totalLiquidity = pool.dynamicData.totalLiquidity;
             const apr = totalLiquidity > 0 ? vault.apy.net_apy * (poolWrappedLiquidity / totalLiquidity) : 0;
-            const growthApr = apr * this.yieldProtocolFeePercentage;
+            const grossApr = apr * this.yieldProtocolFeePercentage;
 
             await prisma.prismaPoolAprItem.upsert({
                 where: { id: itemId },
@@ -44,11 +44,11 @@ export class YearnVaultAprService implements PoolAprService {
                     id: itemId,
                     poolId: pool.id,
                     title: `${vault.symbol} APR`,
-                    apr: growthApr,
+                    apr: grossApr,
                     group: 'YEARN',
                     type: 'LINEAR_BOOSTED',
                 },
-                update: { apr: growthApr },
+                update: { apr: grossApr },
             });
         }
     }

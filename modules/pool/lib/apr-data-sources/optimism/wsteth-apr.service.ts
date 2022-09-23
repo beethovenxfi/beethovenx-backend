@@ -10,14 +10,14 @@ export class WstethAprService implements PoolAprService {
         private readonly yieldProtocolFeePercentage: number,
     ) {}
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
-        let growthApr: number | undefined;
+        let grossApr: number | undefined;
         for (const pool of pools) {
             const itemId = `${pool.id}-lido-wsteth`;
 
             if (pool.tokens.map((token) => token.address).includes(this.wstethContractAddress)) {
-                if (!growthApr) {
+                if (!grossApr) {
                     const { data } = await axios.get<string>(this.wstethAprEndpoint);
-                    growthApr = (parseFloat(data) / 100) * this.yieldProtocolFeePercentage;
+                    grossApr = (parseFloat(data) / 100) * this.yieldProtocolFeePercentage;
                 }
                 await prisma.prismaPoolAprItem.upsert({
                     where: { id: itemId },
@@ -25,10 +25,10 @@ export class WstethAprService implements PoolAprService {
                         id: itemId,
                         poolId: pool.id,
                         title: `LIDO APR`,
-                        apr: growthApr,
+                        apr: grossApr,
                         type: 'IB_YIELD',
                     },
-                    update: { apr: growthApr },
+                    update: { apr: grossApr },
                 });
             }
         }

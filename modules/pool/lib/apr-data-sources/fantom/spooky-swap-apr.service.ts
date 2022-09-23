@@ -32,16 +32,16 @@ export class SpookySwapAprService implements PoolAprService {
             const poolWrappedLiquidity = wrappedTokens * priceRate * tokenPrice;
             const totalLiquidity = pool.dynamicData.totalLiquidity;
             const apr = totalLiquidity > 0 ? xBooApr * (poolWrappedLiquidity / totalLiquidity) : 0;
-            const growthApr = apr * this.yieldProtocolFeePercentage;
+            const grossApr = apr * this.yieldProtocolFeePercentage;
 
             operations.push(
                 prisma.prismaPoolAprItem.upsert({
                     where: { id: `${pool.id}-xboo-apr` },
-                    update: { apr: growthApr, type: 'LINEAR_BOOSTED' },
+                    update: { apr: grossApr, type: 'LINEAR_BOOSTED' },
                     create: {
                         id: `${pool.id}-xboo-apr`,
                         poolId: pool.id,
-                        apr: growthApr,
+                        apr: grossApr,
                         title: 'xBOO boosted APR',
                         type: 'LINEAR_BOOSTED',
                     },
