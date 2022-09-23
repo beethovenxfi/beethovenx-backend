@@ -4,16 +4,20 @@ import { PrismaPoolWithExpandedNesting } from '../../../../../prisma/prisma-type
 import { PoolAprService } from '../../../pool-types';
 
 export class WstethAprService implements PoolAprService {
-    constructor(private readonly wstethAprEndpoint: string, private readonly wstethContractAddress: string) {}
+    constructor(
+        private readonly wstethAprEndpoint: string,
+        private readonly wstethContractAddress: string,
+        private readonly yieldFeePercentage: number,
+    ) {}
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
-        let apr: number | undefined;
+        let growthApr: number | undefined;
         for (const pool of pools) {
             const itemId = `${pool.id}-lido-wsteth`;
 
             if (pool.tokens.map((token) => token.address).includes(this.wstethContractAddress)) {
-                if (!apr) {
+                if (!growthApr) {
                     const { data } = await axios.get<string>(this.wstethAprEndpoint);
-                    apr = parseFloat(data) / 100;
+                    growthApr = (parseFloat(data) / 100) * this.yieldFeePercentage;
                 }
                 await prisma.prismaPoolAprItem.upsert({
                     where: { id: itemId },
@@ -21,10 +25,10 @@ export class WstethAprService implements PoolAprService {
                         id: itemId,
                         poolId: pool.id,
                         title: `LIDO APR`,
-                        apr,
+                        apr: growthApr,
                         type: 'IB_YIELD',
                     },
-                    update: { apr },
+                    update: { apr: growthApr },
                 });
             }
         }
