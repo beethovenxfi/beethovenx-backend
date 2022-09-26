@@ -291,13 +291,22 @@ export const poolService = new PoolService(
                   new StaderStakedFtmAprService(tokenService),
               ]
             : [
-                  new RocketPoolStakedEthAprService(tokenService),
-                  new WstethAprService(networkConfig.lido!.wstEthAprEndpoint, networkConfig.lido!.wstEthContract),
-                  new ReaperCryptAprService(networkConfig.reaper!.cryptsEndpoint),
+                  new RocketPoolStakedEthAprService(tokenService, networkConfig.balancer.yieldProtocolFeePercentage),
+                  new WstethAprService(
+                      tokenService,
+                      networkConfig.lido!.wstEthAprEndpoint,
+                      networkConfig.lido!.wstEthContract,
+                      networkConfig.balancer.yieldProtocolFeePercentage,
+                  ),
+                  new ReaperCryptAprService(
+                      tokenService,
+                      networkConfig.reaper!.cryptsEndpoint,
+                      networkConfig.reaper?.cryptsOverrides,
+                  ),
               ]),
         new PhantomStableAprService(),
-        new BoostedPoolAprService(),
-        new SwapFeeAprService(),
+        new BoostedPoolAprService(networkConfig.balancer.yieldProtocolFeePercentage),
+        new SwapFeeAprService(networkConfig.balancer.swapProtocolFeePercentage),
         ...(isFantomNetwork()
             ? [new MasterchefFarmAprService()]
             : [
