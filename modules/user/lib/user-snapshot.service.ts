@@ -6,19 +6,8 @@ import { UserPoolSnapshot, UserPortfolioSnapshot } from '../user-types';
 import { GqlUserSnapshotDataRange } from '../../../schema';
 import { PoolSnapshotService } from '../../pool/lib/pool-snapshot.service';
 import { formatFixed } from '@ethersproject/bignumber';
-import {
-    UserBalanceSnapshotFragment,
-    UserBalanceSnapshotsQuery,
-} from '../../subgraphs/user-snapshot-subgraph/generated/user-snapshot-subgraph-types';
 import { networkConfig } from '../../config/network-config';
-import {
-    Prisma,
-    PrismaPool,
-    PrismaPoolSnapshot,
-    PrismaPoolStaking,
-    PrismaUserPoolBalanceSnapshot,
-} from '@prisma/client';
-import { sync } from 'execa';
+import { Prisma, PrismaPoolSnapshot } from '@prisma/client';
 import { prismaBulkExecuteOperations } from '../../../prisma/prisma-util';
 
 //TODO FBEETS
