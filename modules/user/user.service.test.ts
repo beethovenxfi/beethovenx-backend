@@ -2,12 +2,12 @@ import moment from 'moment';
 import { graphql } from 'msw';
 import { prisma } from '../../prisma/prisma-client';
 import { networkConfig } from '../config/network-config';
-import { PoolSnapshotService } from '../pool/lib/pool-snapshot.service';
 import {
     createSchemaForTest as createDedicatedSchemaForTest,
     createWeightedPoolFromDefault,
     defaultTokens,
     createRandomSnapshotsForPool,
+    createRandomSnapshotsForPoolForTimestamp,
     createUserPoolBalanceSnapshot,
 } from '../tests-helper/jest-test-helpers';
 import { server } from '../tests-helper/mocks/server';
@@ -25,7 +25,7 @@ const poolName1 = 'Test pool 1';
 const poolAddress1 = '0x001';
 const farmId1 = '0x001a-stake';
 
-const poolId2 = '0x002a';
+const pool2Id = '0x002a';
 const poolName2 = 'Test pool 2';
 const poolAddress2 = '0x002';
 
@@ -51,18 +51,6 @@ beforeAll(async () => {
 
     // create 30 snapshotsfor pool1
     await createRandomSnapshotsForPool(pool1.id, pool1.tokens.length, 30);
-
-    const pool2 = await createWeightedPoolFromDefault(
-        {
-            id: poolId2,
-            name: poolName2,
-            address: poolAddress2,
-        },
-        [defaultTokens.usdc, defaultTokens.beets],
-    );
-
-    // create 30 snapshotsfor pool1
-    await createRandomSnapshotsForPool(pool2.id, pool2.tokens.length, 2);
 
     // create user
     await prisma.prismaUser.create({
@@ -98,15 +86,18 @@ test('The user requests the user stats for the first time, requesting from snaps
     - Balances are correctly returned and summarized (farmbalance + walletbalance = totalbalance)
     - USD values are correctly calculated based on pool snapshot values
     */
-    const thisMorning = moment().startOf('day').unix();
+    const today = moment().startOf('day').unix();
     const oneDayInSeconds = 86400;
-    const newestSnapshotTimestamp = thisMorning;
+    const threeDaysAgo = today - 3 * oneDayInSeconds;
+    const oneDayAgo = today - 1 * oneDayInSeconds;
+
+    const timestampOfLastReturnedSnapshot = today;
 
     server.use(
         ...[
             graphql.query('UserBalanceSnapshots', async (req, res, ctx) => {
                 const requestJson = await req.json();
-                if (requestJson.variables.where.timestamp_gte > newestSnapshotTimestamp) {
+                if (requestJson.variables.where.timestamp_gte > timestampOfLastReturnedSnapshot) {
                     return res(
                         ctx.data({
                             snapshots: [],
@@ -118,11 +109,11 @@ test('The user requests the user stats for the first time, requesting from snaps
                     ctx.data({
                         snapshots: [
                             {
-                                id: `${userAddress}-${thisMorning - 3 * oneDayInSeconds}`,
+                                id: `${userAddress}-${threeDaysAgo}`,
                                 user: {
                                     id: userAddress,
                                 },
-                                timestamp: thisMorning - 3 * oneDayInSeconds,
+                                timestamp: threeDaysAgo,
                                 walletTokens: [poolAddress1],
                                 walletBalances: ['1'],
                                 gauges: [],
@@ -131,11 +122,11 @@ test('The user requests the user stats for the first time, requesting from snaps
                                 farmBalances: [],
                             },
                             {
-                                id: `${userAddress}-${thisMorning - oneDayInSeconds}`,
+                                id: `${userAddress}-${oneDayAgo}`,
                                 user: {
                                     id: userAddress,
                                 },
-                                timestamp: thisMorning - oneDayInSeconds,
+                                timestamp: oneDayAgo,
                                 walletTokens: [poolAddress1, poolAddress2],
                                 walletBalances: ['0.5', '1'],
                                 gauges: [],
@@ -144,13 +135,13 @@ test('The user requests the user stats for the first time, requesting from snaps
                                 farmBalances: ['1.0'],
                             },
                             {
-                                id: `${userAddress}-${newestSnapshotTimestamp}`,
+                                id: `${userAddress}-${today}`,
                                 user: {
                                     id: userAddress,
                                 },
-                                timestamp: newestSnapshotTimestamp,
-                                walletTokens: [poolAddress1, poolAddress2],
-                                walletBalances: ['0', '1'],
+                                timestamp: today,
+                                walletTokens: [poolAddress2],
+                                walletBalances: ['1'],
                                 gauges: [],
                                 gaugeBalances: [],
                                 farms: [],
@@ -178,17 +169,17 @@ test('The user requests the user stats for the first time, requesting from snaps
 
     // check if balances are calculated correctly
     expect(snapshotsFromService[0].walletBalance).toBe('1');
-    expect(snapshotsFromService[0].timestamp).toBe(thisMorning - 3 * oneDayInSeconds);
+    expect(snapshotsFromService[0].timestamp).toBe(today - 3 * oneDayInSeconds);
     expect(snapshotsFromService[1].walletBalance).toBe('1');
-    expect(snapshotsFromService[1].timestamp).toBe(thisMorning - 2 * oneDayInSeconds);
+    expect(snapshotsFromService[1].timestamp).toBe(today - 2 * oneDayInSeconds);
 
     expect(snapshotsFromService[2].walletBalance).toBe('0.5');
     expect(snapshotsFromService[2].farmBalance).toBe('1.0');
     expect(snapshotsFromService[2].totalBalance).toBe('1.5');
-    expect(snapshotsFromService[2].timestamp).toBe(thisMorning - 1 * oneDayInSeconds);
+    expect(snapshotsFromService[2].timestamp).toBe(today - 1 * oneDayInSeconds);
 
     expect(snapshotsFromService[3].walletBalance).toBe('0');
-    expect(snapshotsFromService[3].timestamp).toBe(thisMorning - 0 * oneDayInSeconds);
+    expect(snapshotsFromService[3].timestamp).toBe(today - 0 * oneDayInSeconds);
 
     const poolSnapshots = await prisma.prismaPoolSnapshot.findMany({
         where: { poolId: poolId1 },
@@ -238,16 +229,17 @@ Behaviour under test:
 */
     const today = moment().startOf('day').unix();
     const oneDayInSeconds = 86400;
-    const newestSnapshotTimestamp = today;
     const threeDaysAgo = today - 3 * oneDayInSeconds;
     const twoDaysAgo = today - 2 * oneDayInSeconds;
     const oneDayAgo = today - 1 * oneDayInSeconds;
+
+    const timestampOfLastReturnedSnapshot = oneDayAgo;
 
     server.use(
         ...[
             graphql.query('UserBalanceSnapshots', async (req, res, ctx) => {
                 const requestJson = await req.json();
-                if (requestJson.variables.where.timestamp_gte > newestSnapshotTimestamp) {
+                if (requestJson.variables.where.timestamp_gte > timestampOfLastReturnedSnapshot) {
                     return res(
                         ctx.data({
                             snapshots: [],
@@ -378,16 +370,15 @@ Behaviour under test:
 */
     const today = moment().startOf('day').unix();
     const oneDayInSeconds = 86400;
-    const newestSnapshotTimestamp = today;
     const threeDaysAgo = today - 3 * oneDayInSeconds;
     const twoDaysAgo = today - 2 * oneDayInSeconds;
-    const oneDayAgo = today - 1 * oneDayInSeconds;
+    const timestampOfLastReturnedSnapshot = twoDaysAgo;
 
     server.use(
         ...[
             graphql.query('UserBalanceSnapshots', async (req, res, ctx) => {
                 const requestJson = await req.json();
-                if (requestJson.variables.where.timestamp_gte > newestSnapshotTimestamp) {
+                if (requestJson.variables.where.timestamp_gte > timestampOfLastReturnedSnapshot) {
                     return res(
                         ctx.data({
                             snapshots: [],
@@ -454,32 +445,52 @@ Behaviour under test:
     expect(snapshotsFromService[1].percentShare).toBe(0);
 });
 
-test('no user snapshots if there is no pool snapshot', async () => {
+test('0 $ value user snapshots if there is no pool snapshot', async () => {
     /*
     Scenario: 
     - The user requests the user stats for the first time
     - The user joined pool2 three days ago and is still in the pool
+    - Poolsnapshots are only available for two days, therefore only two $ value > 0 snapshots are present
+    - Adding a "delayed" poolSnapshot which changes the value of the user snapshot
 
     Mock data for user-balance-subgraph (important that timestamps are ASC, as this is requested like this form the function under test):
     - Create one snapshots for user
     - First snapshot from three days ago, where he has 1 bpts from pool1 in his wallet
+    - create two pool snapshots for pool2 for three days ago and two days ago
    
 
     Behaviour under test:
-    - Pool2 has only two snapshots, so only for the last two days and today a usersnapshot is returned and none for three days ago
+    - Pool2 has only two snapshots for three days ago and two days ago. 
+    We should have 4 usersnapshots but only the ones from three and two days ago should have $ values.
+    - We then create another pool snapshot for today
+    - We should now have 3 usersnapshots with $ values
     */
+
     const today = moment().startOf('day').unix();
     const oneDayInSeconds = 86400;
-    const newestSnapshotTimestamp = today;
     const threeDaysAgo = today - 3 * oneDayInSeconds;
     const twoDaysAgo = today - 2 * oneDayInSeconds;
     const oneDayAgo = today - 1 * oneDayInSeconds;
+
+    const timestampOfLastReturnedSnapshot = threeDaysAgo;
+
+    // setup mock data in DB
+    const pool2 = await createWeightedPoolFromDefault(
+        {
+            id: pool2Id,
+            name: poolName2,
+            address: poolAddress2,
+        },
+        [defaultTokens.usdc, defaultTokens.beets],
+    );
+    await createRandomSnapshotsForPoolForTimestamp(pool2.id, pool2.tokens.length, threeDaysAgo);
+    await createRandomSnapshotsForPoolForTimestamp(pool2.id, pool2.tokens.length, twoDaysAgo);
 
     server.use(
         ...[
             graphql.query('UserBalanceSnapshots', async (req, res, ctx) => {
                 const requestJson = await req.json();
-                if (requestJson.variables.where.timestamp_gte > newestSnapshotTimestamp) {
+                if (requestJson.variables.where.timestamp_gte > timestampOfLastReturnedSnapshot) {
                     return res(
                         ctx.data({
                             snapshots: [],
@@ -496,7 +507,7 @@ test('no user snapshots if there is no pool snapshot', async () => {
                                     id: userAddress,
                                 },
                                 timestamp: threeDaysAgo,
-                                walletTokens: [poolAddress1],
+                                walletTokens: [pool2.address],
                                 walletBalances: ['1'],
                                 gauges: [],
                                 gaugeBalances: [],
@@ -510,9 +521,9 @@ test('no user snapshots if there is no pool snapshot', async () => {
         ],
     );
 
-    const snapshotsFromService = await userService.getUserBalanceSnapshotsForPool(userAddress, poolId1, 'THIRTY_DAYS');
-    //check if 4th snapshot has been inferred from three present ones
-    expect(snapshotsFromService.length).toBe(3);
+    const snapshotsFromService = await userService.getUserBalanceSnapshotsForPool(userAddress, pool2Id, 'THIRTY_DAYS');
+    // should get all 4 snapshots
+    expect(snapshotsFromService.length).toBe(4);
     const snapshotsFromDb = await prisma.prismaUserPoolBalanceSnapshot.findMany({
         where: {
             userAddress: userAddress,
@@ -524,43 +535,77 @@ test('no user snapshots if there is no pool snapshot', async () => {
     expect(snapshotsFromDb.length).toBe(1);
 
     // check if balances are calculated correctly
-    expect(snapshotsFromService[0].timestamp).toBe(twoDaysAgo);
+    expect(snapshotsFromService[0].timestamp).toBe(threeDaysAgo);
     expect(snapshotsFromService[0].walletBalance).toBe('1');
-    expect(snapshotsFromService[1].timestamp).toBe(oneDayAgo);
+    expect(parseFloat(snapshotsFromService[0].totalValueUSD)).toBeGreaterThan(0);
+    expect(snapshotsFromService[1].timestamp).toBe(twoDaysAgo);
     expect(snapshotsFromService[1].walletBalance).toBe('1');
+    expect(parseFloat(snapshotsFromService[1].totalValueUSD)).toBeGreaterThan(0);
 
-    expect(snapshotsFromService[2].timestamp).toBe(today);
+    expect(snapshotsFromService[2].timestamp).toBe(oneDayAgo);
     expect(snapshotsFromService[2].walletBalance).toBe('1');
+    expect(parseFloat(snapshotsFromService[2].totalValueUSD)).toBe(0);
+
+    expect(snapshotsFromService[3].timestamp).toBe(today);
+    expect(snapshotsFromService[3].walletBalance).toBe('1');
+    expect(parseFloat(snapshotsFromService[3].totalValueUSD)).toBe(0);
+
+    await createRandomSnapshotsForPoolForTimestamp(pool2.id, pool2.tokens.length, today);
+
+    const snapshotsAfterAdditionalPoolSnapshot = await userService.getUserBalanceSnapshotsForPool(
+        userAddress,
+        pool2Id,
+        'THIRTY_DAYS',
+    );
+    //expect still the same results here as above
+    expect(snapshotsFromService[0].timestamp).toBe(threeDaysAgo);
+    expect(snapshotsFromService[0].walletBalance).toBe('1');
+    expect(parseFloat(snapshotsFromService[0].totalValueUSD)).toBeGreaterThan(0);
+    expect(snapshotsFromService[1].timestamp).toBe(twoDaysAgo);
+    expect(snapshotsFromService[1].walletBalance).toBe('1');
+    expect(parseFloat(snapshotsFromService[1].totalValueUSD)).toBeGreaterThan(0);
+
+    expect(snapshotsFromService[2].timestamp).toBe(oneDayAgo);
+    expect(snapshotsFromService[2].walletBalance).toBe('1');
+    expect(parseFloat(snapshotsFromService[2].totalValueUSD)).toBe(0);
+
+    // expecting a >0 value here since now a poolsnapshot was created
+    expect(snapshotsAfterAdditionalPoolSnapshot[3].timestamp).toBe(today);
+    expect(snapshotsAfterAdditionalPoolSnapshot[3].walletBalance).toBe('1');
+    expect(parseFloat(snapshotsAfterAdditionalPoolSnapshot[3].totalValueUSD)).toBeGreaterThan(0);
 });
 
 test('Persisted user snapshots are synced', async () => {
     /*
-    Scenario: 
+    Scenario:
     - The user has once requested the user stats for pool1
-    - Since one user snapshot is in the database, the userBalanceSync should query the subgraph and sync all missing snapshots until now 
+    - Since one user snapshot is in the database, the userBalanceSync should query the subgraph and sync all missing snapshots until now
 
     Mock data for user-balance-subgraph (important that timestamps are ASC, as this is requested like this form the function under test):
     - Create three snapshots for user
     - First snapshot from three days ago, where he only has 1 bpts from pool1 in his wallet
     - Seconds snapshot from one day ago, where he has 0.5 bpt from pool1 and 1 bpt from pool2 in his wallet and 1 bpt from pool1 in the farm
-    - Third snapshot from today, where he has only 1 bpt from pool2 in his wallet 
+    - Third snapshot from today, where he has only 1 bpt from pool2 in his wallet
 
     Mock data in data base:
     - Create one userbalance snapshot for three days ago for the user and pool1
 
     Behaviour under test:
-    - Sync takes finds the last synced snapshot and sync all missing ones until today
-    - Usually should only be one, since it is assumed that the job is run more than once a day (probably hourly)
-    - Nevertheless, testing is done to sync more than one day to address any job failures
+    - The oldest user snapshot from three days ago for pool1 is already persisted in the db from a previous run (here mocked)
+    - Sync finds that snapshot and will sync ALL from the latest until today
+    - Sync will only sync snapshots of pool1, not of pool2
     */
 
-    const thisMorning = moment().startOf('day').unix();
+    const today = moment().startOf('day').unix();
     const oneDayInSeconds = 86400;
-    const newestSnapshotTimestamp = thisMorning;
+    const threeDaysAgo = today - 3 * oneDayInSeconds;
+    const twoDaysAgo = today - 2 * oneDayInSeconds;
+    const oneDayAgo = today - 1 * oneDayInSeconds;
+    const newestSnapshotTimestamp = today;
 
     await createUserPoolBalanceSnapshot({
-        id: `${poolId1}-${userAddress}-${thisMorning - 3 * oneDayInSeconds}`,
-        timestamp: thisMorning - 3 * oneDayInSeconds,
+        id: `${poolId1}-${userAddress}-${threeDaysAgo}`,
+        timestamp: threeDaysAgo,
         user: { connect: { address: userAddress } },
         pool: {
             connect: {
@@ -590,11 +635,11 @@ test('Persisted user snapshots are synced', async () => {
                     ctx.data({
                         snapshots: [
                             {
-                                id: `${userAddress}-${thisMorning - 3 * oneDayInSeconds}`,
+                                id: `${userAddress}-${threeDaysAgo}`,
                                 user: {
                                     id: userAddress,
                                 },
-                                timestamp: thisMorning - 3 * oneDayInSeconds,
+                                timestamp: threeDaysAgo,
                                 walletTokens: [poolAddress1],
                                 walletBalances: ['1'],
                                 gauges: [],
@@ -603,11 +648,11 @@ test('Persisted user snapshots are synced', async () => {
                                 farmBalances: [],
                             },
                             {
-                                id: `${userAddress}-${thisMorning - oneDayInSeconds}`,
+                                id: `${userAddress}-${oneDayAgo}`,
                                 user: {
                                     id: userAddress,
                                 },
-                                timestamp: thisMorning - oneDayInSeconds,
+                                timestamp: oneDayAgo,
                                 walletTokens: [poolAddress1, poolAddress2],
                                 walletBalances: ['0.5', '1'],
                                 gauges: [],
@@ -616,11 +661,11 @@ test('Persisted user snapshots are synced', async () => {
                                 farmBalances: ['1.0'],
                             },
                             {
-                                id: `${userAddress}-${newestSnapshotTimestamp}`,
+                                id: `${userAddress}-${today}`,
                                 user: {
                                     id: userAddress,
                                 },
-                                timestamp: newestSnapshotTimestamp,
+                                timestamp: today,
                                 walletTokens: [poolAddress1, poolAddress2],
                                 walletBalances: ['0', '1'],
                                 gauges: [],
@@ -636,14 +681,15 @@ test('Persisted user snapshots are synced', async () => {
     );
 
     // before the sync is called, this should only return one snapshot that was manually added to the DB in this test
-    const snapshotsBeforeSync = await userService.getUserBalanceSnapshotsForPool(userAddress, poolId1, 'THIRTY_DAYS');
-    expect(snapshotsBeforeSync.length).toBe(1);
+    const snapshotsInDbBeforeSync = await prisma.prismaUserPoolBalanceSnapshot.findMany({
+        where: {
+            userAddress: userAddress,
+        },
+    });
+    expect(snapshotsInDbBeforeSync.length).toBe(1);
 
+    // sync
     await userService.syncUserBalanceSnapshots();
-
-    // after the sync, the all 4 snapshots should be present
-    const snapshotsAfterSync = await userService.getUserBalanceSnapshotsForPool(userAddress, poolId1, 'THIRTY_DAYS');
-    expect(snapshotsAfterSync.length).toBe(4);
 
     const snapshotsFromDb = await prisma.prismaUserPoolBalanceSnapshot.findMany({
         where: {
@@ -651,22 +697,26 @@ test('Persisted user snapshots are synced', async () => {
         },
     });
 
-    // check if snapshots have been persisted
-    expect(snapshotsFromDb.length).toBe(4);
+    // check if snapshots have been persisted (only three, one is inferred at query)
+    expect(snapshotsFromDb.length).toBe(3);
+
+    // after the sync, the all 4 snapshots should be present
+    const snapshotsAfterSync = await userService.getUserBalanceSnapshotsForPool(userAddress, poolId1, 'THIRTY_DAYS');
+    expect(snapshotsAfterSync.length).toBe(4);
 
     // check if balances are calculated correctly
     expect(snapshotsAfterSync[0].walletBalance).toBe('1');
-    expect(snapshotsAfterSync[0].timestamp).toBe(thisMorning - 3 * oneDayInSeconds);
+    expect(snapshotsAfterSync[0].timestamp).toBe(threeDaysAgo);
     expect(snapshotsAfterSync[1].walletBalance).toBe('1');
-    expect(snapshotsAfterSync[1].timestamp).toBe(thisMorning - 2 * oneDayInSeconds);
+    expect(snapshotsAfterSync[1].timestamp).toBe(twoDaysAgo);
 
     expect(snapshotsAfterSync[2].walletBalance).toBe('0.5');
     expect(snapshotsAfterSync[2].farmBalance).toBe('1.0');
     expect(snapshotsAfterSync[2].totalBalance).toBe('1.5');
-    expect(snapshotsAfterSync[2].timestamp).toBe(thisMorning - 1 * oneDayInSeconds);
+    expect(snapshotsAfterSync[2].timestamp).toBe(oneDayAgo);
 
     expect(snapshotsAfterSync[3].walletBalance).toBe('0');
-    expect(snapshotsAfterSync[3].timestamp).toBe(thisMorning - 0 * oneDayInSeconds);
+    expect(snapshotsAfterSync[3].timestamp).toBe(today);
 
     const poolSnapshots = await prisma.prismaPoolSnapshot.findMany({
         where: { poolId: poolId1 },
@@ -697,8 +747,6 @@ test('Persisted user snapshots are synced', async () => {
         expect(foundPoolSnapshot).toBe(true);
     }
 });
-
-test('user requests snapshots for 2nd time', async () => {});
 
 // Clean up after the tests are finished.
 afterAll(async () => {

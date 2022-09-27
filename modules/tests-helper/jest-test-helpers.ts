@@ -6,6 +6,7 @@ import { commandSync } from 'execa';
 import { prisma, setPrisma } from '../../prisma/prisma-client';
 import moment from 'moment';
 import _ from 'lodash';
+import { time } from 'console';
 
 export type DeepPartial<T> = {
     [P in keyof T]?: DeepPartial<T[P]>;
@@ -189,6 +190,33 @@ function randomNumberFromInterval(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
+export async function createRandomSnapshotsForPoolForTimestamp(poolId: string, tokenCount: number, timestamp: number) {
+    const totlaShares = randomNumberFromInterval(100000, 3000000);
+    const amounts = Array.from({ length: tokenCount }, () => randomNumberFromInterval(10, 50).toString());
+    await prisma.prismaPoolSnapshot.create({
+        data: {
+            id: `${poolId}-${timestamp}`,
+            pool: {
+                connect: {
+                    id: poolId,
+                },
+            },
+            timestamp,
+            fees24h: randomNumberFromInterval(100, 5000),
+            volume24h: randomNumberFromInterval(1000, 50000),
+            swapsCount: randomNumberFromInterval(1000, 50000),
+            holdersCount: randomNumberFromInterval(10, 500),
+            sharePrice: randomNumberFromInterval(100, 500),
+            totalLiquidity: randomNumberFromInterval(10000, 500000),
+            totalShares: totlaShares.toString(),
+            totalSharesNum: totlaShares,
+            totalSwapFee: randomNumberFromInterval(10000, 500000),
+            totalSwapVolume: randomNumberFromInterval(100000, 5000000),
+            amounts,
+        },
+    });
+}
+
 export async function createRandomSnapshotsForPool(poolId: string, tokenCount: number, numSnapshots: number) {
     for (let i = 0; i < numSnapshots; i++) {
         const timestamp = moment().startOf('day').subtract(i, 'days').unix();
@@ -223,7 +251,7 @@ const defaultUserBalanceSnapshot: Omit<Prisma.PrismaUserPoolBalanceSnapshotCreat
     // id: `0x001a-0x0000000000000000000000000000000000000001-${moment().unix()}`,
     timestamp: moment().unix(),
     user: {
-        create: {
+        connect: {
             address: '0x0000000000000000000000000000000000000001',
         },
     },
@@ -242,6 +270,7 @@ export async function createUserPoolBalanceSnapshot(
     snapshot: DeepPartial<Prisma.PrismaUserPoolBalanceSnapshotCreateInput> & {
         id: string;
         pool: { connect: { id: string } };
+        user: { connect: { address: string } };
     },
 ) {
     await prisma.prismaUserPoolBalanceSnapshot.create({

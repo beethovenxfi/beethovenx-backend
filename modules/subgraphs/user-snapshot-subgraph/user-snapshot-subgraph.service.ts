@@ -68,12 +68,13 @@ export class UserSnapshotSubgraphService {
             }
             allSnapshots.snapshots = [...allSnapshots.snapshots, ...result.snapshots];
             fromTimestamp = result.snapshots[result.snapshots.length - 1].timestamp + 1;
+            console.log(`Got ${result.snapshots.length} snapshots from subgraph`);
         } while (true);
 
         return allSnapshots;
     }
 
-    public async getAllUserBalanceSnapshots(numDays: number): Promise<UserBalanceSnapshotsQuery> {
+    public async getUserBalanceSnapshotsWithPagingForDays(numDays: number): Promise<UserBalanceSnapshotsQuery> {
         let timestamp = 0;
         if (numDays > 0) {
             timestamp = moment().utc().startOf('day').subtract(numDays, 'days').unix();
@@ -94,11 +95,9 @@ export class UserSnapshotSubgraphService {
                 break;
             }
             allSnapshots.snapshots = [...allSnapshots.snapshots, ...result.snapshots];
-            console.log(`Got ${result.snapshots.length} from subgraph, now got ${allSnapshots.snapshots.length}`);
             lastId = result.snapshots[result.snapshots.length - 1].id;
         } while (true);
 
-        console.log(`Total: ${allSnapshots.snapshots.length}`);
         return allSnapshots;
     }
 
