@@ -52,7 +52,13 @@ export class TokenDataLoaderService {
         for (const sanityToken of sanityTokens) {
             const tokenAddress = sanityToken.address.toLowerCase();
             let tokenData = {};
-            if (sanityToken.coingeckoTokenId) {
+            if (
+                sanityToken.description ||
+                sanityToken.websiteUrl ||
+                sanityToken.discordUrl ||
+                sanityToken.telegramUrl ||
+                sanityToken.twitterUsername
+            ) {
                 tokenData = {
                     description: sanityToken.description || null,
                     websiteUrl: sanityToken.websiteUrl || null,
