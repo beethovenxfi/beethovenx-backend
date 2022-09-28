@@ -28,7 +28,7 @@ extend type Query {
 
 extend type Mutation {
     poolSyncAllPoolsFromSubgraph: [String!]!
-    poolSyncNewPoolsFromSubgraph: [String!]!
+    poolSyncNewPoolsFromSubgraph(syncFromStart: Boolean = false): [String!]!
     poolLoadOnChainDataForAllPools: String!
     poolLoadOnChainDataForPoolsWithActiveUpdates: String!
     poolUpdateLiquidityValuesForAllPools: String!

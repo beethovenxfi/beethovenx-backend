@@ -154,10 +154,10 @@ export class PoolService {
         }
     }
 
-    public async syncNewPoolsFromSubgraph(): Promise<string[]> {
+    public async syncNewPoolsFromSubgraph(syncFromStart: boolean = false): Promise<string[]> {
         const blockNumber = await this.provider.getBlockNumber();
 
-        const poolIds = await this.poolCreatorService.syncNewPoolsFromSubgraph(blockNumber);
+        const poolIds = await this.poolCreatorService.syncNewPoolsFromSubgraph(blockNumber, syncFromStart);
 
         if (poolIds.length > 0) {
             await this.updateOnChainDataForPools(poolIds, blockNumber);

@@ -33,7 +33,7 @@ export class PoolCreatorService {
         return poolIds;
     }
 
-    public async syncNewPoolsFromSubgraph(blockNumber: number): Promise<string[]> {
+    public async syncNewPoolsFromSubgraph(blockNumber: number, syncFromStart: boolean): Promise<string[]> {
         const existingPools = await prisma.prismaPool.findMany();
         const latest = await prisma.prismaPool.findFirst({
             orderBy: { createTime: 'desc' },
@@ -42,7 +42,7 @@ export class PoolCreatorService {
 
         const subgraphPools = await balancerSubgraphService.getAllPools(
             {
-                where: { createTime_gte: latest?.createTime || 0 },
+                where: { createTime_gte: syncFromStart || !latest ? 0 : latest.createTime },
             },
             false,
         );

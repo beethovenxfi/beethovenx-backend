@@ -70,10 +70,10 @@ const balancerResolvers: Resolvers = {
 
             return poolService.syncAllPoolsFromSubgraph();
         },
-        poolSyncNewPoolsFromSubgraph: async (parent, {}, context) => {
+        poolSyncNewPoolsFromSubgraph: async (parent, { syncFromStart }, context) => {
             isAdminRoute(context);
 
-            return poolService.syncNewPoolsFromSubgraph();
+            return poolService.syncNewPoolsFromSubgraph(syncFromStart);
         },
         poolLoadOnChainDataForAllPools: async (parent, {}, context) => {
             isAdminRoute(context);
