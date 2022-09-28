@@ -33,8 +33,6 @@ const userAddress = '0x0000000000000000000000000000000000000001';
 
 beforeAll(async () => {
     await createDedicatedSchemaForTest();
-    // add pool(s) to DB -> including pricing
-    // await createDefaultTokens([]);
     const pool1 = await createWeightedPoolFromDefault(
         {
             id: poolId1,
@@ -747,6 +745,232 @@ test('Persisted user snapshots are synced', async () => {
         expect(foundPoolSnapshot).toBe(true);
     }
 });
+
+test('Sync and get pool with gaps', async () => {
+    /*
+    Scenario:
+    - The user has once requested the user stats for pool1
+    - Since one user snapshot is in the database, the userBalanceSync should query the subgraph and sync all missing snapshots until now
+    - user joined pool seven days ago, left again five days ago, joined pool and farm again three days ago, left both two days ago
+
+    Mock data for user-balance-subgraph (important that timestamps are ASC, as this is requested like this form the function under test):
+    - Create five snapshots for user representing the above scenario
+
+    Mock data in data base:
+    - Create one userbalance snapshot for seven days ago for the user and pool1
+
+    Behaviour under test:
+    - The oldest user snapshot from seven days ago for pool1 is already persisted in the db from a previous run (here mocked)
+    - Sync finds that snapshot and will sync ALL from the latest until today
+    - Sync will not persist the 0 balance gap from four days ago and one day ago and today
+    - Sync will not persist >0 balance gap from six days ago
+    */
+
+    const today = moment().startOf('day').unix();
+    const oneDayInSeconds = 86400;
+    const sevenDaysAgo = today - 7 * oneDayInSeconds;
+    const sixDaysAgo = today - 6 * oneDayInSeconds;
+    const fiveDaysAgo = today - 5 * oneDayInSeconds;
+    const fourDaysAgo = today - 4 * oneDayInSeconds;
+    const threeDaysAgo = today - 3 * oneDayInSeconds;
+    const twoDaysAgo = today - 2 * oneDayInSeconds;
+    const oneDayAgo = today - 1 * oneDayInSeconds;
+    const newestSnapshotTimestamp = oneDayAgo;
+
+    await createUserPoolBalanceSnapshot({
+        id: `${poolId1}-${userAddress}-${sevenDaysAgo}`,
+        timestamp: sevenDaysAgo,
+        user: { connect: { address: userAddress } },
+        pool: {
+            connect: {
+                id: poolId1,
+            },
+        },
+        poolToken: poolAddress1,
+        walletBalance: '1',
+        farmBalance: '0',
+        gaugeBalance: '0',
+        totalBalance: '1',
+    });
+
+    server.use(
+        ...[
+            graphql.query('UserBalanceSnapshots', async (req, res, ctx) => {
+                const requestJson = await req.json();
+                if (requestJson.variables.where.timestamp_gte > newestSnapshotTimestamp) {
+                    return res(
+                        ctx.data({
+                            snapshots: [],
+                        }),
+                    );
+                }
+                // important, sort snapshots ASC
+                return res(
+                    ctx.data({
+                        snapshots: [
+                            {
+                                id: `${userAddress}-${sevenDaysAgo}`,
+                                user: {
+                                    id: userAddress,
+                                },
+                                timestamp: sevenDaysAgo,
+                                walletTokens: [poolAddress1],
+                                walletBalances: ['1'],
+                                gauges: [],
+                                gaugeBalances: [],
+                                farms: [],
+                                farmBalances: [],
+                            },
+                            {
+                                id: `${userAddress}-${fiveDaysAgo}`,
+                                user: {
+                                    id: userAddress,
+                                },
+                                timestamp: fiveDaysAgo,
+                                walletTokens: [],
+                                walletBalances: [],
+                                gauges: [],
+                                gaugeBalances: [],
+                                farms: [],
+                                farmBalances: [],
+                            },
+                            {
+                                id: `${userAddress}-${threeDaysAgo}`,
+                                user: {
+                                    id: userAddress,
+                                },
+                                timestamp: threeDaysAgo,
+                                walletTokens: [poolAddress1],
+                                walletBalances: ['0.5'],
+                                gauges: [],
+                                gaugeBalances: [],
+                                farms: [farmId1],
+                                farmBalances: ['1'],
+                            },
+                            {
+                                id: `${userAddress}-${twoDaysAgo}`,
+                                user: {
+                                    id: userAddress,
+                                },
+                                timestamp: twoDaysAgo,
+                                walletTokens: [],
+                                walletBalances: [],
+                                gauges: [],
+                                gaugeBalances: [],
+                                farms: [],
+                                farmBalances: [],
+                            },
+                            {
+                                id: `${userAddress}-${oneDayAgo}`,
+                                user: {
+                                    id: userAddress,
+                                },
+                                timestamp: oneDayAgo,
+                                walletTokens: [],
+                                walletBalances: [],
+                                gauges: [],
+                                gaugeBalances: [],
+                                farms: [],
+                                farmBalances: [],
+                            },
+                        ],
+                    }),
+                );
+            }),
+        ],
+    );
+
+    // before the sync is called, this should only return one snapshot that was manually added to the DB in this test
+    const snapshotsInDbBeforeSync = await prisma.prismaUserPoolBalanceSnapshot.findMany({
+        where: {
+            userAddress: userAddress,
+        },
+    });
+    expect(snapshotsInDbBeforeSync.length).toBe(1);
+
+    // sync
+    await userService.syncUserBalanceSnapshots();
+
+    const snapshotsFromDb = await prisma.prismaUserPoolBalanceSnapshot.findMany({
+        where: {
+            userAddress: userAddress,
+        },
+    });
+
+    // check if snapshots have been persisted (only four, rest is inferred at query or consecutive 0 balance)
+    expect(snapshotsFromDb.length).toBe(4);
+
+    // after the sync, 5 snapshots should be present.
+    //Sevendaysago, sixdaysago (inferred), fivedaysago (0 balance), fourdays ago (0 balance), threedaysago and twodaysago (0 balance)
+    const snapshotsAfterSync = await userService.getUserBalanceSnapshotsForPool(userAddress, poolId1, 'THIRTY_DAYS');
+    expect(snapshotsAfterSync.length).toBe(6);
+
+    const snapshotsFromDbAfterGet = await prisma.prismaUserPoolBalanceSnapshot.findMany({
+        where: {
+            userAddress: userAddress,
+        },
+    });
+
+    // check if snapshots are still 4 on db (no new added because of get)
+    expect(snapshotsFromDbAfterGet.length).toBe(4);
+
+    // check if balances are calculated correctly
+    expect(snapshotsAfterSync[0].timestamp).toBe(sevenDaysAgo);
+    expect(snapshotsAfterSync[0].walletBalance).toBe('1');
+    expect(snapshotsAfterSync[0].totalBalance).toBe('1.0');
+    expect(snapshotsAfterSync[1].timestamp).toBe(sixDaysAgo);
+    expect(snapshotsAfterSync[1].walletBalance).toBe('1');
+    expect(snapshotsAfterSync[1].totalBalance).toBe('1.0');
+
+    expect(snapshotsAfterSync[2].timestamp).toBe(fiveDaysAgo);
+    expect(snapshotsAfterSync[2].walletBalance).toBe('0');
+    expect(snapshotsAfterSync[2].totalBalance).toBe('0');
+
+    expect(snapshotsAfterSync[3].timestamp).toBe(fourDaysAgo);
+    expect(snapshotsAfterSync[3].walletBalance).toBe('0');
+    expect(snapshotsAfterSync[3].farmBalance).toBe('0');
+    expect(snapshotsAfterSync[3].totalBalance).toBe('0');
+
+    expect(snapshotsAfterSync[4].timestamp).toBe(threeDaysAgo);
+    expect(snapshotsAfterSync[4].walletBalance).toBe('0.5');
+    expect(snapshotsAfterSync[4].farmBalance).toBe('1');
+    expect(snapshotsAfterSync[4].totalBalance).toBe('1.5');
+
+    expect(snapshotsAfterSync[5].timestamp).toBe(twoDaysAgo);
+    expect(snapshotsAfterSync[5].walletBalance).toBe('0');
+    expect(snapshotsAfterSync[5].totalBalance).toBe('0');
+
+    const poolSnapshots = await prisma.prismaPoolSnapshot.findMany({
+        where: { poolId: poolId1 },
+    });
+
+    // check if usd value, percent share of the pool and fees are correctly calculated based on poolsnapshots
+    for (const userBalanceSnapshot of snapshotsAfterSync) {
+        let foundPoolSnapshot = false;
+        for (const poolSnapshot of poolSnapshots) {
+            if (poolSnapshot.timestamp === userBalanceSnapshot.timestamp) {
+                expect(userBalanceSnapshot.totalValueUSD).toBe(
+                    `${poolSnapshot.sharePrice * parseFloat(userBalanceSnapshot.totalBalance)}`,
+                );
+                expect(userBalanceSnapshot.percentShare).toBe(
+                    parseFloat(userBalanceSnapshot.totalBalance) / poolSnapshot.totalSharesNum,
+                );
+                expect(userBalanceSnapshot.fees24h).toBe(
+                    `${
+                        userBalanceSnapshot.percentShare *
+                        poolSnapshot.fees24h *
+                        (1 - networkConfig.balancer.protocolFeePercent)
+                    }`,
+                );
+                foundPoolSnapshot = true;
+            }
+        }
+        //make sure we have a pool snapshot for each user snapshot
+        expect(foundPoolSnapshot).toBe(true);
+    }
+});
+
+test('Sync pool with gaps', async () => {});
 
 // Clean up after the tests are finished.
 afterAll(async () => {
