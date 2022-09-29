@@ -28,7 +28,7 @@ export class ReaperCryptAprService implements PoolAprService {
             const cryptContract = getContractAt(wrappedToken.address, ReaperCryptAbi);
             const cryptStrategyAddress = await cryptContract.strategy();
             const strategyContract = getContractAt(cryptStrategyAddress, ReaperCryptStrategyAbi);
-            const avgAprAccross5Harvests =
+            const avgAprAcross5Harvests =
                 (await strategyContract.averageAPRAcrossLastNHarvests(5)) / this.APR_PERCENT_DIVISOR;
 
             const tokenPrice = this.tokenService.getPriceForToken(tokenPrices, mainToken.address);
@@ -36,7 +36,7 @@ export class ReaperCryptAprService implements PoolAprService {
             const priceRate = parseFloat(wrappedToken.dynamicData?.priceRate || '1.0');
             const poolWrappedLiquidity = wrappedTokens * priceRate * tokenPrice;
             const totalLiquidity = pool.dynamicData.totalLiquidity;
-            const apr = totalLiquidity > 0 ? avgAprAccross5Harvests * (poolWrappedLiquidity / totalLiquidity) : 0;
+            const apr = totalLiquidity > 0 ? avgAprAcross5Harvests * (poolWrappedLiquidity / totalLiquidity) : 0;
 
             await prisma.prismaPoolAprItem.upsert({
                 where: { id: itemId },
