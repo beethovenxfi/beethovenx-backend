@@ -39,11 +39,11 @@ export class WstethAprService implements PoolAprService {
                     create: {
                         id: itemId,
                         poolId: pool.id,
-                        title: `LIDO APR`,
+                        title: `stETH APR`,
                         apr: collectsYieldFee ? userApr : wstethApr,
                         type: 'IB_YIELD',
                     },
-                    update: { apr: collectsYieldFee ? userApr : wstethApr },
+                    update: { apr: collectsYieldFee ? userApr : wstethApr, title: `stETH APR` },
                 });
             }
         }
