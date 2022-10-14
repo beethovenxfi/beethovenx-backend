@@ -155,7 +155,7 @@ export class UserSyncWalletBalanceService {
                 ...balances
                     .filter(({ userAddress }) => userAddress !== AddressZero)
                     .map((userBalance) => {
-                        if (userBalance.erc20Address === networkConfig.fbeets.address) {
+                        if (isSameAddress(userBalance.erc20Address, networkConfig.fbeets.address)) {
                             return this.getUserWalletBalanceUpsertForFbeets(
                                 userBalance.erc20Address,
                                 formatFixed(userBalance.balance, 18),
