@@ -39,11 +39,15 @@ const resolvers: Resolvers = {
 
             return userService.getUserStaking(accountAddress);
         },
-        userGetPoolSnapshots: async (parent, args, context) => {
-            const userAddress = getRequiredAccountAddress(context);
+        // userGetPoolSnapshots: async (parent, { poolId, range }, context) => {
+        //     const accountAddress = getRequiredAccountAddress(context);
 
-            return userService.getPoolSnapshots({ ...args, userAddress });
-        },
+        //     return userService.getUserBalanceSnapshotsForPool(
+        //         accountAddress.toLowerCase(),
+        //         poolId.toLowerCase(),
+        //         range,
+        //     );
+        // },
     },
     Mutation: {
         userSyncChangedWalletBalancesForAllPools: async (parent, {}, context) => {
