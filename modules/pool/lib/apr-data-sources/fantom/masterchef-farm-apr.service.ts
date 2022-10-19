@@ -24,8 +24,8 @@ export class MasterchefFarmAprService implements PoolAprService {
 
         for (const pool of pools) {
             const farm = farms.find((farm) => {
-                if (pool.id === networkConfig.fbeets.poolId) {
-                    return farm.id === networkConfig.fbeets.farmId;
+                if (pool.id === networkConfig.fbeets!.poolId) {
+                    return farm.id === networkConfig.fbeets!.farmId;
                 }
 
                 return farm.pair.toLowerCase() === pool.address.toLowerCase();

@@ -1,4 +1,5 @@
 import { BigNumber } from 'ethers';
+import internal from 'stream';
 import { env } from '../../app/env';
 
 export type DeploymentEnv = 'canary' | 'main';
@@ -30,10 +31,10 @@ export interface NetworkConfig {
         startDate: string;
         balancer: string;
         blocks: string;
-        masterchef: string;
-        beetsBar: string;
-        changelog: string;
-        gauge: string;
+        masterchef?: string;
+        reliquary?: string;
+        beetsBar?: string;
+        gauge?: string;
         userBalances: string;
     };
     sanity: {
@@ -43,11 +44,15 @@ export interface NetworkConfig {
     beets: {
         address: string;
     };
-    fbeets: {
+    fbeets?: {
         address: string;
+        newAddress: string;
         farmId: string;
+        reliquaryFarmPid: number;
         poolId: string;
+        newPoolId: string;
         poolAddress: string;
+        newPoolAddress: string;
     };
     bal: {
         address: string;
@@ -63,6 +68,9 @@ export interface NetworkConfig {
     masterchef: {
         address: string;
         excludedFarmIds: string[];
+    };
+    reliquary: {
+        address: string;
     };
     copper: {
         proxyAddress: string;
@@ -105,9 +113,8 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             balancer: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx',
             beetsBar: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beets-bar',
             blocks: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/fantom-blocks',
-            changelog: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/changelog',
             masterchef: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/masterchefv2',
-            gauge: 'https://#/',
+            reliquary: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/reliquary',
             userBalances: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/user-bpt-balances-fantom',
         },
         eth: {
@@ -135,9 +142,13 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         fbeets: {
             address: '0xfcef8a994209d6916eb2c86cdd2afd60aa6f54b1',
+            newAddress: '0x547dd1af43305a4aaa604856b2a9a2da96852983', // test fidelio duetto v2
             farmId: '22',
+            reliquaryFarmPid: 0,
             poolId: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019',
+            newPoolId: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019', // set when pool created
             poolAddress: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837',
+            newPoolAddress: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837', // set when pool created
         },
         bal: {
             address: '',
@@ -157,6 +168,9 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
                 '28', //OHM bonding farm
                 '9', //old fidellio dueto (non fbeets)
             ],
+        },
+        reliquary: {
+            address: '0x300daa195a19dc39719237655ecada053031359d',
         },
         avgBlockSpeed: 1,
         sor: {
@@ -195,10 +209,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         subgraphs: {
             startDate: '2022-01-01',
             balancer: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx-optimism',
-            beetsBar: 'https://',
             blocks: 'https://api.thegraph.com/subgraphs/name/danielmkm/optimism-blocks',
-            changelog: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/changelog-optimism',
-            masterchef: 'https://',
             gauge: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/balancer-gauges-optimism',
             userBalances: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/user-bpt-balances-optimism',
         },
@@ -225,12 +236,6 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         beets: {
             address: '0x97513e975a7fa9072c72c92d8000b0db90b163c5',
         },
-        fbeets: {
-            address: '0x0000000000000000000000000000000000000000',
-            farmId: '-1',
-            poolId: '0x0000000000000000000000000000000000000000',
-            poolAddress: '0x0000000000000000000000000000000000000000',
-        },
         bal: {
             address: '0xfe8b128ba8c78aabc59d4c64cee7ff28e9379921',
         },
@@ -245,6 +250,9 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         masterchef: {
             address: '0x0000000000000000000000000000000000000000',
             excludedFarmIds: [],
+        },
+        reliquary: {
+            address: '0x0000000000000000000000000000000000000000',
         },
         avgBlockSpeed: 1,
         sor: {

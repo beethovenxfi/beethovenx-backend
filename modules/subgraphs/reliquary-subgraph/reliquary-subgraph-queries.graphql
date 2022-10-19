@@ -1,0 +1,201 @@
+query Reliquary($id: ID!, $block: Block_height) {
+    reliquary(id: $id, block: $block) {
+        id
+        emissionToken {
+            id
+            address
+            name
+            symbol
+            decimals
+        }
+        totalAllocPoint
+        poolCount
+        relicCount
+        harvests {
+            id
+            amount
+        }
+        emissionCurve {
+            id
+            address
+        }
+        pools {
+            id
+        }
+        users {
+            id
+            address
+        }
+        relics {
+            id
+            relicId
+        }
+    }
+}
+
+query Reliquaries(
+    $skip: Int
+    $first: Int
+    $orderBy: Reliquary_orderBy
+    $orderDirection: OrderDirection
+    $where: Reliquary_filter
+    $block: Block_height
+) {
+    reliquaries(
+        skip: $skip
+        first: $first
+        orderBy: $orderBy
+        orderDirection: $orderDirection
+        where: $where
+        block: $block
+    ) {
+        id
+        emissionToken {
+            id
+            address
+            name
+            symbol
+            decimals
+        }
+        totalAllocPoint
+        poolCount
+        relicCount
+        harvests {
+            id
+            amount
+        }
+        emissionCurve {
+            id
+            address
+        }
+        pools {
+            id
+        }
+        users {
+            id
+            address
+        }
+        relics {
+            id
+            relicId
+        }
+    }
+}
+
+query Relics(
+    $skip: Int
+    $first: Int
+    $orderBy: Relic_orderBy
+    $orderDirection: OrderDirection
+    $where: Relic_filter
+    $block: Block_height
+) {
+    relics(
+        skip: $skip
+        first: $first
+        orderBy: $orderBy
+        orderDirection: $orderDirection
+        where: $where
+        block: $block
+    ) {
+        id
+        relicId
+        reliquary {
+            id
+        }
+        pool {
+            id
+        }
+        pid
+        user {
+            id
+            address
+        }
+        balance
+        entryTimestamp
+    }
+}
+
+query ReliquaryUsers(
+    $skip: Int
+    $first: Int
+    $orderBy: User_orderBy
+    $orderDirection: OrderDirection
+    $where: User_filter
+    $block: Block_height
+) {
+    reliquaryUsers: users(
+        skip: $skip
+        first: $first
+        orderBy: $orderBy
+        orderDirection: $orderDirection
+        where: $where
+        block: $block
+    ) {
+        id
+        address
+        reliquary {
+            id
+        }
+        relics {
+            id
+            relicId
+        }
+    }
+}
+
+query ReliquaryPools(
+    $skip: Int
+    $first: Int
+    $orderBy: Pool_orderBy
+    $orderDirection: OrderDirection
+    $where: Pool_filter
+    $block: Block_height
+) {
+    farms: pools(
+        skip: $skip
+        first: $first
+        orderBy: $orderBy
+        orderDirection: $orderDirection
+        where: $where
+        block: $block
+    ) {
+        ...Farm
+    }
+}
+
+fragment Farm on Pool {
+    id
+    pid
+    name
+    reliquary {
+        id
+    }
+    rewarder {
+        id
+        rewardToken {
+            id
+            address
+            name
+            symbol
+            decimals
+        }
+    }
+    nftDescriptor
+    poolToken {
+        id
+        address
+        name
+        symbol
+        decimals
+    }
+    poolTokenAddress
+    totalBalance
+    relics {
+        id
+        relicId
+    }
+    relicCount
+    levelMaturities
+    allocPoint
+}

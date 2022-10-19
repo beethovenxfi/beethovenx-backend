@@ -23,9 +23,9 @@ export class MasterChefStakingService implements PoolStakingService {
         const operations: any[] = [];
 
         for (const farm of filteredFarms) {
-            const isFbeetsFarm = farm.id === networkConfig.fbeets.farmId;
+            const isFbeetsFarm = farm.id === networkConfig.fbeets!.farmId;
             const pool = pools.find((pool) =>
-                isFbeetsFarm ? pool.id === networkConfig.fbeets.poolId : pool.address === farm.pair,
+                isFbeetsFarm ? pool.id === networkConfig.fbeets!.poolId : pool.address === farm.pair,
             );
 
             if (!pool) {
@@ -49,7 +49,7 @@ export class MasterChefStakingService implements PoolStakingService {
                             id: farm.id,
                             poolId: pool.id,
                             type: isFbeetsFarm ? 'FRESH_BEETS' : 'MASTER_CHEF',
-                            address: isFbeetsFarm ? networkConfig.fbeets.address : farm.masterChef.id,
+                            address: isFbeetsFarm ? networkConfig.fbeets!.address : farm.masterChef.id,
                         },
                     }),
                 );
@@ -95,7 +95,7 @@ export class MasterChefStakingService implements PoolStakingService {
     public async reloadStakingForAllPools() {
         await prisma.prismaPoolStakingMasterChefFarmRewarder.deleteMany({});
         await prisma.prismaPoolStakingMasterChefFarm.deleteMany({});
-        await prisma.prismaPoolStaking.deleteMany({});
+        await prisma.prismaPoolStaking.deleteMany({ where: { type: 'MASTER_CHEF' } });
         await this.syncStakingForPools();
     }
 }
