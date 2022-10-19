@@ -38,6 +38,7 @@
         "ethers": "^5.5.1",
         "express": "^4.17.1",
         "express-promise-router": "^4.1.0",
+        "googleapis": "^108.0.0",
         "graphql": "^16.0.1",
         "graphql-request": "^3.6.1",
         "graphql-type-json": "^0.3.2",
