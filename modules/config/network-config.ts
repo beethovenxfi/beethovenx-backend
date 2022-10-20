@@ -46,13 +46,12 @@ export interface NetworkConfig {
     };
     fbeets?: {
         address: string;
-        newAddress: string;
         farmId: string;
         reliquaryFarmPid: number;
         poolId: string;
-        newPoolId: string;
+        poolIdV2: string;
         poolAddress: string;
-        newPoolAddress: string;
+        poolAddressV2: string;
     };
     bal: {
         address: string;
@@ -142,13 +141,12 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         fbeets: {
             address: '0xfcef8a994209d6916eb2c86cdd2afd60aa6f54b1',
-            newAddress: '0x547dd1af43305a4aaa604856b2a9a2da96852983', // test fidelio duetto v2
             farmId: '22',
             reliquaryFarmPid: 0,
             poolId: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019',
-            newPoolId: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019', // set when pool created
+            poolIdV2: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019', // set when pool created
             poolAddress: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837',
-            newPoolAddress: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837', // set when pool created
+            poolAddressV2: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837', // test fidelio duetto bpt v2
         },
         bal: {
             address: '',
