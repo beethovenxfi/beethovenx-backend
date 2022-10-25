@@ -95,7 +95,6 @@ export interface NetworkConfig {
             user: string;
             sheetId: string;
             compositionTabName: string;
-            poolTypesTabName: string;
             databaseTabName: string;
         };
     };
@@ -199,14 +198,12 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
                 sheetId: '1Ifbfh8njyssWKuLlUvlfXt-r3rnd4gAIP5sSM-lEuBU',
                 databaseTabName: 'Database v2',
                 compositionTabName: 'Pool Composition v2',
-                poolTypesTabName: 'Pool Types v2',
             },
             canary: {
                 user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
                 sheetId: '17bYDbQAdMwGevfJ7thiwI8mjYeZppVRi8gD8ER6CtSs',
                 databaseTabName: 'Database v2',
                 compositionTabName: 'Pool Composition v2',
-                poolTypesTabName: 'Pool Types v2',
             },
         },
     },
@@ -313,14 +310,12 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
                 sheetId: '1Ifbfh8njyssWKuLlUvlfXt-r3rnd4gAIP5sSM-lEuBU',
                 databaseTabName: 'DatabaseOptimism v2',
                 compositionTabName: 'Pool Composition Optimism v2',
-                poolTypesTabName: 'Pool Types Optimism v2',
             },
             canary: {
                 user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
                 sheetId: '17bYDbQAdMwGevfJ7thiwI8mjYeZppVRi8gD8ER6CtSs',
                 databaseTabName: 'DatabaseOptimism v2',
                 compositionTabName: 'Pool Composition Optimism v2',
-                poolTypesTabName: 'Pool Types Optimism v2',
             },
         },
     },

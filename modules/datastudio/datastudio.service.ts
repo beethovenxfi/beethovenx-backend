@@ -141,19 +141,6 @@ export class DatastudioService {
             );
             allPoolDataRows.push(poolDataRow);
 
-            const poolTypeRow: string[] = [];
-            poolTypeRow.push(pool.address, pool.name, pool.id, pool.type, swapFee, pool.symbol);
-            allPoolTypeRows.push(poolTypeRow);
-
-            const allTokens = pool.allTokens.map((token) => {
-                const poolToken = pool.tokens.find((poolToken) => poolToken.address === token.token.address);
-
-                return {
-                    ...token.token,
-                    weight: poolToken?.dynamicData?.weight,
-                };
-            });
-
             for (const token of allTokens) {
                 const poolCompositionRow: string[] = [];
                 poolCompositionRow.push(
@@ -173,12 +160,6 @@ export class DatastudioService {
             networkConfig.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].databaseTabName,
             'A1:T1',
             allPoolDataRows,
-            jwtClient,
-        );
-        this.updateDataInSheet(
-            networkConfig.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].poolTypesTabName,
-            `A2:F${allPoolTypeRows.length + 1}`,
-            allPoolTypeRows,
             jwtClient,
         );
 
