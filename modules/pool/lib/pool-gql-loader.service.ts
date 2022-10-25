@@ -360,13 +360,19 @@ export class PoolGqlLoaderService {
     private mapAllTokens(pool: PrismaPoolMinimal): GqlPoolTokenExpanded[] {
         return pool.allTokens.map((token) => {
             const poolToken = pool.tokens.find((poolToken) => poolToken.address === token.token.address);
+            const isNested = !poolToken;
+            const isPhantomBpt = token.tokenAddress === pool.address;
+            const isMainToken = !token.token.types.some(
+                (type) => type.type === 'LINEAR_WRAPPED_TOKEN' || type.type === 'PHANTOM_BPT' || type.type === 'BPT',
+            );
 
             return {
                 ...token.token,
                 id: `${pool.id}-${token.tokenAddress}`,
                 weight: poolToken?.dynamicData?.weight,
-                isNested: !poolToken,
-                isPhantomBpt: token.tokenAddress === pool.address,
+                isNested,
+                isPhantomBpt,
+                isMainToken,
             };
         });
     }
