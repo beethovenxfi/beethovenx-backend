@@ -4,51 +4,31 @@ import { env } from '../../app/env';
 import { DeploymentEnv, networkConfig } from '../config/network-config';
 import moment from 'moment-timezone';
 import { JWT } from 'google-auth-library';
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import { SecretsManager, secretsManager } from './secrets-manager';
+import { googleJwtClient, GoogleJwtClient } from './google-jwt-client';
 
 export class DatastudioService {
+    constructor(
+        private readonly secretsManager: SecretsManager,
+        private readonly jwtClientHelper: GoogleJwtClient,
+        private readonly databaseTabeName: string,
+        private readonly sheetId: string,
+        private readonly compositionTabName: string,
+    ) {}
+
     public async feedPoolData() {
-        const secretManagerClient = new SecretsManagerClient({ region: env.AWS_REGION });
-
-        let privateKey = '';
-        try {
-            const response = await secretManagerClient.send(
-                new GetSecretValueCommand({ SecretId: 'backend-v2-datafeed-privatekey' }),
-            );
-            if (response.SecretString) {
-                privateKey = response.SecretString;
-                console.log(privateKey);
-            }
-        } catch (error) {
-            throw Error(`Error getting secret from AWS: ${error}`);
-        }
-
-        const jwtClient = new google.auth.JWT(
-            networkConfig.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].user,
-            undefined,
-            privateKey,
-            'https://www.googleapis.com/auth/spreadsheets',
-        );
-        await jwtClient.authorize(function (err, result) {
-            if (err) {
-                console.log(`Error authorizing: ${err}`);
-                return;
-            }
-        });
+        const privateKey = await this.secretsManager.getSecret('backend-v2-datafeed-privatekey');
+        const jwtClient = await this.jwtClientHelper.getAuthorizedSheetsClient(privateKey);
 
         const sheets = google.sheets({ version: 'v4' });
 
-        const range = `${networkConfig.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].databaseTabName}!B2:B`;
+        const range = `${this.databaseTabeName}!B2:B`;
         let result;
-        try {
-            result = await sheets.spreadsheets.values.get({
-                auth: jwtClient,
-                spreadsheetId: networkConfig.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].sheetId,
-                range: range,
-            });
-        } catch (e) {
-            throw Error(`Error reading values: ${e}`);
-        }
+        result = await sheets.spreadsheets.values.get({
+            auth: jwtClient,
+            spreadsheetId: this.sheetId,
+            range: range,
+        });
 
         let lastRun = moment.tz('GMT').startOf('day').subtract(1, 'day').unix();
         if (result.data.values) {
@@ -62,7 +42,6 @@ export class DatastudioService {
 
         const today = moment.tz('GMT').startOf('day');
         const allPoolDataRows: string[][] = [];
-        const allPoolTypeRows: string[][] = [];
         const allPoolCompositionRows: string[][] = [];
         const pools = await prisma.prismaPool.findMany({
             where: {
@@ -93,6 +72,7 @@ export class DatastudioService {
 
             const yesterday = moment.tz('GMT').startOf('day').subtract(1, 'day').unix();
 
+            // need the snapshot for the swap count change
             const snapshotFrom24HrsAgo = await prisma.prismaPoolSnapshot.findFirst({
                 where: {
                     poolId: pool.id,
@@ -141,6 +121,15 @@ export class DatastudioService {
             );
             allPoolDataRows.push(poolDataRow);
 
+            const allTokens = pool.allTokens.map((token) => {
+                const poolToken = pool.tokens.find((poolToken) => poolToken.address === token.token.address);
+
+                return {
+                    ...token.token,
+                    weight: poolToken?.dynamicData?.weight,
+                };
+            });
+
             for (const token of allTokens) {
                 const poolCompositionRow: string[] = [];
                 poolCompositionRow.push(
@@ -156,15 +145,10 @@ export class DatastudioService {
             }
         }
 
-        this.appendDataInSheet(
-            networkConfig.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].databaseTabName,
-            'A1:T1',
-            allPoolDataRows,
-            jwtClient,
-        );
+        this.appendDataInSheet(this.databaseTabeName, 'A1:T1', allPoolDataRows, jwtClient);
 
         this.updateDataInSheet(
-            networkConfig.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].compositionTabName,
+            this.compositionTabName,
             `A2:G${allPoolCompositionRows.length + 1}`,
             allPoolCompositionRows,
             jwtClient,
@@ -174,42 +158,40 @@ export class DatastudioService {
     private async updateDataInSheet(tabName: string, rowRange: string, rows: string[][], jwtClient: JWT) {
         const sheets = google.sheets({ version: 'v4' });
 
-        try {
-            await sheets.spreadsheets.values.update({
-                auth: jwtClient,
-                spreadsheetId: networkConfig.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].sheetId,
+        await sheets.spreadsheets.values.update({
+            auth: jwtClient,
+            spreadsheetId: this.sheetId,
+            range: `${tabName}!${rowRange}`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: {
+                majorDimension: 'ROWS',
                 range: `${tabName}!${rowRange}`,
-                valueInputOption: 'USER_ENTERED',
-                requestBody: {
-                    majorDimension: 'ROWS',
-                    range: `${tabName}!${rowRange}`,
-                    values: rows,
-                },
-            });
-        } catch (e) {
-            throw Error(`Error updating values: ${e}`);
-        }
+                values: rows,
+            },
+        });
     }
 
     private async appendDataInSheet(tabName: string, rowRange: string, rows: string[][], jwtClient: JWT) {
         const sheets = google.sheets({ version: 'v4' });
 
-        try {
-            await sheets.spreadsheets.values.append({
-                auth: jwtClient,
-                spreadsheetId: networkConfig.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].sheetId,
+        await sheets.spreadsheets.values.append({
+            auth: jwtClient,
+            spreadsheetId: this.sheetId,
+            range: `${tabName}!${rowRange}`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: {
+                majorDimension: 'ROWS',
                 range: `${tabName}!${rowRange}`,
-                valueInputOption: 'USER_ENTERED',
-                requestBody: {
-                    majorDimension: 'ROWS',
-                    range: `${tabName}!${rowRange}`,
-                    values: rows,
-                },
-            });
-        } catch (e) {
-            throw Error(`Error appending values: ${e}`);
-        }
+                values: rows,
+            },
+        });
     }
 }
 
-export const datastudioService = new DatastudioService();
+export const datastudioService = new DatastudioService(
+    secretsManager,
+    googleJwtClient,
+    networkConfig.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].databaseTabName,
+    networkConfig.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].sheetId,
+    networkConfig.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].compositionTabName,
+);
