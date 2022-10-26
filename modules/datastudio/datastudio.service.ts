@@ -14,6 +14,7 @@ export class DatastudioService {
         private readonly databaseTabeName: string,
         private readonly sheetId: string,
         private readonly compositionTabName: string,
+        private readonly swapProtocolFeePercentage: number,
     ) {}
 
     public async feedPoolData() {
@@ -22,17 +23,17 @@ export class DatastudioService {
 
         const sheets = google.sheets({ version: 'v4' });
 
-        const range = `${this.databaseTabeName}!B2:B`;
-        let result;
-        result = await sheets.spreadsheets.values.get({
+        const range = `${this.databaseTabeName}!B2:G`;
+        let currentSheetValues;
+        currentSheetValues = await sheets.spreadsheets.values.get({
             auth: jwtClient,
             spreadsheetId: this.sheetId,
             range: range,
         });
 
         let lastRun = moment.tz('GMT').startOf('day').subtract(1, 'day').unix();
-        if (result.data.values) {
-            lastRun = result.data.values[result.data.values.length - 1][0];
+        if (currentSheetValues.data.values) {
+            lastRun = currentSheetValues.data.values[currentSheetValues.data.values.length - 1][0];
         }
 
         if (lastRun > moment.tz('GMT').subtract(1, 'day').unix()) {
@@ -41,6 +42,7 @@ export class DatastudioService {
         }
 
         const today = moment.tz('GMT').startOf('day');
+
         const allPoolDataRows: string[][] = [];
         const allPoolCompositionRows: string[][] = [];
         const pools = await prisma.prismaPool.findMany({
@@ -72,25 +74,26 @@ export class DatastudioService {
 
             const yesterday = moment.tz('GMT').startOf('day').subtract(1, 'day').unix();
 
-            // need the snapshot for the swap count change
-            const snapshotFrom24HrsAgo = await prisma.prismaPoolSnapshot.findFirst({
-                where: {
-                    poolId: pool.id,
-                    timestamp: { lte: yesterday },
-                },
-            });
+            let lastTotalSwaps = `0`;
+            //find last entry of pool in currentSheet and get total swaps
+            if (currentSheetValues.data.values) {
+                // string[row][column], index 1 is address, index 5 total swap count
+                currentSheetValues.data.values.forEach((row: string[]) => {
+                    if (pool.address === row[1] && yesterday.toString() === row[0]) {
+                        lastTotalSwaps = row[5];
+                    }
+                });
+            }
 
             if (pool.dynamicData) {
                 sharesChange = `${
                     parseFloat(pool.dynamicData.totalShares24hAgo) - parseFloat(pool.dynamicData.totalShares)
                 }`;
                 tvlChange = `${pool.dynamicData.totalLiquidity24hAgo - pool.dynamicData.totalLiquidity}`;
-                lpSwapFee = `${pool.dynamicData.fees24h * (1 - networkConfig.balancer.swapProtocolFeePercentage)}`;
-                protocolSwapFee = `${pool.dynamicData.fees24h * networkConfig.balancer.swapProtocolFeePercentage}`;
+                lpSwapFee = `${pool.dynamicData.fees24h * (1 - this.swapProtocolFeePercentage)}`;
+                protocolSwapFee = `${pool.dynamicData.fees24h * this.swapProtocolFeePercentage}`;
 
-                if (snapshotFrom24HrsAgo) {
-                    dailySwaps = `${pool.dynamicData.swapsCount - snapshotFrom24HrsAgo.swapsCount}`;
-                }
+                dailySwaps = `${pool.dynamicData.swapsCount - parseFloat(lastTotalSwaps)}`;
             }
 
             const poolDataRow: string[] = [];
@@ -194,4 +197,5 @@ export const datastudioService = new DatastudioService(
     networkConfig.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].databaseTabName,
     networkConfig.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].sheetId,
     networkConfig.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].compositionTabName,
+    networkConfig.balancer.swapProtocolFeePercentage,
 );

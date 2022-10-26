@@ -5,13 +5,13 @@ export class SecretsManager {
     public async getSecret(secretId: string): Promise<string> {
         const secretManagerClient = new SecretsManagerClient({ region: env.AWS_REGION });
 
-        let secret = '';
+        let secretValue = '';
         const response = await secretManagerClient.send(new GetSecretValueCommand({ SecretId: secretId }));
         if (response.SecretString) {
-            secret = response.SecretString;
+            const jsonSecret = JSON.parse(response.SecretString);
+            secretValue = jsonSecret.key;
         }
-
-        return secret;
+        return secretValue;
     }
 }
 
