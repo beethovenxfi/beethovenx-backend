@@ -1,16 +1,12 @@
-import { PoolStakingService } from '../../../pool-types';
-import { ReliquarySubgraphService } from '../../../../subgraphs/reliquary-subgraph/reliquary.service';
+import { isSameAddress } from '@balancer-labs/sdk';
+import { BigNumber } from 'ethers';
 import { prisma } from '../../../../../prisma/prisma-client';
 import { prismaBulkExecuteOperations } from '../../../../../prisma/prisma-util';
 import { networkConfig } from '../../../../config/network-config';
-import { oldBnum } from '../../../../big-number/old-big-number';
-import { formatFixed } from '@ethersproject/bignumber';
-import { getContractAt } from '../../../../web3/contract';
+import { ReliquarySubgraphService } from '../../../../subgraphs/reliquary-subgraph/reliquary.service';
 import ERC20Abi from '../../../../web3//abi/ERC20.json';
-import { BigNumber } from 'ethers';
-import EmissionCurveAbi from './abi/EmissionCurve.json';
-import { isSameAddress } from '@balancer-labs/sdk';
-import { Rewarder_OrderBy } from '../../../../subgraphs/masterchef-subgraph/generated/masterchef-subgraph-types';
+import { getContractAt } from '../../../../web3/contract';
+import { PoolStakingService } from '../../../pool-types';
 
 export class ReliquaryStakingService implements PoolStakingService {
     constructor(private readonly reliquarySubgraphService: ReliquarySubgraphService) {}
@@ -60,27 +56,27 @@ export class ReliquaryStakingService implements PoolStakingService {
                 }),
             );
 
-            // TODO: multiple reward tokens
             if (farm.rewarder) {
-                // for (const rewardToken of farm.rewarder.rewardToken || []) {
-                const id = `${farmId}-${farm.rewarder.id}-${farm.rewarder.rewardToken.address}`;
-                const erc20Token = await getContractAt(farm.rewarder.rewardToken.address, ERC20Abi);
-                const rewardBalance: BigNumber = await erc20Token.balanceOf(farm.rewarder.id);
-                const rewardPerSecond = rewardBalance.gt(0) ? farm.rewarder.rewardPerSecond : '0.0';
+                for (const rewarderEmission of farm.rewarder.emissions) {
+                    const id = `${farmId}-${farm.rewarder.id}-${rewarderEmission.rewardToken.address.toLowerCase()}`;
+                    const erc20Token = await getContractAt(rewarderEmission.rewardToken.address, ERC20Abi);
+                    const rewardBalance: BigNumber = await erc20Token.balanceOf(farm.rewarder.id);
+                    const rewardPerSecond = rewardBalance.gt(0) ? rewarderEmission.rewardPerSecond : '0.0';
 
-                operations.push(
-                    prisma.prismaPoolStakingReliquaryFarmRewarder.upsert({
-                        where: { id },
-                        create: {
-                            id,
-                            farmId,
-                            tokenAddress: farm.rewarder.rewardToken.address,
-                            address: farm.rewarder.id,
-                            rewardPerSecond,
-                        },
-                        update: { rewardPerSecond },
-                    }),
-                );
+                    operations.push(
+                        prisma.prismaPoolStakingReliquaryFarmRewarder.upsert({
+                            where: { id },
+                            create: {
+                                id,
+                                farmId,
+                                tokenAddress: rewarderEmission.rewardToken.address.toLowerCase(),
+                                address: farm.rewarder.id,
+                                rewardPerSecond,
+                            },
+                            update: { rewardPerSecond },
+                        }),
+                    );
+                }
             }
         }
 

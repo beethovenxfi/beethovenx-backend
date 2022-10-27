@@ -101,14 +101,16 @@ fragment ReliquaryFarm on Pool {
     name
     rewarder {
         id
-        rewardToken {
-            id
-            address
-            name
-            symbol
-            decimals
+        emissions {
+            rewardToken {
+                id
+                address
+                name
+                symbol
+                decimals
+            }
+            rewardPerSecond
         }
-        rewardPerSecond
     }
     poolTokenAddress
     totalBalance
