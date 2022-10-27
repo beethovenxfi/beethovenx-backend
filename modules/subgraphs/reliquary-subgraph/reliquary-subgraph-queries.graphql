@@ -11,73 +11,10 @@ query Reliquary($id: ID!, $block: Block_height) {
         totalAllocPoint
         poolCount
         relicCount
-        harvests {
-            id
-            amount
-        }
         emissionCurve {
             id
             address
-        }
-        pools {
-            id
-        }
-        users {
-            id
-            address
-        }
-        relics {
-            id
-            relicId
-        }
-    }
-}
-
-query Reliquaries(
-    $skip: Int
-    $first: Int
-    $orderBy: Reliquary_orderBy
-    $orderDirection: OrderDirection
-    $where: Reliquary_filter
-    $block: Block_height
-) {
-    reliquaries(
-        skip: $skip
-        first: $first
-        orderBy: $orderBy
-        orderDirection: $orderDirection
-        where: $where
-        block: $block
-    ) {
-        id
-        emissionToken {
-            id
-            address
-            name
-            symbol
-            decimals
-        }
-        totalAllocPoint
-        poolCount
-        relicCount
-        harvests {
-            id
-            amount
-        }
-        emissionCurve {
-            id
-            address
-        }
-        pools {
-            id
-        }
-        users {
-            id
-            address
-        }
-        relics {
-            id
-            relicId
+            rewardPerSecond
         }
     }
 }
@@ -98,21 +35,7 @@ query Relics(
         where: $where
         block: $block
     ) {
-        id
-        relicId
-        reliquary {
-            id
-        }
-        pool {
-            id
-        }
-        pid
-        user {
-            id
-            address
-        }
-        balance
-        entryTimestamp
+        ...ReliquaryRelic
     }
 }
 
@@ -132,15 +55,7 @@ query ReliquaryUsers(
         where: $where
         block: $block
     ) {
-        id
-        address
-        reliquary {
-            id
-        }
-        relics {
-            id
-            relicId
-        }
+        ...ReliquaryUser
     }
 }
 
@@ -160,17 +75,30 @@ query ReliquaryPools(
         where: $where
         block: $block
     ) {
-        ...Farm
+        ...ReliquaryFarm
     }
 }
 
-fragment Farm on Pool {
+fragment ReliquaryUser on User {
+    address
+    relics {
+        ...ReliquaryRelic
+    }
+}
+
+fragment ReliquaryRelic on Relic {
+    id
+    relicId
+    pid
+    userAddress
+    balance
+    entryTimestamp
+}
+
+fragment ReliquaryFarm on Pool {
     id
     pid
     name
-    reliquary {
-        id
-    }
     rewarder {
         id
         rewardToken {
@@ -180,21 +108,10 @@ fragment Farm on Pool {
             symbol
             decimals
         }
-    }
-    nftDescriptor
-    poolToken {
-        id
-        address
-        name
-        symbol
-        decimals
+        rewardPerSecond
     }
     poolTokenAddress
     totalBalance
-    relics {
-        id
-        relicId
-    }
     relicCount
     levelMaturities
     allocPoint

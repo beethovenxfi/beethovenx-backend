@@ -9,15 +9,16 @@ import { getContractAt } from '../../../../web3/contract';
 import ERC20Abi from '../../../../web3//abi/ERC20.json';
 import { BigNumber } from 'ethers';
 import EmissionCurveAbi from './abi/EmissionCurve.json';
+import { isSameAddress } from '@balancer-labs/sdk';
+import { Rewarder_OrderBy } from '../../../../subgraphs/masterchef-subgraph/generated/masterchef-subgraph-types';
 
 export class ReliquaryStakingService implements PoolStakingService {
     constructor(private readonly reliquarySubgraphService: ReliquarySubgraphService) {}
 
     public async syncStakingForPools(): Promise<void> {
-        const reliquary = await this.reliquarySubgraphService.getReliquary({ id: networkConfig.reliquary.address });
+        const { reliquary } = await this.reliquarySubgraphService.getReliquary({ id: networkConfig.reliquary.address });
         if (!reliquary) {
-            // log error
-            return;
+            throw new Error(`Reliquary with id ${networkConfig.reliquary.address} not found in subgraph`);
         }
         const farms = await this.reliquarySubgraphService.getAllFarms({});
         const pools = await prisma.prismaPool.findMany({
@@ -26,29 +27,23 @@ export class ReliquaryStakingService implements PoolStakingService {
         const operations: any[] = [];
 
         for (const farm of farms) {
-            const pool = pools.find((pool) => pool.address === farm.poolTokenAddress);
+            const pool = pools.find((pool) => isSameAddress(pool.address, farm.poolTokenAddress));
 
             if (!pool) {
+                console.warn(
+                    `Missing pool for farm with id ${farm.pid} with pool token ${farm.poolTokenAddress}. Skipping...`,
+                );
                 continue;
             }
 
-            const emissionCurveContract = getContractAt(reliquary.reliquary!.emissionCurve.address, EmissionCurveAbi);
-            const totalReliquaryEmissions: number = await emissionCurveContract.getRate();
-
             const farmId = `${farm.pid}`;
-            const beetsPerSecond = formatFixed(
-                oldBnum(totalReliquaryEmissions)
-                    .times(farm.allocPoint)
-                    .div(reliquary.reliquary!.totalAllocPoint)
-                    .toFixed(0),
-                18,
-            );
+            const beetsPerSecond = reliquary.emissionCurve.rewardPerSecond;
 
             if (!pool.staking) {
                 operations.push(
                     prisma.prismaPoolStaking.create({
                         data: {
-                            id: farm.id,
+                            id: `${reliquary.id}-${farm.id}`,
                             poolId: pool.id,
                             type: 'RELIQUARY',
                             address: networkConfig.reliquary.address,
@@ -65,31 +60,27 @@ export class ReliquaryStakingService implements PoolStakingService {
                 }),
             );
 
-            // TODO multiple rewarders/reward tokens
+            // TODO: multiple reward tokens
             if (farm.rewarder) {
                 // for (const rewardToken of farm.rewarder.rewardToken || []) {
                 const id = `${farmId}-${farm.rewarder.id}-${farm.rewarder.rewardToken.address}`;
                 const erc20Token = await getContractAt(farm.rewarder.rewardToken.address, ERC20Abi);
                 const rewardBalance: BigNumber = await erc20Token.balanceOf(farm.rewarder.id);
-                // TODO implement rewardPerSecond to subgraph
-                // const rewardPerSecond = rewardBalance.gt(0)
-                //     ? formatFixed(rewardToken.rewardPerSecond, rewardToken.decimals)
-                //     : '0.0';
+                const rewardPerSecond = rewardBalance.gt(0) ? farm.rewarder.rewardPerSecond : '0.0';
 
                 operations.push(
-                    prisma.prismaPoolStakingMasterChefFarmRewarder.upsert({
+                    prisma.prismaPoolStakingReliquaryFarmRewarder.upsert({
                         where: { id },
                         create: {
                             id,
                             farmId,
                             tokenAddress: farm.rewarder.rewardToken.address,
                             address: farm.rewarder.id,
-                            rewardPerSecond: '0',
+                            rewardPerSecond,
                         },
-                        update: { rewardPerSecond: '0' },
+                        update: { rewardPerSecond },
                     }),
                 );
-                // }
             }
         }
 

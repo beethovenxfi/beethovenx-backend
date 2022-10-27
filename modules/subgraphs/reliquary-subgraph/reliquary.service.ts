@@ -1,16 +1,15 @@
 import { GraphQLClient } from 'graphql-request';
-import { env } from '../../../app/env';
-import { subgraphLoadAll } from '../subgraph-util';
-import { twentyFourHoursInMs } from '../../common/time';
 import { Cache, CacheClass } from 'memory-cache';
 import { networkConfig } from '../../config/network-config';
+import { subgraphLoadAll } from '../subgraph-util';
 import {
-    FarmFragment,
     getSdk,
+    ReliquaryFarmFragment,
     ReliquaryPoolsQuery,
     ReliquaryPoolsQueryVariables,
     ReliquaryQuery,
     ReliquaryQueryVariables,
+    ReliquaryUserFragment,
     ReliquaryUsersQuery,
     ReliquaryUsersQueryVariables,
 } from './generated/reliquary-subgraph-types';
@@ -36,14 +35,13 @@ export class ReliquarySubgraphService {
         return this.sdk.ReliquaryUsers(args);
     }
 
-    public async getAllFarms(args: ReliquaryPoolsQueryVariables): Promise<FarmFragment[]> {
-        return subgraphLoadAll<FarmFragment>(this.sdk.ReliquaryPools, 'farms', args);
+    public async getAllFarms(args: ReliquaryPoolsQueryVariables): Promise<ReliquaryFarmFragment[]> {
+        return subgraphLoadAll<ReliquaryFarmFragment>(this.sdk.ReliquaryPools, 'farms', args);
     }
 
-    // TODO this with paging
-    // public async getAllFarmUsers(args: MasterchefUsersQueryVariables): Promise<FarmUserFragment[]> {
-    //     return subgraphLoadAll<FarmUserFragment>(this.sdk.MasterchefUsers, 'farmUsers', args);
-    // }
+    public async getAllFarmUsers(args: ReliquaryUsersQueryVariables): Promise<ReliquaryUserFragment[]> {
+        return subgraphLoadAll<ReliquaryUserFragment>(this.sdk.ReliquaryUsers, 'reliquaryUsers', args);
+    }
 
     public get sdk() {
         return getSdk(this.client);
