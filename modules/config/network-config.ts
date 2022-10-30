@@ -68,7 +68,7 @@ export interface NetworkConfig {
         proxyAddress: string;
     };
     reaper?: {
-        linearPoolFactory: string;
+        linearPoolFactories: string[];
     };
     yearn: {
         vaultsEndpoint: string;
@@ -88,6 +88,15 @@ export interface NetworkConfig {
             forceRefresh: boolean;
             gasPrice: BigNumber;
             swapGas: BigNumber;
+        };
+    };
+    datastudio: {
+        [key in DeploymentEnv]: {
+            user: string;
+            sheetId: string;
+            compositionTabName: string;
+            databaseTabName: string;
+            emissionDataTabName: string;
         };
     };
 }
@@ -181,6 +190,25 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         copper: {
             proxyAddress: '0xbC8a71C75ffbd2807c021F4F81a8832392dEF93c',
         },
+        reaper: {
+            linearPoolFactories: ['0xd448c4156b8de31e56fdfc071c8d96459bb28119'],
+        },
+        datastudio: {
+            main: {
+                user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
+                sheetId: '1Ifbfh8njyssWKuLlUvlfXt-r3rnd4gAIP5sSM-lEuBU',
+                databaseTabName: 'Database v2',
+                compositionTabName: 'Pool Composition v2',
+                emissionDataTabName: 'EmissionData',
+            },
+            canary: {
+                user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
+                sheetId: '17bYDbQAdMwGevfJ7thiwI8mjYeZppVRi8gD8ER6CtSs',
+                databaseTabName: 'Database v2',
+                compositionTabName: 'Pool Composition v2',
+                emissionDataTabName: 'EmissionData',
+            },
+        },
     },
     '10': {
         chain: {
@@ -264,7 +292,10 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             vaultsEndpoint: 'https://#/',
         },
         reaper: {
-            linearPoolFactory: '0x19968d4b7126904fd665ed25417599df9604df83',
+            linearPoolFactories: [
+                '0x19968d4b7126904fd665ed25417599df9604df83',
+                '0xe4b88e745dce9084b9fc2439f85a9a4c5cd6f361',
+            ],
         },
         lido: {
             wstEthAprEndpoint: 'https://stake.lido.fi/api/steth-apr',
@@ -275,6 +306,22 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         copper: {
             proxyAddress: '0x0000000000000000000000000000000000000000',
+        },
+        datastudio: {
+            main: {
+                user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
+                sheetId: '1Ifbfh8njyssWKuLlUvlfXt-r3rnd4gAIP5sSM-lEuBU',
+                databaseTabName: 'DatabaseOptimism v2',
+                compositionTabName: 'Pool Composition Optimism v2',
+                emissionDataTabName: 'EmissionData Optimism',
+            },
+            canary: {
+                user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
+                sheetId: '17bYDbQAdMwGevfJ7thiwI8mjYeZppVRi8gD8ER6CtSs',
+                databaseTabName: 'DatabaseOptimism v2',
+                compositionTabName: 'Pool Composition Optimism v2',
+                emissionDataTabName: 'EmissionData Optimism',
+            },
         },
     },
 };
