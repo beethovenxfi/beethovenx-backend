@@ -23,8 +23,6 @@ export class ReliquaryFarmAprService implements PoolAprService {
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
         const farms = await reliquaryService.getAllFarms({});
 
-        // const blocksPerDay = await blocksSubgraphService.getBlocksPerDay();
-        // const blocksPerYear = blocksPerDay * 365;
         const tokenPrices = await tokenService.getTokenPrices();
         const operations: any[] = [];
 
