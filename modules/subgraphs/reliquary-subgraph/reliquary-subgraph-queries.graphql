@@ -92,6 +92,7 @@ fragment ReliquaryRelic on Relic {
     pid
     userAddress
     balance
+    level
     entryTimestamp
 }
 
@@ -115,6 +116,11 @@ fragment ReliquaryFarm on Pool {
     poolTokenAddress
     totalBalance
     relicCount
-    levelMaturities
     allocPoint
+    levels {
+        level
+        balance
+        allocationPoints
+        requiredMaturity
+    }
 }

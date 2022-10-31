@@ -1,25 +1,19 @@
-import { PoolAprService } from '../../../pool-types';
-import { PrismaPoolWithExpandedNesting } from '../../../../../prisma/prisma-types';
-import { prisma } from '../../../../../prisma/prisma-client';
-import { prismaBulkExecuteOperations } from '../../../../../prisma/prisma-util';
-import { blocksSubgraphService } from '../../../../subgraphs/blocks-subgraph/blocks-subgraph.service';
-import { secondsPerYear } from '../../../../common/time';
+import { isSameAddress } from '@balancer-labs/sdk';
 import {
     PrismaPoolAprItem,
     PrismaPoolStakingReliquaryFarm,
     PrismaPoolStakingReliquaryFarmRewarder,
     PrismaTokenCurrentPrice,
 } from '@prisma/client';
+import { prisma } from '../../../../../prisma/prisma-client';
+import { PrismaPoolWithExpandedNesting } from '../../../../../prisma/prisma-types';
+import { prismaBulkExecuteOperations } from '../../../../../prisma/prisma-util';
+import { secondsPerYear } from '../../../../common/time';
 import { networkConfig } from '../../../../config/network-config';
-import { tokenService } from '../../../../token/token.service';
-import { masterchefService } from '../../../../subgraphs/masterchef-subgraph/masterchef.service';
-import { FarmFragment } from '../../../../subgraphs/masterchef-subgraph/generated/masterchef-subgraph-types';
-import { formatFixed } from '@ethersproject/bignumber';
-import { reliquaryService } from '../../../../subgraphs/reliquary-subgraph/reliquary.service';
-import { isSameAddress } from '@balancer-labs/sdk';
 import { ReliquaryFarmFragment } from '../../../../subgraphs/reliquary-subgraph/generated/reliquary-subgraph-types';
-
-const FARM_EMISSIONS_PERCENT = 0.872;
+import { reliquaryService } from '../../../../subgraphs/reliquary-subgraph/reliquary.service';
+import { tokenService } from '../../../../token/token.service';
+import { PoolAprService } from '../../../pool-types';
 
 type FarmWithRewarders = PrismaPoolStakingReliquaryFarm & {
     rewarders: PrismaPoolStakingReliquaryFarmRewarder[];
@@ -45,8 +39,16 @@ export class ReliquaryFarmAprService implements PoolAprService {
             const totalShares = parseFloat(pool.dynamicData.totalShares);
             const totalLiquidity = pool.dynamicData?.totalLiquidity || 0;
             const farmTvl = totalShares > 0 ? (farmBptBalance / totalShares) * totalLiquidity : 0;
+            const pricePerShare = totalLiquidity / totalShares;
 
-            const items = await this.calculateFarmApr(pool.id, pool.staking!.reliquary!, farm, farmTvl, tokenPrices);
+            const items = await this.calculateFarmApr(
+                pool.id,
+                pool.staking!.reliquary!,
+                farm,
+                farmTvl,
+                pricePerShare,
+                tokenPrices,
+            );
 
             items.forEach((item) => {
                 operations.push(
@@ -60,8 +62,8 @@ export class ReliquaryFarmAprService implements PoolAprService {
         }
 
         const poolsWithNoAllocPoints = farms
-            .filter((farm) => parseFloat(farm.allocPoint) === 0)
-            .map((farm) => farm.pair);
+            .filter((farm) => farm.allocPoint === 0)
+            .map((farm) => farm.poolTokenAddress.toLowerCase());
 
         //TODO: this could be optimized, doesn't need to be run everytime
         await prisma.prismaPoolAprItem.deleteMany({
@@ -79,6 +81,7 @@ export class ReliquaryFarmAprService implements PoolAprService {
         farm: FarmWithRewarders,
         subgraphFarm: ReliquaryFarmFragment,
         farmTvl: number,
+        pricePerShare: number,
         tokenPrices: PrismaTokenCurrentPrice[],
     ): Promise<PrismaPoolAprItem[]> {
         if (farmTvl <= 0) {
@@ -88,14 +91,44 @@ export class ReliquaryFarmAprService implements PoolAprService {
         const farmBeetsPerYear = parseFloat(farm.beetsPerSecond) * secondsPerYear;
         const beetsValuePerYear = beetsPrice * farmBeetsPerYear;
         const items: PrismaPoolAprItem[] = [];
-        const beetsApr = beetsValuePerYear / farmTvl;
+        const sortedLevelsWithBalance = subgraphFarm.levels
+            .filter((level) => parseFloat(level.balance) > 0)
+            .sort((a, b) => a.level - b.level);
 
-        if (beetsApr > 0) {
+        if (sortedLevelsWithBalance.length === 0) {
+            return [];
+        }
+
+        const minPoolLevel = sortedLevelsWithBalance[0];
+        const maxPoolLevel = sortedLevelsWithBalance[sortedLevelsWithBalance.length - 1];
+
+        const totalWeightedSupply = subgraphFarm.levels.reduce(
+            (total, level) => total + level.allocationPoints * parseFloat(level.balance),
+            0,
+        );
+        const minLevelBalance = parseFloat(minPoolLevel.balance);
+        const maxLevelBalance = parseFloat(maxPoolLevel.balance);
+
+        const minAprShare = (minPoolLevel.allocationPoints * minLevelBalance) / totalWeightedSupply;
+        const maxAprShare = (maxPoolLevel.allocationPoints * maxLevelBalance) / totalWeightedSupply;
+
+        const minBeetsApr = (beetsValuePerYear * minAprShare) / (minLevelBalance * pricePerShare);
+        const maxBeetsApr = (beetsValuePerYear * maxAprShare) / (maxLevelBalance * pricePerShare);
+
+        if (minBeetsApr > 0 || maxBeetsApr > 0) {
             items.push({
-                id: `${poolId}-beets-apr`,
+                id: `${poolId}-min-beets-apr`,
                 poolId,
-                title: 'BEETS reward APR',
-                apr: beetsApr,
+                title: 'BEETS min reward APR',
+                apr: minBeetsApr,
+                type: 'NATIVE_REWARD',
+                group: null,
+            });
+            items.push({
+                id: `${poolId}-max-beets-apr`,
+                poolId,
+                title: 'BEETS max reward APR',
+                apr: maxBeetsApr,
                 type: 'NATIVE_REWARD',
                 group: null,
             });
