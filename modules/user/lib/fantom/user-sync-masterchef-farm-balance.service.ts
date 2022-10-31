@@ -1,23 +1,24 @@
-import { masterchefService } from '../../../subgraphs/masterchef-subgraph/masterchef.service';
+import { formatFixed } from '@ethersproject/bignumber';
+import { BigNumber } from 'ethers';
+import _ from 'lodash';
+import { prisma } from '../../../../prisma/prisma-client';
+import { prismaBulkExecuteOperations } from '../../../../prisma/prisma-util';
+import { AmountHumanReadable } from '../../../common/global-types';
+import { networkConfig } from '../../../config/network-config';
 import {
     FarmUserFragment,
     OrderDirection,
     User_OrderBy,
 } from '../../../subgraphs/masterchef-subgraph/generated/masterchef-subgraph-types';
-import _ from 'lodash';
-import { prisma } from '../../../../prisma/prisma-client';
+import { masterchefService } from '../../../subgraphs/masterchef-subgraph/masterchef.service';
 import { getContractAt, jsonRpcProvider } from '../../../web3/contract';
-import MasterChefAbi from '../../abi/MasterChef.json';
 import { Multicaller } from '../../../web3/multicaller';
-import { networkConfig } from '../../../config/network-config';
-import { BigNumber } from 'ethers';
-import { formatFixed } from '@ethersproject/bignumber';
-import { prismaBulkExecuteOperations } from '../../../../prisma/prisma-util';
+import MasterChefAbi from '../../abi/MasterChef.json';
 import { UserStakedBalanceService, UserSyncUserBalanceInput } from '../../user-types';
-import { AmountHumanReadable } from '../../../common/global-types';
-import { PrismaPoolStaking } from '@prisma/client';
 
 export class UserSyncMasterchefFarmBalanceService implements UserStakedBalanceService {
+    constructor(private readonly fbeetsAddress: string, private readonly fbeetsFarmId: string) {}
+
     public async syncChangedStakedBalances(): Promise<void> {
         const status = await prisma.prismaUserBalanceSyncStatus.findUnique({ where: { type: 'STAKED' } });
 
@@ -68,7 +69,7 @@ export class UserSyncMasterchefFarmBalanceService implements UserStakedBalanceSe
                             balance: update.amount,
                             balanceNum: parseFloat(update.amount),
                             userAddress: update.userAddress,
-                            poolId: update.farmId !== networkConfig.fbeets.farmId ? pool?.id : null,
+                            poolId: update.farmId !== this.fbeetsFarmId ? pool?.id : null,
                             tokenAddress: farm!.pair,
                             stakingId: update.farmId,
                         },
@@ -148,7 +149,7 @@ export class UserSyncMasterchefFarmBalanceService implements UserStakedBalanceSe
                 balanceNum: parseFloat(amountStaked),
                 userAddress,
                 poolId: staking.type !== 'FRESH_BEETS' ? poolId : null,
-                tokenAddress: staking.type === 'FRESH_BEETS' ? networkConfig.fbeets.address : poolAddress,
+                tokenAddress: staking.type === 'FRESH_BEETS' ? this.fbeetsAddress : poolAddress,
                 stakingId: staking.id,
             },
         });

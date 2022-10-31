@@ -2,7 +2,7 @@ import { PrismaPoolStaking } from '@prisma/client';
 import { prisma } from '../../prisma/prisma-client';
 import { GqlPoolJoinExit, GqlPoolSwap, GqlUserSnapshotDataRange } from '../../schema';
 import { coingeckoService } from '../coingecko/coingecko.service';
-import { isFantomNetwork } from '../config/network-config';
+import { isFantomNetwork, networkConfig } from '../config/network-config';
 import { PoolSnapshotService } from '../pool/lib/pool-snapshot.service';
 import { PoolSwapService } from '../pool/lib/pool-swap.service';
 import { balancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer-subgraph.service';
@@ -119,12 +119,20 @@ export class UserService {
 }
 
 export const userService = new UserService(
-    new UserBalanceService(),
-    new UserSyncWalletBalanceService(),
-    isFantomNetwork() ? new UserSyncMasterchefFarmBalanceService() : new UserSyncGaugeBalanceService(),
+    new UserBalanceService(networkConfig.fbeets?.address ?? ''),
+    new UserSyncWalletBalanceService(
+        networkConfig.balancer.vault,
+        networkConfig.fbeets?.address ?? '',
+        networkConfig.fbeets?.poolAddress ?? '',
+    ),
+    isFantomNetwork()
+        ? new UserSyncMasterchefFarmBalanceService(networkConfig.fbeets!.address, networkConfig.fbeets!.farmId)
+        : new UserSyncGaugeBalanceService(),
     new PoolSwapService(tokenService, balancerSubgraphService),
     new UserSnapshotService(
         userSnapshotSubgraphService,
         new PoolSnapshotService(balancerSubgraphService, coingeckoService),
+        networkConfig.fbeets?.address ?? '',
+        networkConfig.fbeets?.poolId ?? '',
     ),
 );
