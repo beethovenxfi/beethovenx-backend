@@ -1,4 +1,5 @@
 import { isSameAddress } from '@balancer-labs/sdk';
+import { Prisma } from '@prisma/client';
 import { BigNumber } from 'ethers';
 import { prisma } from '../../../../../prisma/prisma-client';
 import { prismaBulkExecuteOperations } from '../../../../../prisma/prisma-util';
@@ -51,10 +52,42 @@ export class ReliquaryStakingService implements PoolStakingService {
             operations.push(
                 prisma.prismaPoolStakingReliquaryFarm.upsert({
                     where: { id: farmId },
-                    create: { id: farmId, stakingId: farmId, beetsPerSecond: beetsPerSecond },
-                    update: { beetsPerSecond: beetsPerSecond },
+                    create: {
+                        id: farmId,
+                        stakingId: farmId,
+                        name: farm.name,
+                        beetsPerSecond: beetsPerSecond,
+                    },
+                    update: {
+                        beetsPerSecond: beetsPerSecond,
+                        name: farm.name,
+                    },
                 }),
             );
+
+            for (let farmLevel of farm.levels) {
+                const { allocationPoints, balance, level, requiredMaturity } = farmLevel;
+
+                operations.push(
+                    prisma.prismaPoolStakingReliquaryFarmLevel.upsert({
+                        where: { id: `${farmId}-${level}` },
+                        create: {
+                            id: `${farmId}-${level}`,
+                            farmId,
+                            allocationPoints,
+                            balance,
+                            level,
+                            requiredMaturity,
+                            // apr will be updated by apr service
+                            apr: 0,
+                        },
+                        update: {
+                            allocationPoints,
+                            balance,
+                        },
+                    }),
+                );
+            }
 
             if (farm.rewarder) {
                 for (const rewarderEmission of farm.rewarder.emissions) {

@@ -1,23 +1,13 @@
 import { isSameAddress } from '@balancer-labs/sdk';
-import {
-    PrismaPoolAprItem,
-    PrismaPoolStakingReliquaryFarm,
-    PrismaPoolStakingReliquaryFarmRewarder,
-    PrismaTokenCurrentPrice,
-} from '@prisma/client';
+import { PrismaPoolAprType } from '@prisma/client';
 import { prisma } from '../../../../../prisma/prisma-client';
 import { PrismaPoolWithExpandedNesting } from '../../../../../prisma/prisma-types';
 import { prismaBulkExecuteOperations } from '../../../../../prisma/prisma-util';
 import { secondsPerYear } from '../../../../common/time';
 import { networkConfig } from '../../../../config/network-config';
-import { ReliquaryFarmFragment } from '../../../../subgraphs/reliquary-subgraph/generated/reliquary-subgraph-types';
 import { reliquaryService } from '../../../../subgraphs/reliquary-subgraph/reliquary.service';
 import { tokenService } from '../../../../token/token.service';
 import { PoolAprService } from '../../../pool-types';
-
-type FarmWithRewarders = PrismaPoolStakingReliquaryFarm & {
-    rewarders: PrismaPoolStakingReliquaryFarmRewarder[];
-};
 
 export class ReliquaryFarmAprService implements PoolAprService {
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
@@ -27,36 +17,118 @@ export class ReliquaryFarmAprService implements PoolAprService {
         const operations: any[] = [];
 
         for (const pool of pools) {
-            const farm = farms.find((farm) => isSameAddress(pool.address, farm.poolTokenAddress));
+            const subgraphFarm = farms.find((farm) => isSameAddress(pool.address, farm.poolTokenAddress));
+            const farm = pool.staking?.reliquary;
 
-            if (!farm || !pool.dynamicData) {
+            if (!subgraphFarm || !pool.dynamicData || !farm || subgraphFarm.totalBalance === '0') {
                 continue;
             }
 
-            const farmBptBalance = parseFloat(farm.totalBalance);
+            const farmBptBalance = parseFloat(subgraphFarm.totalBalance);
             const totalShares = parseFloat(pool.dynamicData.totalShares);
             const totalLiquidity = pool.dynamicData?.totalLiquidity || 0;
             const farmTvl = totalShares > 0 ? (farmBptBalance / totalShares) * totalLiquidity : 0;
             const pricePerShare = totalLiquidity / totalShares;
 
-            const items = await this.calculateFarmApr(
-                pool.id,
-                pool.staking!.reliquary!,
-                farm,
-                farmTvl,
-                pricePerShare,
-                tokenPrices,
+            const beetsPrice = tokenService.getPriceForToken(tokenPrices, networkConfig.beets.address);
+            const farmBeetsPerYear = parseFloat(farm.beetsPerSecond) * secondsPerYear;
+            const beetsValuePerYear = beetsPrice * farmBeetsPerYear;
+
+            const totalWeightedSupply = subgraphFarm.levels.reduce(
+                (total, level) => total + level.allocationPoints * parseFloat(level.balance),
+                0,
             );
 
-            items.forEach((item) => {
+            /*
+                on the pool overview & detal page, we only show min & max apr values, but on the 
+                reliquary page we want to show apr values for each level, so we search for the min / max 
+                apr values and add the as apr items and also update the apr for each level of the farm
+            */
+            let minApr = 0;
+            let maxApr = 0;
+
+            for (let farmLevel of subgraphFarm.levels) {
+                const levelSupply = parseFloat(farmLevel.balance);
+                const aprShare = (farmLevel.allocationPoints * levelSupply) / totalWeightedSupply;
+                const apr = (beetsValuePerYear * aprShare) / (levelSupply * pricePerShare);
+                if (apr < minApr) {
+                    minApr = apr;
+                } else if (apr > maxApr) {
+                    maxApr = apr;
+                }
                 operations.push(
-                    prisma.prismaPoolAprItem.upsert({
-                        where: { id: item.id },
-                        update: item,
-                        create: item,
+                    prisma.prismaPoolStakingReliquaryFarmLevel.update({
+                        where: {
+                            id: `${subgraphFarm.pid}-${farmLevel.level}`,
+                        },
+                        data: {
+                            apr: apr,
+                        },
                     }),
                 );
-            });
+            }
+
+            if (maxApr > 0) {
+                const minAprItem = {
+                    id: `${pool.id}-min-beets-apr`,
+                    poolId: pool.id,
+                    title: 'BEETS min reward APR',
+                    apr: minApr,
+                    type: PrismaPoolAprType.NATIVE_REWARD,
+                    group: null,
+                };
+                const maxAprItem = {
+                    id: `${pool.id}-max-beets-apr`,
+                    poolId: pool.id,
+                    title: 'BEETS max reward APR',
+                    apr: maxApr,
+                    type: PrismaPoolAprType.NATIVE_REWARD,
+                    group: null,
+                };
+
+                operations.push(
+                    prisma.prismaPoolAprItem.upsert({
+                        where: { id: minAprItem.id },
+                        update: minAprItem,
+                        create: minAprItem,
+                    }),
+                    prisma.prismaPoolAprItem.upsert({
+                        where: { id: maxAprItem.id },
+                        update: maxAprItem,
+                        create: maxAprItem,
+                    }),
+                );
+            }
+
+            if (subgraphFarm.rewarder) {
+                for (const rewarderEmission of subgraphFarm.rewarder.emissions) {
+                    const rewardTokenPrice = tokenService.getPriceForToken(
+                        tokenPrices,
+                        rewarderEmission.rewardToken.address,
+                    );
+                    const rewardTokenPerYear = parseFloat(rewarderEmission.rewardPerSecond) * secondsPerYear;
+                    const rewardTokenValuePerYear = rewardTokenPrice * rewardTokenPerYear;
+                    const rewardApr = rewardTokenValuePerYear / farmTvl > 0 ? rewardTokenValuePerYear / farmTvl : 0;
+
+                    const item = {
+                        id: `${pool.id}-${rewarderEmission.rewardToken.symbol}-apr`,
+                        poolId: pool.id,
+                        title: `${rewarderEmission.rewardToken.symbol} reward APR`,
+                        apr: rewardApr,
+                        type: PrismaPoolAprType.NATIVE_REWARD,
+                        group: null,
+                    };
+                    operations.push(
+                        prisma.prismaPoolAprItem.upsert({
+                            where: { id: item.id },
+                            update: item,
+                            create: item,
+                        }),
+                    );
+                }
+            }
+
+            // ***********
         }
 
         const poolsWithNoAllocPoints = farms
@@ -72,86 +144,5 @@ export class ReliquaryFarmAprService implements PoolAprService {
         });
 
         await prismaBulkExecuteOperations(operations);
-    }
-
-    private async calculateFarmApr(
-        poolId: string,
-        farm: FarmWithRewarders,
-        subgraphFarm: ReliquaryFarmFragment,
-        farmTvl: number,
-        pricePerShare: number,
-        tokenPrices: PrismaTokenCurrentPrice[],
-    ): Promise<PrismaPoolAprItem[]> {
-        if (farmTvl <= 0) {
-            return [];
-        }
-        const beetsPrice = tokenService.getPriceForToken(tokenPrices, networkConfig.beets.address);
-        const farmBeetsPerYear = parseFloat(farm.beetsPerSecond) * secondsPerYear;
-        const beetsValuePerYear = beetsPrice * farmBeetsPerYear;
-        const items: PrismaPoolAprItem[] = [];
-        const sortedLevelsWithBalance = subgraphFarm.levels
-            .filter((level) => parseFloat(level.balance) > 0)
-            .sort((a, b) => a.level - b.level);
-
-        if (sortedLevelsWithBalance.length === 0) {
-            return [];
-        }
-
-        const minPoolLevel = sortedLevelsWithBalance[0];
-        const maxPoolLevel = sortedLevelsWithBalance[sortedLevelsWithBalance.length - 1];
-
-        const totalWeightedSupply = subgraphFarm.levels.reduce(
-            (total, level) => total + level.allocationPoints * parseFloat(level.balance),
-            0,
-        );
-        const minLevelBalance = parseFloat(minPoolLevel.balance);
-        const maxLevelBalance = parseFloat(maxPoolLevel.balance);
-
-        const minAprShare = (minPoolLevel.allocationPoints * minLevelBalance) / totalWeightedSupply;
-        const maxAprShare = (maxPoolLevel.allocationPoints * maxLevelBalance) / totalWeightedSupply;
-
-        const minBeetsApr = (beetsValuePerYear * minAprShare) / (minLevelBalance * pricePerShare);
-        const maxBeetsApr = (beetsValuePerYear * maxAprShare) / (maxLevelBalance * pricePerShare);
-
-        if (minBeetsApr > 0 || maxBeetsApr > 0) {
-            items.push({
-                id: `${poolId}-min-beets-apr`,
-                poolId,
-                title: 'BEETS min reward APR',
-                apr: minBeetsApr,
-                type: 'NATIVE_REWARD',
-                group: null,
-            });
-            items.push({
-                id: `${poolId}-max-beets-apr`,
-                poolId,
-                title: 'BEETS max reward APR',
-                apr: maxBeetsApr,
-                type: 'NATIVE_REWARD',
-                group: null,
-            });
-        }
-
-        if (subgraphFarm.rewarder) {
-            for (const rewarderEmission of subgraphFarm.rewarder.emissions) {
-                const rewardTokenPrice = tokenService.getPriceForToken(
-                    tokenPrices,
-                    rewarderEmission.rewardToken.address,
-                );
-                const rewardTokenPerYear = parseFloat(rewarderEmission.rewardPerSecond) * secondsPerYear;
-                const rewardTokenValuePerYear = rewardTokenPrice * rewardTokenPerYear;
-                const rewardApr = rewardTokenValuePerYear / farmTvl > 0 ? rewardTokenValuePerYear / farmTvl : 0;
-
-                items.push({
-                    id: `${poolId}-${rewarderEmission.rewardToken.symbol}-apr`,
-                    poolId,
-                    title: `${rewarderEmission.rewardToken.symbol} reward APR`,
-                    apr: rewardApr,
-                    type: 'THIRD_PARTY_REWARD',
-                    group: null,
-                });
-            }
-        }
-        return items;
     }
 }

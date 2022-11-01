@@ -351,8 +351,21 @@ model PrismaPoolStakingReliquaryFarm {
     id                  String              @id
     stakingId           String              @unique
     staking             PrismaPoolStaking   @relation(fields:[stakingId], references: [id])
+    name                String
     beetsPerSecond      String
+    levels              PrismaPoolStakingReliquaryFarmLevel[]
     rewarders           PrismaPoolStakingReliquaryFarmRewarder[]
+}
+
+model PrismaPoolStakingReliquaryFarmLevel {
+    id                  String              @id
+    farmId              String
+    farm                PrismaPoolStakingReliquaryFarm  @relation(fields:[farmId], references: [id])
+    level               Int
+    balance             String
+    requiredMaturity    Int
+    allocationPoints    Int
+    apr                 Float
 }
 
 model PrismaPoolStakingReliquaryFarmRewarder {
