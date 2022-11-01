@@ -127,8 +127,6 @@ export class ReliquaryFarmAprService implements PoolAprService {
                     );
                 }
             }
-
-            // ***********
         }
 
         const poolsWithNoAllocPoints = farms
