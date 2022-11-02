@@ -9,18 +9,28 @@ import {
     ReliquaryPoolsQueryVariables,
     ReliquaryQuery,
     ReliquaryQueryVariables,
+    ReliquaryRelicFragment,
+    ReliquaryRelicsQueryVariables,
     ReliquaryUserFragment,
     ReliquaryUsersQuery,
     ReliquaryUsersQueryVariables,
 } from './generated/reliquary-subgraph-types';
 
 export class ReliquarySubgraphService {
-    private readonly cache: CacheClass<string, any>;
     private readonly client: GraphQLClient;
 
     constructor() {
-        this.cache = new Cache<string, any>();
         this.client = new GraphQLClient(networkConfig.subgraphs.reliquary!);
+    }
+
+    public async getMetadata() {
+        const { meta } = await this.sdk.ReliquaryGetMeta();
+
+        if (!meta) {
+            throw new Error('Missing meta data');
+        }
+
+        return meta;
     }
 
     public async getReliquary(args: ReliquaryQueryVariables): Promise<ReliquaryQuery> {
@@ -33,6 +43,10 @@ export class ReliquarySubgraphService {
 
     public async getReliquaryUsers(args: ReliquaryUsersQueryVariables): Promise<ReliquaryUsersQuery> {
         return this.sdk.ReliquaryUsers(args);
+    }
+
+    public async getAllRelics(args: ReliquaryRelicsQueryVariables): Promise<ReliquaryRelicFragment[]> {
+        return subgraphLoadAll<ReliquaryRelicFragment>(this.sdk.ReliquaryRelics, 'relics', args);
     }
 
     public async getAllFarms(args: ReliquaryPoolsQueryVariables): Promise<ReliquaryFarmFragment[]> {

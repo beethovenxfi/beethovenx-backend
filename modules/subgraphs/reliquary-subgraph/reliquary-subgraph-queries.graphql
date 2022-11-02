@@ -19,7 +19,7 @@ query Reliquary($id: ID!, $block: Block_height) {
     }
 }
 
-query Relics(
+query ReliquaryRelics(
     $skip: Int
     $first: Int
     $orderBy: Relic_orderBy
@@ -94,6 +94,9 @@ fragment ReliquaryRelic on Relic {
     balance
     level
     entryTimestamp
+    pool {
+        poolTokenAddress
+    }
 }
 
 fragment ReliquaryFarm on Pool {
@@ -122,5 +125,14 @@ fragment ReliquaryFarm on Pool {
         balance
         allocationPoints
         requiredMaturity
+    }
+}
+query ReliquaryGetMeta {
+    meta: _meta {
+        block {
+            number
+        }
+        deployment
+        hasIndexingErrors
     }
 }

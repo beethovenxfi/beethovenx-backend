@@ -13,7 +13,8 @@ import {
 import { masterchefService } from '../../../subgraphs/masterchef-subgraph/masterchef.service';
 import { getContractAt, jsonRpcProvider } from '../../../web3/contract';
 import { Multicaller } from '../../../web3/multicaller';
-import MasterChefAbi from '../../abi/MasterChef.json';
+import { BeethovenxMasterChef } from '../../../web3/types/BeethovenxMasterChef';
+import MasterChefAbi from '../../../web3/abi/MasterChef.json';
 import { UserStakedBalanceService, UserSyncUserBalanceInput } from '../../user-types';
 
 export class UserSyncMasterchefFarmBalanceService implements UserStakedBalanceService {
@@ -133,8 +134,11 @@ export class UserSyncMasterchefFarmBalanceService implements UserStakedBalanceSe
     }
 
     public async syncUserBalance({ userAddress, poolId, poolAddress, staking }: UserSyncUserBalanceInput) {
-        const masterchef = getContractAt(networkConfig.masterchef.address, MasterChefAbi);
-        const userInfo: [BigNumber] = await masterchef.userInfo(staking.id, userAddress);
+        if (staking.type !== 'MASTER_CHEF' && staking.type !== 'FRESH_BEETS') {
+            return;
+        }
+        const masterchef: BeethovenxMasterChef = getContractAt(networkConfig.masterchef.address, MasterChefAbi);
+        const userInfo = await masterchef.userInfo(staking.id, userAddress);
         const amountStaked = formatFixed(userInfo[0], 18);
 
         await prisma.prismaUserStakedBalance.upsert({
@@ -160,7 +164,7 @@ export class UserSyncMasterchefFarmBalanceService implements UserStakedBalanceSe
         startBlock: number,
         endBlock: number,
     ): Promise<{ farmId: string; userAddress: string; amount: AmountHumanReadable }[]> {
-        const contract = getContractAt(masterChefAddress, MasterChefAbi);
+        const contract: BeethovenxMasterChef = getContractAt(masterChefAddress, MasterChefAbi);
         const events = await contract.queryFilter({ address: masterChefAddress }, startBlock, endBlock);
         const filteredEvents = events.filter((event) =>
             ['Deposit', 'Withdraw', 'EmergencyWithdraw'].includes(event.event!),

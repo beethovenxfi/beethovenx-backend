@@ -543,6 +543,7 @@ model PrismaUserBalanceSyncStatus {
 enum PrismaUserBalanceType {
     WALLET
     STAKED
+    RELIQUARY
 }
 
 model PrismaUserPoolBalanceSnapshot {

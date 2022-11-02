@@ -12,7 +12,7 @@ import { beetsBarService } from '../../subgraphs/beets-bar-subgraph/beets-bar.se
 import { BeetsBarUserFragment } from '../../subgraphs/beets-bar-subgraph/generated/beets-bar-subgraph-types';
 import { jsonRpcProvider } from '../../web3/contract';
 import { Multicaller, MulticallUserBalance } from '../../web3/multicaller';
-import ERC20Abi from '../abi/ERC20.json';
+import ERC20Abi from '../../web3/abi/ERC20.json';
 
 export class UserSyncWalletBalanceService {
     constructor(

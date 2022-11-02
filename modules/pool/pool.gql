@@ -630,8 +630,7 @@ type GqlPoolStakingMasterChefFarm {
 type GqlPoolStakingReliquaryFarm {
     id: ID!
     beetsPerSecond: String!
-    levels: [GqlPoolStakingReliquarFarmLevel!]!
-    rewarders: [GqlPoolStakingFarmRewarder!]
+    levels: [GqlPoolStakingReliquarFarmLevel!]
 }
 type GqlPoolStakingReliquarFarmLevel {
     id: ID!
