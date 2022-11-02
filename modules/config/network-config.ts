@@ -1,5 +1,4 @@
 import { BigNumber } from 'ethers';
-import internal from 'stream';
 import { env } from '../../app/env';
 
 export type DeploymentEnv = 'canary' | 'main';
@@ -68,10 +67,10 @@ export interface NetworkConfig {
         address: string;
         excludedFarmIds: string[];
     };
-    reliquary: {
+    reliquary?: {
         address: string;
     };
-    copper: {
+    copper?: {
         proxyAddress: string;
     };
     reaper?: {
@@ -249,9 +248,6 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             address: '0x0000000000000000000000000000000000000000',
             excludedFarmIds: [],
         },
-        reliquary: {
-            address: '0x0000000000000000000000000000000000000000',
-        },
         avgBlockSpeed: 1,
         sor: {
             main: {
@@ -284,9 +280,6 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         overnight: {
             aprEndpoint: 'https://api.overnight.fi/optimism',
-        },
-        copper: {
-            proxyAddress: '0x0000000000000000000000000000000000000000',
         },
     },
 };

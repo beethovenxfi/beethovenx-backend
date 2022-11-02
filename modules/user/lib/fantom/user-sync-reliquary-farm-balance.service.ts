@@ -4,8 +4,14 @@ import { BigNumber, Event } from 'ethers';
 import _ from 'lodash';
 import { prisma } from '../../../../prisma/prisma-client';
 import { prismaBulkExecuteOperations } from '../../../../prisma/prisma-util';
+import { bn } from '../../../big-number/big-number';
 import { AmountHumanReadable } from '../../../common/global-types';
 import { networkConfig } from '../../../config/network-config';
+import {
+    OrderDirection,
+    Relic_OrderBy,
+    ReliquaryRelicFragment,
+} from '../../../subgraphs/reliquary-subgraph/generated/reliquary-subgraph-types';
 import { reliquaryService } from '../../../subgraphs/reliquary-subgraph/reliquary.service';
 import ReliquaryAbi from '../../../web3/abi/Reliquary.json';
 import { getContractAt, jsonRpcProvider } from '../../../web3/contract';
@@ -50,7 +56,7 @@ type TransferEvent = Event & {
 };
 
 export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceService {
-    constructor() {}
+    constructor(private readonly reliquaryAddress: string) {}
 
     public async syncChangedStakedBalances(): Promise<void> {
         const status = await prisma.prismaUserBalanceSyncStatus.findUnique({ where: { type: 'RELIQUARY' } });
@@ -59,14 +65,21 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
             throw new Error('UserReliquaryFarmBalanceService: syncStakedBalances called before initStakedBalances');
         }
 
-        const pools = await prisma.prismaPool.findMany({ include: { staking: true } });
+        const pools = await prisma.prismaPool.findMany({
+            where: {
+                staking: {
+                    type: 'RELIQUARY',
+                },
+            },
+            include: { staking: true },
+        });
         const latestBlock = await jsonRpcProvider.getBlockNumber();
         const farms = await reliquaryService.getAllFarms({});
 
         const startBlock = status.blockNumber + 1;
         const endBlock = latestBlock - startBlock > 10_000 ? startBlock + 10_000 : latestBlock;
         const amountUpdates = await this.getAmountsForUsersWithBalanceChangesSinceStartBlock(
-            networkConfig.masterchef.address,
+            this.reliquaryAddress,
             startBlock,
             endBlock,
         );
@@ -98,7 +111,7 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
                             balanceNum: parseFloat(update.amount),
                         },
                         create: {
-                            id: `${update.farmId}-${update.userAddress}`,
+                            id: `reliquary-${update.farmId}-${update.userAddress}`,
                             balance: update.amount,
                             balanceNum: parseFloat(update.amount),
                             userAddress: update.userAddress,
@@ -120,7 +133,7 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
     public async initStakedBalances(): Promise<void> {
         const { block } = await reliquaryService.getMetadata();
         console.log('initStakedReliquaryBalances: loading subgraph relics...');
-        const relics = await reliquaryService.getAllRelics({});
+        const relics = await this.loadAllSubgraphRelics();
         console.log('initStakedReliquaryBalances: finished loading subgraph relics...');
         console.log('initStakedReliquaryBalances: loading pools...');
         const pools = await prisma.prismaPool.findMany({ select: { id: true, address: true } });
@@ -141,7 +154,7 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
                         const pool = pools.find((pool) => isSameAddress(pool.address, relic.pool.poolTokenAddress));
 
                         return {
-                            id: relic.id,
+                            id: `reliquary-${relic.pid}-${relic.userAddress}`,
                             balance: formatFixed(relic.balance, 18),
                             balanceNum: parseFloat(formatFixed(relic.balance, 18)),
                             userAddress: relic.userAddress,
@@ -167,34 +180,32 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
         if (staking.type !== 'RELIQUARY') {
             return;
         }
-        const reliquary: Reliquary = getContractAt(networkConfig.reliquary.address, ReliquaryAbi);
+        const reliquary: Reliquary = getContractAt(this.reliquaryAddress, ReliquaryAbi);
         const relicPositions = await reliquary.relicPositionsOfOwner(userAddress);
 
-        const relicIds = relicPositions[0];
         const positions = relicPositions[1];
-        for (let i = 0; i < relicIds.length; i++) {
-            if (positions[i].poolId.toString() !== poolId) {
-                continue;
-            }
 
-            const amountStaked = formatFixed(positions[i].amount, 18);
-            await prisma.prismaUserStakedBalance.upsert({
-                where: { id: `reliquary-${staking.id}-${userAddress}` },
-                update: {
-                    balance: amountStaked,
-                    balanceNum: parseFloat(amountStaked),
-                },
-                create: {
-                    id: `reliquary-${staking.id}-${userAddress}`,
-                    balance: amountStaked,
-                    balanceNum: parseFloat(amountStaked),
-                    userAddress,
-                    poolId: poolId,
-                    tokenAddress: poolAddress,
-                    stakingId: staking.id,
-                },
-            });
-        }
+        const balance = positions
+            .filter((position) => position.poolId.toString() === poolId)
+            .reduce((total, position) => total.add(position.amount), bn(0));
+        const balanceFormatted = formatFixed(balance, 18);
+
+        await prisma.prismaUserStakedBalance.upsert({
+            where: { id: `reliquary-${staking.id}-${userAddress}` },
+            update: {
+                balance: balanceFormatted,
+                balanceNum: parseFloat(balanceFormatted),
+            },
+            create: {
+                id: `reliquary-${staking.id}-${userAddress}`,
+                balance: balanceFormatted,
+                balanceNum: parseFloat(balanceFormatted),
+                userAddress,
+                poolId: poolId,
+                tokenAddress: poolAddress,
+                stakingId: staking.id,
+            },
+        });
     }
 
     private async getAmountsForUsersWithBalanceChangesSinceStartBlock(
@@ -260,5 +271,35 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
             ...userFarmBalance,
             amount: formatFixed(userFarmBalance.amount, 18),
         }));
+    }
+
+    private async loadAllSubgraphRelics(): Promise<ReliquaryRelicFragment[]> {
+        const pageSize = 1000;
+        const MAX_SKIP = 5000;
+        let allRelics: ReliquaryRelicFragment[] = [];
+        let timestamp = 0;
+        let hasMore = true;
+        let skip = 0;
+
+        while (hasMore) {
+            const { relics } = await reliquaryService.getRelics({
+                where: { entryTimestamp_gte: timestamp, balance_gt: '0' },
+                first: pageSize,
+                skip,
+                orderBy: Relic_OrderBy.EntryTimestamp,
+                orderDirection: OrderDirection.Asc,
+            });
+
+            allRelics.push(...relics);
+            hasMore = relics.length >= pageSize;
+
+            skip += pageSize;
+
+            if (skip > MAX_SKIP) {
+                timestamp = relics[relics.length - 1].entryTimestamp;
+                skip = 0;
+            }
+        }
+        return allRelics;
     }
 }

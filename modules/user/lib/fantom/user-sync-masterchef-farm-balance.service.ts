@@ -27,7 +27,10 @@ export class UserSyncMasterchefFarmBalanceService implements UserStakedBalanceSe
             throw new Error('UserMasterchefFarmBalanceService: syncStakedBalances called before initStakedBalances');
         }
 
-        const pools = await prisma.prismaPool.findMany({ include: { staking: true } });
+        const pools = await prisma.prismaPool.findMany({
+            where: { OR: { staking: { type: 'FRESH_BEETS' } }, staking: { type: 'MASTER_CHEF' } },
+            include: { staking: true },
+        });
         const latestBlock = await jsonRpcProvider.getBlockNumber();
         const farms = await masterchefService.getAllFarms({});
 

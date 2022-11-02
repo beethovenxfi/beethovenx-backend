@@ -40,7 +40,7 @@ export class ReliquaryFarmAprService implements PoolAprService {
             );
 
             /*
-                on the pool overview & detal page, we only show min & max apr values, but on the 
+                on the pool overview & detail page, we only show min & max apr values, but on the 
                 reliquary page we want to show apr values for each level, so we search for the min / max 
                 apr values and add the as apr items and also update the apr for each level of the farm
             */
@@ -98,34 +98,6 @@ export class ReliquaryFarmAprService implements PoolAprService {
                         create: maxAprItem,
                     }),
                 );
-            }
-
-            if (subgraphFarm.rewarder) {
-                for (const rewarderEmission of subgraphFarm.rewarder.emissions) {
-                    const rewardTokenPrice = tokenService.getPriceForToken(
-                        tokenPrices,
-                        rewarderEmission.rewardToken.address,
-                    );
-                    const rewardTokenPerYear = parseFloat(rewarderEmission.rewardPerSecond) * secondsPerYear;
-                    const rewardTokenValuePerYear = rewardTokenPrice * rewardTokenPerYear;
-                    const rewardApr = rewardTokenValuePerYear / farmTvl > 0 ? rewardTokenValuePerYear / farmTvl : 0;
-
-                    const item = {
-                        id: `${pool.id}-${rewarderEmission.rewardToken.symbol}-apr`,
-                        poolId: pool.id,
-                        title: `${rewarderEmission.rewardToken.symbol} reward APR`,
-                        apr: rewardApr,
-                        type: PrismaPoolAprType.NATIVE_REWARD,
-                        group: null,
-                    };
-                    operations.push(
-                        prisma.prismaPoolAprItem.upsert({
-                            where: { id: item.id },
-                            update: item,
-                            create: item,
-                        }),
-                    );
-                }
             }
         }
 

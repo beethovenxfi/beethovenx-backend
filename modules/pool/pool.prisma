@@ -323,7 +323,6 @@ model PrismaPoolStakingReliquaryFarm {
     name                String
     beetsPerSecond      String
     levels              PrismaPoolStakingReliquaryFarmLevel[]
-    rewarders           PrismaPoolStakingReliquaryFarmRewarder[]
 }
 
 model PrismaPoolStakingReliquaryFarmLevel {
@@ -335,15 +334,6 @@ model PrismaPoolStakingReliquaryFarmLevel {
     requiredMaturity    Int
     allocationPoints    Int
     apr                 Float
-}
-
-model PrismaPoolStakingReliquaryFarmRewarder {
-    id                  String              @id
-    farmId              String
-    farm                PrismaPoolStakingReliquaryFarm  @relation(fields:[farmId], references: [id])
-    address             String
-    tokenAddress        String
-    rewardPerSecond     String
 }
 
 

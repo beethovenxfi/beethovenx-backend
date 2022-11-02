@@ -10,6 +10,7 @@ import {
     ReliquaryQuery,
     ReliquaryQueryVariables,
     ReliquaryRelicFragment,
+    ReliquaryRelicsQuery,
     ReliquaryRelicsQueryVariables,
     ReliquaryUserFragment,
     ReliquaryUsersQuery,
@@ -45,16 +46,16 @@ export class ReliquarySubgraphService {
         return this.sdk.ReliquaryUsers(args);
     }
 
+    public async getRelics(args: ReliquaryRelicsQueryVariables): Promise<ReliquaryRelicsQuery> {
+        return this.sdk.ReliquaryRelics(args);
+    }
+
     public async getAllRelics(args: ReliquaryRelicsQueryVariables): Promise<ReliquaryRelicFragment[]> {
         return subgraphLoadAll<ReliquaryRelicFragment>(this.sdk.ReliquaryRelics, 'relics', args);
     }
 
     public async getAllFarms(args: ReliquaryPoolsQueryVariables): Promise<ReliquaryFarmFragment[]> {
         return subgraphLoadAll<ReliquaryFarmFragment>(this.sdk.ReliquaryPools, 'farms', args);
-    }
-
-    public async getAllFarmUsers(args: ReliquaryUsersQueryVariables): Promise<ReliquaryUserFragment[]> {
-        return subgraphLoadAll<ReliquaryUserFragment>(this.sdk.ReliquaryUsers, 'reliquaryUsers', args);
     }
 
     public get sdk() {

@@ -10,12 +10,15 @@ import { getContractAt } from '../../../../web3/contract';
 import { PoolStakingService } from '../../../pool-types';
 
 export class ReliquaryStakingService implements PoolStakingService {
-    constructor(private readonly reliquarySubgraphService: ReliquarySubgraphService) {}
+    constructor(
+        private readonly reliquaryAddress: string,
+        private readonly reliquarySubgraphService: ReliquarySubgraphService,
+    ) {}
 
     public async syncStakingForPools(): Promise<void> {
-        const { reliquary } = await this.reliquarySubgraphService.getReliquary({ id: networkConfig.reliquary.address });
+        const { reliquary } = await this.reliquarySubgraphService.getReliquary({ id: this.reliquaryAddress });
         if (!reliquary) {
-            throw new Error(`Reliquary with id ${networkConfig.reliquary.address} not found in subgraph`);
+            throw new Error(`Reliquary with id ${this.reliquaryAddress} not found in subgraph`);
         }
         const farms = await this.reliquarySubgraphService.getAllFarms({});
         const pools = await prisma.prismaPool.findMany({
@@ -43,7 +46,7 @@ export class ReliquaryStakingService implements PoolStakingService {
                             id: `${reliquary.id}-${farm.id}`,
                             poolId: pool.id,
                             type: 'RELIQUARY',
-                            address: networkConfig.reliquary.address,
+                            address: this.reliquaryAddress,
                         },
                     }),
                 );
@@ -82,34 +85,10 @@ export class ReliquaryStakingService implements PoolStakingService {
                             apr: 0,
                         },
                         update: {
-                            allocationPoints,
                             balance,
                         },
                     }),
                 );
-            }
-
-            if (farm.rewarder) {
-                for (const rewarderEmission of farm.rewarder.emissions) {
-                    const id = `${farmId}-${farm.rewarder.id}-${rewarderEmission.rewardToken.address.toLowerCase()}`;
-                    const erc20Token = await getContractAt(rewarderEmission.rewardToken.address, ERC20Abi);
-                    const rewardBalance: BigNumber = await erc20Token.balanceOf(farm.rewarder.id);
-                    const rewardPerSecond = rewardBalance.gt(0) ? rewarderEmission.rewardPerSecond : '0.0';
-
-                    operations.push(
-                        prisma.prismaPoolStakingReliquaryFarmRewarder.upsert({
-                            where: { id },
-                            create: {
-                                id,
-                                farmId,
-                                tokenAddress: rewarderEmission.rewardToken.address.toLowerCase(),
-                                address: farm.rewarder.id,
-                                rewardPerSecond,
-                            },
-                            update: { rewardPerSecond },
-                        }),
-                    );
-                }
             }
         }
 
