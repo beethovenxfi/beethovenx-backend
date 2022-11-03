@@ -277,13 +277,13 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
         const pageSize = 1000;
         const MAX_SKIP = 5000;
         let allRelics: ReliquaryRelicFragment[] = [];
-        let timestamp = 0;
+        let latestRelicId = 0;
         let hasMore = true;
         let skip = 0;
 
         while (hasMore) {
             const { relics } = await reliquaryService.getRelics({
-                where: { entryTimestamp_gte: timestamp, balance_gt: '0' },
+                where: { relicId_gt: latestRelicId, balance_gt: '0' },
                 first: pageSize,
                 skip,
                 orderBy: Relic_OrderBy.EntryTimestamp,
@@ -296,7 +296,7 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
             skip += pageSize;
 
             if (skip > MAX_SKIP) {
-                timestamp = relics[relics.length - 1].entryTimestamp;
+                latestRelicId = relics[relics.length - 1].relicId;
                 skip = 0;
             }
         }
