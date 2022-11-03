@@ -9,6 +9,7 @@ import { balancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer
 import { userSnapshotSubgraphService } from '../subgraphs/user-snapshot-subgraph/user-snapshot-subgraph.service';
 import { tokenService } from '../token/token.service';
 import { UserSyncMasterchefFarmBalanceService } from './lib/fantom/user-sync-masterchef-farm-balance.service';
+import { UserSyncReliquaryFarmBalanceService } from './lib/fantom/user-sync-reliquary-farm-balance.service';
 import { UserSyncGaugeBalanceService } from './lib/optimism/user-sync-gauge-balance.service';
 import { UserBalanceService } from './lib/user-balance.service';
 import { UserSnapshotService } from './lib/user-snapshot.service';
@@ -19,7 +20,7 @@ export class UserService {
     constructor(
         private readonly userBalanceService: UserBalanceService,
         private readonly walletSyncService: UserSyncWalletBalanceService,
-        private readonly stakedSyncService: UserStakedBalanceService,
+        private readonly stakedSyncServices: UserStakedBalanceService[],
         private readonly poolSwapService: PoolSwapService,
         private readonly snapshotService: UserSnapshotService,
     ) {}
@@ -62,11 +63,11 @@ export class UserService {
     }
 
     public async initStakedBalances() {
-        await this.stakedSyncService.initStakedBalances();
+        await Promise.all(this.stakedSyncServices.map((service) => service.initStakedBalances()));
     }
 
     public async syncChangedStakedBalances() {
-        await this.stakedSyncService.syncChangedStakedBalances();
+        await Promise.all(this.stakedSyncServices.map((service) => service.syncChangedStakedBalances()));
     }
 
     public async syncUserBalanceAllPools(userAddress: string) {
@@ -89,20 +90,20 @@ export class UserService {
             create: { address: userAddress },
         });
 
-        const operations = [];
-        operations.push(this.walletSyncService.syncUserBalance(userAddress, pool.id, pool.address));
+        await this.walletSyncService.syncUserBalance(userAddress, pool.id, pool.address);
 
         if (pool.staking) {
-            operations.push(
-                this.stakedSyncService.syncUserBalance({
-                    userAddress,
-                    poolId: pool.id,
-                    poolAddress: pool.address,
-                    staking: pool.staking,
-                }),
+            await Promise.all(
+                this.stakedSyncServices.map((service) =>
+                    service.syncUserBalance({
+                        userAddress,
+                        poolId: pool.id,
+                        poolAddress: pool.address,
+                        staking: pool.staking!,
+                    }),
+                ),
             );
         }
-        await Promise.all(operations);
     }
 
     public async syncUserBalanceSnapshots() {
@@ -126,8 +127,11 @@ export const userService = new UserService(
         networkConfig.fbeets?.poolAddress ?? '',
     ),
     isFantomNetwork()
-        ? new UserSyncMasterchefFarmBalanceService(networkConfig.fbeets!.address, networkConfig.fbeets!.farmId)
-        : new UserSyncGaugeBalanceService(),
+        ? [
+              new UserSyncMasterchefFarmBalanceService(networkConfig.fbeets!.address, networkConfig.fbeets!.farmId),
+              new UserSyncReliquaryFarmBalanceService(networkConfig.reliquary!.address),
+          ]
+        : [new UserSyncGaugeBalanceService()],
     new PoolSwapService(tokenService, balancerSubgraphService),
     new UserSnapshotService(
         userSnapshotSubgraphService,
