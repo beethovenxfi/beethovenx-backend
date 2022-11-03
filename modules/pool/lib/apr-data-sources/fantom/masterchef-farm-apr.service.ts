@@ -1,15 +1,14 @@
-import { PoolAprService } from '../../../pool-types';
-import { PrismaPoolWithExpandedNesting } from '../../../../../prisma/prisma-types';
-import { prisma } from '../../../../../prisma/prisma-client';
-import { prismaBulkExecuteOperations } from '../../../../../prisma/prisma-util';
-import { blocksSubgraphService } from '../../../../subgraphs/blocks-subgraph/blocks-subgraph.service';
-import { secondsPerYear } from '../../../../common/time';
 import { PrismaPoolAprItem, PrismaTokenCurrentPrice } from '@prisma/client';
+import { prisma } from '../../../../../prisma/prisma-client';
+import { PrismaPoolWithExpandedNesting } from '../../../../../prisma/prisma-types';
+import { prismaBulkExecuteOperations } from '../../../../../prisma/prisma-util';
+import { secondsPerYear } from '../../../../common/time';
 import { networkConfig } from '../../../../config/network-config';
-import { tokenService } from '../../../../token/token.service';
-import { masterchefService } from '../../../../subgraphs/masterchef-subgraph/masterchef.service';
+import { blocksSubgraphService } from '../../../../subgraphs/blocks-subgraph/blocks-subgraph.service';
 import { FarmFragment } from '../../../../subgraphs/masterchef-subgraph/generated/masterchef-subgraph-types';
-import { formatFixed } from '@ethersproject/bignumber';
+import { masterchefService } from '../../../../subgraphs/masterchef-subgraph/masterchef.service';
+import { tokenService } from '../../../../token/token.service';
+import { PoolAprService } from '../../../pool-types';
 
 const FARM_EMISSIONS_PERCENT = 0.872;
 

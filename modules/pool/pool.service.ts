@@ -54,6 +54,7 @@ import { id } from 'ethers/lib/utils';
 import { WstethAprService } from './lib/apr-data-sources/optimism/wsteth-apr.service';
 import { ReaperCryptAprService } from './lib/apr-data-sources/reaper-crypt-apr.service';
 import { OvernightAprService } from './lib/apr-data-sources/optimism/overnight-apr.service';
+import { ReliquaryFarmAprService } from './lib/apr-data-sources/fantom/reliquary-farm-apr.service';
 
 const FEATURED_POOL_GROUPS_CACHE_KEY = 'pool:featuredPoolGroups';
 
@@ -307,7 +308,7 @@ export const poolService = new PoolService(
         new BoostedPoolAprService(networkConfig.balancer.yieldProtocolFeePercentage),
         new SwapFeeAprService(networkConfig.balancer.swapProtocolFeePercentage),
         ...(isFantomNetwork()
-            ? [new MasterchefFarmAprService()]
+            ? [new MasterchefFarmAprService(), new ReliquaryFarmAprService()]
             : [
                   new GaugeAprService(gaugeSerivce, tokenService, [
                       networkConfig.beets.address,

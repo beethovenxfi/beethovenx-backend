@@ -24,10 +24,8 @@ export class ReliquaryFarmAprService implements PoolAprService {
                 continue;
             }
 
-            const farmBptBalance = parseFloat(subgraphFarm.totalBalance);
             const totalShares = parseFloat(pool.dynamicData.totalShares);
             const totalLiquidity = pool.dynamicData?.totalLiquidity || 0;
-            const farmTvl = totalShares > 0 ? (farmBptBalance / totalShares) * totalLiquidity : 0;
             const pricePerShare = totalLiquidity / totalShares;
 
             const beetsPrice = tokenService.getPriceForToken(tokenPrices, networkConfig.beets.address);
