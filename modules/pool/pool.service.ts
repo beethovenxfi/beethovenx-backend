@@ -10,6 +10,7 @@ import {
     GqlPoolBatchSwap,
     GqlPoolFeaturedPoolGroup,
     GqlPoolJoinExit,
+    GqlPoolLinear,
     GqlPoolMinimal,
     GqlPoolSnapshot,
     GqlPoolSnapshotDataRange,
@@ -80,6 +81,10 @@ export class PoolService {
 
     public async getGqlPools(args: QueryPoolGetPoolsArgs): Promise<GqlPoolMinimal[]> {
         return this.poolGqlLoaderService.getPools(args);
+    }
+
+    public async getGqlLinearPools(): Promise<GqlPoolLinear[]> {
+        return this.poolGqlLoaderService.getLinearPools();
     }
 
     public async getPoolsCount(args: QueryPoolGetPoolsArgs): Promise<number> {
@@ -291,7 +296,6 @@ export const poolService = new PoolService(
                   new SpookySwapAprService(tokenService),
                   new YearnVaultAprService(tokenService),
                   new StaderStakedFtmAprService(tokenService),
-                  new ReaperCryptAprService(networkConfig.reaper!.linearPoolFactories, tokenService),
               ]
             : [
                   new RocketPoolStakedEthAprService(tokenService, networkConfig.balancer.yieldProtocolFeePercentage),
@@ -301,9 +305,13 @@ export const poolService = new PoolService(
                       networkConfig.lido!.wstEthContract,
                       networkConfig.balancer.yieldProtocolFeePercentage,
                   ),
-                  new ReaperCryptAprService(networkConfig.reaper!.linearPoolFactories, tokenService),
                   new OvernightAprService(networkConfig.overnight!.aprEndpoint, tokenService),
               ]),
+        new ReaperCryptAprService(
+            networkConfig.reaper.linearPoolFactories,
+            networkConfig.reaper.averageAPRAcrossLastNHarvests,
+            tokenService,
+        ),
         new PhantomStableAprService(networkConfig.balancer.yieldProtocolFeePercentage),
         new BoostedPoolAprService(networkConfig.balancer.yieldProtocolFeePercentage),
         new SwapFeeAprService(networkConfig.balancer.swapProtocolFeePercentage),

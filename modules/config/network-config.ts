@@ -73,8 +73,9 @@ export interface NetworkConfig {
     copper?: {
         proxyAddress: string;
     };
-    reaper?: {
+    reaper: {
         linearPoolFactories: string[];
+        averageAPRAcrossLastNHarvests: number;
     };
     yearn: {
         vaultsEndpoint: string;
@@ -94,6 +95,15 @@ export interface NetworkConfig {
             forceRefresh: boolean;
             gasPrice: BigNumber;
             swapGas: BigNumber;
+        };
+    };
+    datastudio: {
+        [key in DeploymentEnv]: {
+            user: string;
+            sheetId: string;
+            compositionTabName: string;
+            databaseTabName: string;
+            emissionDataTabName: string;
         };
     };
 }
@@ -194,6 +204,23 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         reaper: {
             linearPoolFactories: ['0xd448c4156b8de31e56fdfc071c8d96459bb28119'],
+            averageAPRAcrossLastNHarvests: 5,
+        },
+        datastudio: {
+            main: {
+                user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
+                sheetId: '1Ifbfh8njyssWKuLlUvlfXt-r3rnd4gAIP5sSM-lEuBU',
+                databaseTabName: 'Database v2',
+                compositionTabName: 'Pool Composition v2',
+                emissionDataTabName: 'EmissionData',
+            },
+            canary: {
+                user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
+                sheetId: '17bYDbQAdMwGevfJ7thiwI8mjYeZppVRi8gD8ER6CtSs',
+                databaseTabName: 'Database v2',
+                compositionTabName: 'Pool Composition v2',
+                emissionDataTabName: 'EmissionData',
+            },
         },
     },
     '10': {
@@ -273,6 +300,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
                 '0x19968d4b7126904fd665ed25417599df9604df83',
                 '0xe4b88e745dce9084b9fc2439f85a9a4c5cd6f361',
             ],
+            averageAPRAcrossLastNHarvests: 2,
         },
         lido: {
             wstEthAprEndpoint: 'https://stake.lido.fi/api/steth-apr',
@@ -280,6 +308,22 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         overnight: {
             aprEndpoint: 'https://api.overnight.fi/optimism',
+        },
+        datastudio: {
+            main: {
+                user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
+                sheetId: '1Ifbfh8njyssWKuLlUvlfXt-r3rnd4gAIP5sSM-lEuBU',
+                databaseTabName: 'DatabaseOptimism v2',
+                compositionTabName: 'Pool Composition Optimism v2',
+                emissionDataTabName: 'EmissionData Optimism',
+            },
+            canary: {
+                user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
+                sheetId: '17bYDbQAdMwGevfJ7thiwI8mjYeZppVRi8gD8ER6CtSs',
+                databaseTabName: 'DatabaseOptimism v2',
+                compositionTabName: 'Pool Composition Optimism v2',
+                emissionDataTabName: 'EmissionData Optimism',
+            },
         },
     },
 };
