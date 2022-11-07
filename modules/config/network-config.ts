@@ -54,8 +54,8 @@ export interface NetworkConfig {
     };
     balancer: {
         vault: string;
-        weightedPoolV2Factory: string;
-        coposableStablePoolFactory: string;
+        weightedPoolV2Factories: string[];
+        composableStablePoolFactories: string[];
         yieldProtocolFeePercentage: number;
         swapProtocolFeePercentage: number;
     };
@@ -67,8 +67,9 @@ export interface NetworkConfig {
     copper: {
         proxyAddress: string;
     };
-    reaper?: {
+    reaper: {
         linearPoolFactories: string[];
+        averageAPRAcrossLastNHarvests: number;
     };
     yearn: {
         vaultsEndpoint: string;
@@ -111,7 +112,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         subgraphs: {
             startDate: '2021-10-08',
-            balancer: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx',
+            balancer: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx-v2-fantom',
             beetsBar: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beets-bar',
             blocks: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/fantom-blocks',
             changelog: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/changelog',
@@ -153,8 +154,14 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         balancer: {
             vault: '0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce',
-            coposableStablePoolFactory: '0xB384A86F2Fd7788720db42f9daa60fc07EcBeA06',
-            weightedPoolV2Factory: '0x8ea1c497c16726E097f62C8C9FBD944143F27090',
+            composableStablePoolFactories: [
+                '0xB384A86F2Fd7788720db42f9daa60fc07EcBeA06',
+                '0x44814E3A603bb7F1198617995c5696C232F6e8Ed',
+            ],
+            weightedPoolV2Factories: [
+                '0x8ea1c497c16726E097f62C8C9FBD944143F27090',
+                '0xea87F3dFfc679035653C0FBa70e7bfe46E3FB733',
+            ],
             swapProtocolFeePercentage: 0.25,
             yieldProtocolFeePercentage: 0.25,
         },
@@ -192,6 +199,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         reaper: {
             linearPoolFactories: ['0xd448c4156b8de31e56fdfc071c8d96459bb28119'],
+            averageAPRAcrossLastNHarvests: 5,
         },
         datastudio: {
             main: {
@@ -219,7 +227,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         subgraphs: {
             startDate: '2022-01-01',
-            balancer: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx-optimism',
+            balancer: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx-v2-optimism',
             beetsBar: 'https://',
             blocks: 'https://api.thegraph.com/subgraphs/name/danielmkm/optimism-blocks',
             changelog: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/changelog-optimism',
@@ -261,8 +269,8 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         balancer: {
             vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
-            coposableStablePoolFactory: '0xf145caFB67081895EE80eB7c04A30Cf87f07b745',
-            weightedPoolV2Factory: '0xad901309d9e9DbC5Df19c84f729f429F0189a633',
+            composableStablePoolFactories: ['0xf145caFB67081895EE80eB7c04A30Cf87f07b745'],
+            weightedPoolV2Factories: ['0xad901309d9e9DbC5Df19c84f729f429F0189a633'],
             swapProtocolFeePercentage: 0.5,
             yieldProtocolFeePercentage: 0.5,
         },
@@ -296,9 +304,10 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
                 '0x19968d4b7126904fd665ed25417599df9604df83',
                 '0xe4b88e745dce9084b9fc2439f85a9a4c5cd6f361',
             ],
+            averageAPRAcrossLastNHarvests: 2,
         },
         lido: {
-            wstEthAprEndpoint: 'https://stake.lido.fi/api/steth-apr',
+            wstEthAprEndpoint: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
             wstEthContract: '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
         },
         overnight: {
