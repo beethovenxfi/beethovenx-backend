@@ -86,11 +86,7 @@ export class UserBalanceService {
                                         rewards: true,
                                     },
                                 },
-                                reliquary: {
-                                    include: {
-                                        rewarders: true,
-                                    },
-                                },
+                                reliquary: true,
                             },
                         },
                     },

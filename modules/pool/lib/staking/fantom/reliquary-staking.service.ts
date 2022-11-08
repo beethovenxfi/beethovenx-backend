@@ -1,12 +1,7 @@
 import { isSameAddress } from '@balancer-labs/sdk';
-import { Prisma } from '@prisma/client';
-import { BigNumber } from 'ethers';
 import { prisma } from '../../../../../prisma/prisma-client';
 import { prismaBulkExecuteOperations } from '../../../../../prisma/prisma-util';
-import { networkConfig } from '../../../../config/network-config';
 import { ReliquarySubgraphService } from '../../../../subgraphs/reliquary-subgraph/reliquary.service';
-import ERC20Abi from '../../../../web3//abi/ERC20.json';
-import { getContractAt } from '../../../../web3/contract';
 import { PoolStakingService } from '../../../pool-types';
 
 export class ReliquaryStakingService implements PoolStakingService {
@@ -43,7 +38,7 @@ export class ReliquaryStakingService implements PoolStakingService {
                 operations.push(
                     prisma.prismaPoolStaking.create({
                         data: {
-                            id: `${reliquary.id}-${farm.id}`,
+                            id: `reliquary-${farm.pid}`,
                             poolId: pool.id,
                             type: 'RELIQUARY',
                             address: this.reliquaryAddress,
@@ -96,7 +91,6 @@ export class ReliquaryStakingService implements PoolStakingService {
     }
 
     public async reloadStakingForAllPools() {
-        await prisma.prismaPoolStakingReliquaryFarmRewarder.deleteMany({});
         await prisma.prismaPoolStakingReliquaryFarm.deleteMany({});
         await prisma.prismaPoolStaking.deleteMany({ where: { type: 'RELIQUARY' } });
         await this.syncStakingForPools();

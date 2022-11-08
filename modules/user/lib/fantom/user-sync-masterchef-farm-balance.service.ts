@@ -106,7 +106,7 @@ export class UserSyncMasterchefFarmBalanceService implements UserStakedBalanceSe
                     data: userAddresses.map((userAddress) => ({ address: userAddress })),
                     skipDuplicates: true,
                 }),
-                prisma.prismaUserStakedBalance.deleteMany({}),
+                prisma.prismaUserStakedBalance.deleteMany({ where: { staking: { type: 'MASTER_CHEF' } } }),
                 prisma.prismaUserStakedBalance.createMany({
                     data: farmUsers
                         .filter((farmUser) => !networkConfig.masterchef.excludedFarmIds.includes(farmUser.pool!.id))

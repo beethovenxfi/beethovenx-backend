@@ -83,7 +83,7 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
             startBlock,
             endBlock,
         );
-        const userAddresses = _.uniq(amountUpdates.map((update) => update.userAddress));
+        const userAddresses = _.uniq(amountUpdates.map((update) => update.userAddress.toLowerCase()));
 
         if (amountUpdates.length === 0) {
             await prisma.prismaUserBalanceSyncStatus.update({
@@ -101,20 +101,21 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
                     skipDuplicates: true,
                 }),
                 ...amountUpdates.map((update) => {
-                    const pool = pools.find((pool) => pool.staking?.id === update.farmId);
-                    const farm = farms.find((farm) => farm.id === update.farmId);
+                    const userAddress = update.userAddress.toLowerCase();
+                    const pool = pools.find((pool) => pool.staking?.id === `reliquary-${update.farmId}`);
+                    const farm = farms.find((farm) => farm.pid.toString() === update.farmId);
 
                     return prisma.prismaUserStakedBalance.upsert({
-                        where: { id: `reliquary-${update.farmId}-${update.userAddress}` },
+                        where: { id: `reliquary-${update.farmId}-${userAddress}` },
                         update: {
                             balance: update.amount,
                             balanceNum: parseFloat(update.amount),
                         },
                         create: {
-                            id: `reliquary-${update.farmId}-${update.userAddress}`,
+                            id: `reliquary-${update.farmId}-${userAddress}`,
                             balance: update.amount,
                             balanceNum: parseFloat(update.amount),
-                            userAddress: update.userAddress,
+                            userAddress: userAddress,
                             poolId: pool!.id,
                             tokenAddress: farm!.poolTokenAddress,
                             stakingId: update.farmId,
@@ -138,6 +139,10 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
         console.log('initStakedReliquaryBalances: loading pools...');
         const pools = await prisma.prismaPool.findMany({ select: { id: true, address: true } });
         console.log('initStakedReliquaryBalances: finished loading pools...');
+        // we have to group all relics for the same pool
+        const userRelicsByPoolId = _.groupBy(relics, (relic) => relic.userAddress + relic.pid);
+
+        // we need to make sure all users exist
         const userAddresses = _.uniq(relics.map((relic) => relic.userAddress.toLowerCase()));
 
         console.log('initStakedReliquaryBalances: performing db operations...');
@@ -148,19 +153,24 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
                     data: userAddresses.map((userAddress) => ({ address: userAddress })),
                     skipDuplicates: true,
                 }),
-                prisma.prismaUserStakedBalance.deleteMany({}),
+                prisma.prismaUserStakedBalance.deleteMany({ where: { staking: { type: 'RELIQUARY' } } }),
+
                 prisma.prismaUserStakedBalance.createMany({
-                    data: relics.map((relic) => {
+                    data: Object.values(userRelicsByPoolId).map((relics) => {
+                        const totalBalance = relics.reduce((total, relic) => total + parseFloat(relic.balance), 0);
+                        // there has to be at least 1 relic in there
+                        const relic = relics[0];
+                        const userAddress = relic.userAddress.toLowerCase();
                         const pool = pools.find((pool) => isSameAddress(pool.address, relic.pool.poolTokenAddress));
 
                         return {
-                            id: `reliquary-${relic.pid}-${relic.userAddress}`,
-                            balance: formatFixed(relic.balance, 18),
-                            balanceNum: parseFloat(formatFixed(relic.balance, 18)),
-                            userAddress: relic.userAddress,
+                            id: `reliquary-${relic.pid}-${userAddress}`,
+                            balance: totalBalance.toString(),
+                            balanceNum: totalBalance,
+                            userAddress: userAddress,
                             poolId: pool?.id,
                             tokenAddress: relic.pool.poolTokenAddress,
-                            stakingId: `${relic.pid}`,
+                            stakingId: `reliquary-${relic.pid}`,
                         };
                     }),
                 }),
@@ -191,16 +201,16 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
         const balanceFormatted = formatFixed(balance, 18);
 
         await prisma.prismaUserStakedBalance.upsert({
-            where: { id: `reliquary-${staking.id}-${userAddress}` },
+            where: { id: `reliquary-${staking.id}-${userAddress.toLowerCase()}` },
             update: {
                 balance: balanceFormatted,
                 balanceNum: parseFloat(balanceFormatted),
             },
             create: {
-                id: `reliquary-${staking.id}-${userAddress}`,
+                id: `reliquary-${staking.id}-${userAddress.toLowerCase()}`,
                 balance: balanceFormatted,
                 balanceNum: parseFloat(balanceFormatted),
-                userAddress,
+                userAddress: userAddress.toLowerCase(),
                 poolId: poolId,
                 tokenAddress: poolAddress,
                 stakingId: staking.id,
@@ -231,7 +241,7 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
         // for the other events, we need to find the owners of the affected relicIds
         const affectedRelicIds = [
             ...balanceChangedEvents.map((event) => event.args.relicId),
-            relicManagementEvents.flatMap((event) => [event.args.fromId, event.args.toId]),
+            ...relicManagementEvents.flatMap((event) => [event.args.fromId, event.args.toId]),
         ];
 
         affectedRelicIds.forEach((relicId, index) => {
