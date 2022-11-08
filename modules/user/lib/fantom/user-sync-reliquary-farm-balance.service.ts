@@ -1,5 +1,6 @@
 import { isSameAddress } from '@balancer-labs/sdk';
 import { formatFixed } from '@ethersproject/bignumber';
+import { ZERO_ADDRESS } from '@gnosis.pm/safe-core-sdk/dist/src/utils/constants';
 import { BigNumber, Event } from 'ethers';
 import _ from 'lodash';
 import { prisma } from '../../../../prisma/prisma-client';
@@ -110,6 +111,7 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
                         update: {
                             balance: update.amount,
                             balanceNum: parseFloat(update.amount),
+                            stakingId: `reliquary-${update.farmId}`,
                         },
                         create: {
                             id: `reliquary-${update.farmId}-${userAddress}`,
@@ -118,7 +120,7 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
                             userAddress: userAddress,
                             poolId: pool!.id,
                             tokenAddress: farm!.poolTokenAddress,
-                            stakingId: update.farmId,
+                            stakingId: `reliquary-${update.farmId}`,
                         },
                     });
                 }),
@@ -237,7 +239,7 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
         const multicall = new Multicaller(networkConfig.multicall, jsonRpcProvider, ReliquaryAbi);
 
         // for the transfer events, we know which users are affected
-        const affetedUsers = transferEvents.flatMap((event) => [event.args.from, event.args.to]);
+        let affectedUsers = transferEvents.flatMap((event) => [event.args.from, event.args.to]);
         // for the other events, we need to find the owners of the affected relicIds
         const affectedRelicIds = [
             ...balanceChangedEvents.map((event) => event.args.relicId),
@@ -248,9 +250,11 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
             multicall.call(`users[${index}]`, reliquaryAddress, 'ownerOf', [relicId]);
         });
         let ownerResult: { users: string[] } = await multicall.execute();
-        affetedUsers.push(...ownerResult.users);
+        affectedUsers = _.uniq([...affectedUsers, ...(ownerResult.users ?? [])]).filter(
+            (address) => !isSameAddress(ZERO_ADDRESS, address),
+        );
 
-        affetedUsers.forEach((userAddress) => {
+        affectedUsers.forEach((userAddress) => {
             multicall.call(userAddress, reliquaryAddress, 'relicPositionsOfOwner', [userAddress]);
         });
 
