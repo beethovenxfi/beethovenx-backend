@@ -57,8 +57,8 @@ export interface NetworkConfig {
     };
     balancer: {
         vault: string;
-        weightedPoolV2Factory: string;
-        coposableStablePoolFactory: string;
+        weightedPoolV2Factories: string[];
+        composableStablePoolFactories: string[];
         yieldProtocolFeePercentage: number;
         swapProtocolFeePercentage: number;
     };
@@ -118,7 +118,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         subgraphs: {
             startDate: '2021-10-08',
-            balancer: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx',
+            balancer: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx-v2-fantom',
             beetsBar: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beets-bar',
             blocks: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/fantom-blocks',
             masterchef: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/masterchefv2',
@@ -162,8 +162,8 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         balancer: {
             vault: '0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce',
-            coposableStablePoolFactory: '0xB384A86F2Fd7788720db42f9daa60fc07EcBeA06',
-            weightedPoolV2Factory: '0x8ea1c497c16726E097f62C8C9FBD944143F27090',
+            composableStablePoolFactories: ['0x5AdAF6509BCEc3219455348AC45d6D3261b1A990'],
+            weightedPoolV2Factories: ['0x8ea1c497c16726E097f62C8C9FBD944143F27090'],
             swapProtocolFeePercentage: 0.25,
             yieldProtocolFeePercentage: 0.25,
         },
@@ -232,7 +232,8 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         subgraphs: {
             startDate: '2022-01-01',
-            balancer: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx-optimism',
+            balancer: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx-v2-optimism',
+            beetsBar: 'https://',
             blocks: 'https://api.thegraph.com/subgraphs/name/danielmkm/optimism-blocks',
             gauge: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/balancer-gauges-optimism',
             userBalances: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/user-bpt-balances-optimism',
@@ -265,8 +266,8 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         balancer: {
             vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
-            coposableStablePoolFactory: '0xf145caFB67081895EE80eB7c04A30Cf87f07b745',
-            weightedPoolV2Factory: '0xad901309d9e9DbC5Df19c84f729f429F0189a633',
+            composableStablePoolFactories: ['0xf145caFB67081895EE80eB7c04A30Cf87f07b745'],
+            weightedPoolV2Factories: ['0xad901309d9e9DbC5Df19c84f729f429F0189a633'],
             swapProtocolFeePercentage: 0.5,
             yieldProtocolFeePercentage: 0.5,
         },
@@ -303,7 +304,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             averageAPRAcrossLastNHarvests: 2,
         },
         lido: {
-            wstEthAprEndpoint: 'https://stake.lido.fi/api/steth-apr',
+            wstEthAprEndpoint: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
             wstEthContract: '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
         },
         overnight: {
