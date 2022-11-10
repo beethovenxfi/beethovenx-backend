@@ -91,6 +91,7 @@ export class ReliquaryStakingService implements PoolStakingService {
     }
 
     public async reloadStakingForAllPools() {
+        await prisma.prismaPoolStakingReliquaryFarmLevel.deleteMany({});
         await prisma.prismaPoolStakingReliquaryFarm.deleteMany({});
         await prisma.prismaPoolStaking.deleteMany({ where: { type: 'RELIQUARY' } });
         await this.syncStakingForPools();
