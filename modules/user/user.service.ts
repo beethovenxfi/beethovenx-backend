@@ -1,4 +1,4 @@
-import { PrismaPoolStaking } from '@prisma/client';
+import { PrismaPoolStaking, PrismaPoolStakingType } from '@prisma/client';
 import { prisma } from '../../prisma/prisma-client';
 import { GqlPoolJoinExit, GqlPoolSwap, GqlUserSnapshotDataRange } from '../../schema';
 import { coingeckoService } from '../coingecko/coingecko.service';
@@ -62,8 +62,8 @@ export class UserService {
         await this.walletSyncService.syncChangedBalancesForAllPools();
     }
 
-    public async initStakedBalances() {
-        await Promise.all(this.stakedSyncServices.map((service) => service.initStakedBalances()));
+    public async initStakedBalances(stakingTypes: PrismaPoolStakingType[]) {
+        await Promise.all(this.stakedSyncServices.map((service) => service.initStakedBalances(stakingTypes)));
     }
 
     public async syncChangedStakedBalances() {

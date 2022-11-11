@@ -16,6 +16,7 @@ import { Multicaller } from '../../../web3/multicaller';
 import { BeethovenxMasterChef } from '../../../web3/types/BeethovenxMasterChef';
 import MasterChefAbi from '../../../web3/abi/MasterChef.json';
 import { UserStakedBalanceService, UserSyncUserBalanceInput } from '../../user-types';
+import { PrismaPoolStakingType } from '@prisma/client';
 
 export class UserSyncMasterchefFarmBalanceService implements UserStakedBalanceService {
     constructor(private readonly fbeetsAddress: string, private readonly fbeetsFarmId: string) {}
@@ -88,7 +89,10 @@ export class UserSyncMasterchefFarmBalanceService implements UserStakedBalanceSe
         );
     }
 
-    public async initStakedBalances(): Promise<void> {
+    public async initStakedBalances(stakingTypes: PrismaPoolStakingType[]): Promise<void> {
+        if (!stakingTypes.includes('MASTER_CHEF')) {
+            return;
+        }
         const { block } = await masterchefService.getMetadata();
         console.log('initStakedBalances: loading subgraph users...');
         const farmUsers = await this.loadAllSubgraphUsers();

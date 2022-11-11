@@ -1,5 +1,5 @@
 import { Provider } from '@ethersproject/providers';
-import { PrismaPoolFilter, PrismaPoolSwap } from '@prisma/client';
+import { PrismaPoolFilter, PrismaPoolStakingType, PrismaPoolSwap } from '@prisma/client';
 import _ from 'lodash';
 import { Cache } from 'memory-cache';
 import moment from 'moment-timezone';
@@ -149,8 +149,10 @@ export class PoolService {
         return this.poolCreatorService.syncAllPoolsFromSubgraph(blockNumber);
     }
 
-    public async reloadStakingForAllPools(): Promise<void> {
-        await Promise.all(this.poolStakingServices.map((stakingService) => stakingService.reloadStakingForAllPools()));
+    public async reloadStakingForAllPools(stakingTypes: PrismaPoolStakingType[]): Promise<void> {
+        await Promise.all(
+            this.poolStakingServices.map((stakingService) => stakingService.reloadStakingForAllPools(stakingTypes)),
+        );
     }
 
     public async syncPoolAllTokensRelationship(): Promise<void> {

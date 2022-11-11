@@ -1,4 +1,5 @@
 import { isSameAddress } from '@balancer-labs/sdk';
+import { PrismaPoolStakingType } from '@prisma/client';
 import { prisma } from '../../../../../prisma/prisma-client';
 import { prismaBulkExecuteOperations } from '../../../../../prisma/prisma-util';
 import { ReliquarySubgraphService } from '../../../../subgraphs/reliquary-subgraph/reliquary.service';
@@ -90,10 +91,13 @@ export class ReliquaryStakingService implements PoolStakingService {
         await prismaBulkExecuteOperations(operations, true);
     }
 
-    public async reloadStakingForAllPools() {
-        await prisma.prismaPoolStakingReliquaryFarmLevel.deleteMany({});
-        await prisma.prismaPoolStakingReliquaryFarm.deleteMany({});
-        await prisma.prismaPoolStaking.deleteMany({ where: { type: 'RELIQUARY' } });
-        await this.syncStakingForPools();
+    public async reloadStakingForAllPools(reloadStakingTypes: PrismaPoolStakingType[]) {
+        if (reloadStakingTypes.includes('RELIQUARY')) {
+            await prisma.prismaUserStakedBalance.deleteMany({ where: { staking: { type: 'RELIQUARY' } } });
+            await prisma.prismaPoolStakingReliquaryFarmLevel.deleteMany({});
+            await prisma.prismaPoolStakingReliquaryFarm.deleteMany({});
+            await prisma.prismaPoolStaking.deleteMany({ where: { type: 'RELIQUARY' } });
+            await this.syncStakingForPools();
+        }
     }
 }

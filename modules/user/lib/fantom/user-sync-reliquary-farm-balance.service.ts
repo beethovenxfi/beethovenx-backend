@@ -1,6 +1,7 @@
 import { isSameAddress } from '@balancer-labs/sdk';
 import { formatFixed } from '@ethersproject/bignumber';
 import { ZERO_ADDRESS } from '@gnosis.pm/safe-core-sdk/dist/src/utils/constants';
+import { PrismaPoolStakingType } from '@prisma/client';
 import { BigNumber, Event } from 'ethers';
 import _ from 'lodash';
 import { prisma } from '../../../../prisma/prisma-client';
@@ -133,7 +134,10 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
         );
     }
 
-    public async initStakedBalances(): Promise<void> {
+    public async initStakedBalances(stakingTypes: PrismaPoolStakingType[]): Promise<void> {
+        if (!stakingTypes.includes('RELIQUARY')) {
+            return;
+        }
         const { block } = await reliquaryService.getMetadata();
         console.log('initStakedReliquaryBalances: loading subgraph relics...');
         const relics = await this.loadAllSubgraphRelics();
