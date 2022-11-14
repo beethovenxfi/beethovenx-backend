@@ -432,7 +432,6 @@ export class PoolGqlLoaderService {
         let hasRewardApr = false;
 
         if (hasAprRange) {
-            // if an apr item has a range, the apr field is 0, so we can sum all up and have the base apr
             let swapFeeApr = 0;
             let minTotalApr = 0;
             let maxTotalApr = 0;
