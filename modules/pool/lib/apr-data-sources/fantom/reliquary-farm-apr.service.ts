@@ -49,7 +49,6 @@ export class ReliquaryFarmAprService implements PoolAprService {
                 const levelSupply = parseFloat(farmLevel.balance);
                 const aprShare = (farmLevel.allocationPoints * levelSupply) / totalWeightedSupply;
                 const apr = levelSupply !== 0 ? (beetsValuePerYear * aprShare) / (levelSupply * pricePerShare) : 0;
-                console.log('APrrrrrrrrrrr', apr);
 
                 if (minApr === 0 && maxApr === 0) {
                     minApr = apr;
