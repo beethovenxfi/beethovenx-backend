@@ -425,6 +425,8 @@ export class PoolGqlLoaderService {
 
         const hasAprRange = !!aprItems.find((item) => item.range);
         let totalApr: string;
+        let minApr: string | undefined;
+        let maxApr: string | undefined;
         let swapApr: string;
         let nativeRewardApr: string;
         let thirdPartyApr: string;
@@ -469,10 +471,12 @@ export class PoolGqlLoaderService {
                 }
             }
             swapApr = `${swapFeeApr}`;
-            totalApr = `${minTotalApr} - ${maxTotalApr}`;
-            nativeRewardApr = `${minNativeRewardApr} - ${maxNativeRewardApr}`;
-            thirdPartyApr = `${minThirdPartyApr} - ${maxThirdPartyApr}`;
-            hasRewardApr = minNativeRewardApr > 0 || minThirdPartyApr > 0;
+            totalApr = `${maxTotalApr}`;
+            minApr = `${minTotalApr}`;
+            maxApr = `${maxTotalApr}`;
+            nativeRewardApr = `${maxNativeRewardApr}`;
+            thirdPartyApr = `${maxThirdPartyApr}`;
+            hasRewardApr = maxNativeRewardApr > 0 || maxThirdPartyApr > 0;
         } else {
             const nativeRewardAprItems = aprItems.filter((item) => item.type === 'NATIVE_REWARD');
             const thirdPartyRewardAprItems = aprItems.filter((item) => item.type === 'THIRD_PARTY_REWARD');
@@ -519,20 +523,39 @@ export class PoolGqlLoaderService {
             volume24hAtlTimestamp,
             apr: {
                 total: totalApr,
+                min: minApr,
+                max: maxApr,
                 swapApr,
                 nativeRewardApr,
                 thirdPartyApr,
                 items: [
-                    ...aprItemsWithNoGroup.map((item) => {
+                    ...aprItemsWithNoGroup.flatMap((item) => {
                         let apr = `${item.apr}`;
                         if (item.range) {
                             apr = `${item.range.min} - ${item.range.max}`;
+                            return [
+                                {
+                                    id: `${item.id}-min`,
+                                    apr: item.range.min.toString(),
+                                    title: `Min ${item.title}`,
+                                    subItems: [],
+                                },
+                                {
+                                    id: `${item.id}-max`,
+                                    apr: item.range.max.toString(),
+                                    title: `Max ${item.title}`,
+                                    subItems: [],
+                                },
+                            ];
+                        } else {
+                            return [
+                                {
+                                    ...item,
+                                    apr,
+                                    subItems: [],
+                                },
+                            ];
                         }
-                        return {
-                            ...item,
-                            apr,
-                            subItems: [],
-                        };
                     }),
                     ..._.map(grouped, (items, group) => {
                         const subItems = items.map((item) => ({ ...item, apr: `${item.apr}` }));
