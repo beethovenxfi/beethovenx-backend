@@ -530,9 +530,7 @@ export class PoolGqlLoaderService {
                 thirdPartyApr,
                 items: [
                     ...aprItemsWithNoGroup.flatMap((item) => {
-                        let apr = `${item.apr}`;
                         if (item.range) {
-                            apr = `${item.range.min} - ${item.range.max}`;
                             return [
                                 {
                                     id: `${item.id}-min`,
@@ -551,7 +549,7 @@ export class PoolGqlLoaderService {
                             return [
                                 {
                                     ...item,
-                                    apr,
+                                    apr: `${item.apr}`,
                                     subItems: [],
                                 },
                             ];
