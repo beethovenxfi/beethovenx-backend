@@ -26,6 +26,7 @@ model PrismaPool {
     tokensWithPoolNested PrismaPoolToken[] @relation(name: "PoolNestedInToken")
 
     allTokens           PrismaPoolExpandedTokens[]
+    allTokensNested     PrismaPoolExpandedTokens[] @relation(name: "NestedPoolForAllToken")
     filters             PrismaPoolFilterMap[]
     staking             PrismaPoolStaking?
 
@@ -203,9 +204,18 @@ model PrismaPoolAprItem {
     pool                PrismaPool          @relation(fields:[poolId], references: [id])
     title               String
     apr                 Float
+    range               PrismaPoolAprRange?
 
     type                PrismaPoolAprType?
     group               PrismaPoolAprItemGroup?
+}
+
+model PrismaPoolAprRange {
+    id                  String              @id
+    aprItemId           String              @unique
+    aprItem             PrismaPoolAprItem   @relation(fields:[aprItemId], references: [id])
+    min                 Float
+    max                 Float
 }
 
 enum PrismaPoolAprType {
@@ -241,6 +251,9 @@ model PrismaPoolExpandedTokens {
     poolId              String
     pool                PrismaPool          @relation(fields:[poolId], references: [id])
 
+    nestedPoolId        String?
+    nestedPool          PrismaPool?         @relation(name: "NestedPoolForAllToken", fields:[nestedPoolId], references: [id])
+
     @@id([tokenAddress, poolId])
 }
 
@@ -268,6 +281,7 @@ model PrismaPoolStaking {
     address             String
     farm                PrismaPoolStakingMasterChefFarm?
     gauge               PrismaPoolStakingGauge?
+    reliquary           PrismaPoolStakingReliquaryFarm?
 
     userStakedBalances  PrismaUserStakedBalance[]
 }
@@ -276,6 +290,7 @@ model PrismaPoolStaking {
 enum PrismaPoolStakingType {
     MASTER_CHEF
     GAUGE
+    RELIQUARY
     FRESH_BEETS
 }
 
@@ -311,6 +326,27 @@ model PrismaPoolStakingGaugeReward{
     gauge               PrismaPoolStakingGauge @relation(fields:[gaugeId], references: [id])
     tokenAddress        String
     rewardPerSecond     String
+}
+
+
+model PrismaPoolStakingReliquaryFarm {
+    id                  String              @id
+    stakingId           String              @unique
+    staking             PrismaPoolStaking   @relation(fields:[stakingId], references: [id])
+    name                String
+    beetsPerSecond      String
+    levels              PrismaPoolStakingReliquaryFarmLevel[]
+}
+
+model PrismaPoolStakingReliquaryFarmLevel {
+    id                  String              @id
+    farmId              String
+    farm                PrismaPoolStakingReliquaryFarm  @relation(fields:[farmId], references: [id])
+    level               Int
+    balance             String
+    requiredMaturity    Int
+    allocationPoints    Int
+    apr                 Float
 }
 
 

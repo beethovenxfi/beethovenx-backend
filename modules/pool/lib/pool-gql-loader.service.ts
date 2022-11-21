@@ -19,6 +19,7 @@ import {
     GqlPoolNestingType,
     GqlPoolPhantomStableNested,
     GqlPoolToken,
+    GqlPoolTokenDisplay,
     GqlPoolTokenExpanded,
     GqlPoolTokenUnion,
     GqlPoolUnion,
@@ -80,6 +81,7 @@ export class PoolGqlLoaderService {
             decimals: 18,
             dynamicData: this.getPoolDynamicData(pool),
             allTokens: this.mapAllTokens(pool),
+            displayTokens: this.mapDisplayTokens(pool),
         };
     }
 
@@ -387,6 +389,61 @@ export class PoolGqlLoaderService {
         });
     }
 
+    private mapDisplayTokens(pool: PrismaPoolMinimal): GqlPoolTokenDisplay[] {
+        return pool.tokens
+            .filter((token) => token.address !== pool.address)
+            .map((poolToken) => {
+                const allToken = pool.allTokens.find((allToken) => allToken.token.address === poolToken.address)!;
+
+                if (allToken.nestedPool?.type === 'LINEAR') {
+                    const mainToken = allToken.nestedPool.allTokens.find(
+                        (nestedToken) =>
+                            !nestedToken.token.types.some(
+                                (type) =>
+                                    type.type === 'LINEAR_WRAPPED_TOKEN' ||
+                                    type.type === 'PHANTOM_BPT' ||
+                                    type.type === 'BPT',
+                            ),
+                    );
+
+                    if (mainToken) {
+                        return {
+                            id: `${pool.id}-${mainToken.token.address}`,
+                            ...mainToken.token,
+                            weight: poolToken?.dynamicData?.weight,
+                        };
+                    }
+                } else if (allToken.nestedPool?.type === 'PHANTOM_STABLE') {
+                    const mainTokens =
+                        allToken.nestedPool.allTokens.filter(
+                            (nestedToken) =>
+                                !nestedToken.token.types.some(
+                                    (type) =>
+                                        type.type === 'LINEAR_WRAPPED_TOKEN' ||
+                                        type.type === 'PHANTOM_BPT' ||
+                                        type.type === 'BPT',
+                                ),
+                        ) || [];
+
+                    return {
+                        id: `${pool.id}-${poolToken.token.address}`,
+                        ...poolToken.token,
+                        weight: poolToken?.dynamicData?.weight,
+                        nestedTokens: mainTokens.map((mainToken) => ({
+                            id: `${pool.id}-${poolToken.token.address}-${mainToken.tokenAddress}`,
+                            ...mainToken.token,
+                        })),
+                    };
+                }
+
+                return {
+                    id: `${pool.id}-${poolToken.token.address}`,
+                    ...poolToken.token,
+                    weight: poolToken?.dynamicData?.weight,
+                };
+            });
+    }
+
     private getPoolDynamicData(pool: PrismaPoolMinimal): GqlPoolDynamicData {
         const {
             fees24h,
@@ -417,11 +474,75 @@ export class PoolGqlLoaderService {
             fees24hAth,
             fees24hAtlTimestamp,
         } = pool.dynamicData!;
-        const aprItems = pool.aprItems?.filter((item) => item.apr > 0) || [];
+        const aprItems = pool.aprItems?.filter((item) => item.apr > 0 || (item.range?.min ?? 0 > 0)) || [];
         const swapAprItems = aprItems.filter((item) => item.type == 'SWAP_FEE');
-        const nativeRewardAprItems = aprItems.filter((item) => item.type === 'NATIVE_REWARD');
-        const thirdPartyRewardAprItems = aprItems.filter((item) => item.type === 'THIRD_PARTY_REWARD');
+
+        // swap apr cannot have a range, so we can already sum it up
         const aprItemsWithNoGroup = aprItems.filter((item) => !item.group);
+
+        const hasAprRange = !!aprItems.find((item) => item.range);
+        let totalApr: string;
+        let minApr: string | undefined;
+        let maxApr: string | undefined;
+        let swapApr: string;
+        let nativeRewardApr: string;
+        let thirdPartyApr: string;
+
+        let hasRewardApr = false;
+
+        if (hasAprRange) {
+            let swapFeeApr = 0;
+            let minTotalApr = 0;
+            let maxTotalApr = 0;
+            let minNativeRewardApr = 0;
+            let maxNativeRewardApr = 0;
+            let minThirdPartyApr = 0;
+            let maxThirdPartyApr = 0;
+            for (let aprItem of aprItems) {
+                let minApr: number;
+                let maxApr: number;
+                if (aprItem.range) {
+                    minApr = aprItem.range.min;
+                    maxApr = aprItem.range.max;
+                } else {
+                    minApr = aprItem.apr;
+                    maxApr = aprItem.apr;
+                }
+                minTotalApr += minApr;
+                maxTotalApr += maxApr;
+
+                switch (aprItem.type) {
+                    case 'NATIVE_REWARD': {
+                        minNativeRewardApr += minApr;
+                        maxNativeRewardApr += maxApr;
+                        break;
+                    }
+                    case 'THIRD_PARTY_REWARD': {
+                        minThirdPartyApr += minApr;
+                        maxThirdPartyApr += maxApr;
+                    }
+                    case 'SWAP_FEE': {
+                        swapFeeApr += maxApr;
+                        break;
+                    }
+                }
+            }
+            swapApr = `${swapFeeApr}`;
+            totalApr = `${maxTotalApr}`;
+            minApr = `${minTotalApr}`;
+            maxApr = `${maxTotalApr}`;
+            nativeRewardApr = `${maxNativeRewardApr}`;
+            thirdPartyApr = `${maxThirdPartyApr}`;
+            hasRewardApr = maxNativeRewardApr > 0 || maxThirdPartyApr > 0;
+        } else {
+            const nativeRewardAprItems = aprItems.filter((item) => item.type === 'NATIVE_REWARD');
+            const thirdPartyRewardAprItems = aprItems.filter((item) => item.type === 'THIRD_PARTY_REWARD');
+            totalApr = `${_.sumBy(aprItems, 'apr')}`;
+            swapApr = `${_.sumBy(swapAprItems, 'apr')}`;
+            nativeRewardApr = `${_.sumBy(nativeRewardAprItems, 'apr')}`;
+            thirdPartyApr = `${_.sumBy(thirdPartyRewardAprItems, 'apr')}`;
+            hasRewardApr = nativeRewardAprItems.length > 0 || thirdPartyRewardAprItems.length > 0;
+        }
 
         const grouped = _.groupBy(
             aprItems.filter((item) => item.group),
@@ -458,18 +579,42 @@ export class PoolGqlLoaderService {
             volume24hAthTimestamp,
             volume24hAtlTimestamp,
             apr: {
-                total: `${_.sumBy(aprItems, 'apr')}`,
-                swapApr: `${_.sumBy(swapAprItems, 'apr')}`,
-                nativeRewardApr: `${_.sumBy(nativeRewardAprItems, 'apr')}`,
-                thirdPartyApr: `${_.sumBy(thirdPartyRewardAprItems, 'apr')}`,
+                total: totalApr,
+                min: minApr,
+                max: maxApr,
+                swapApr,
+                nativeRewardApr,
+                thirdPartyApr,
                 items: [
-                    ...aprItemsWithNoGroup.map((item) => ({
-                        ...item,
-                        apr: `${item.apr}`,
-                        subItems: [],
-                    })),
+                    ...aprItemsWithNoGroup.flatMap((item) => {
+                        if (item.range) {
+                            return [
+                                {
+                                    id: `${item.id}-min`,
+                                    apr: item.range.min.toString(),
+                                    title: `Min ${item.title}`,
+                                    subItems: [],
+                                },
+                                {
+                                    id: `${item.id}-max`,
+                                    apr: item.range.max.toString(),
+                                    title: `Max ${item.title}`,
+                                    subItems: [],
+                                },
+                            ];
+                        } else {
+                            return [
+                                {
+                                    ...item,
+                                    apr: `${item.apr}`,
+                                    subItems: [],
+                                },
+                            ];
+                        }
+                    }),
                     ..._.map(grouped, (items, group) => {
                         const subItems = items.map((item) => ({ ...item, apr: `${item.apr}` }));
+                        // todo: might need to support apr ranges as well at some point
                         const apr = _.sumBy(items, 'apr');
                         let title = '';
 
@@ -492,7 +637,7 @@ export class PoolGqlLoaderService {
                         };
                     }),
                 ],
-                hasRewardApr: nativeRewardAprItems.length > 0 || thirdPartyRewardAprItems.length > 0,
+                hasRewardApr,
             },
         };
     }

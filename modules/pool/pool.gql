@@ -40,7 +40,7 @@ extend type Mutation {
     poolSyncPoolAllTokensRelationship: String!
     poolReloadAllPoolAprs: String!
     poolSyncTotalShares: String!
-    poolReloadStakingForAllPools: String!
+    poolReloadStakingForAllPools(stakingTypes: [GqlPoolStakingType!]!): String!
     poolSyncStakingForPools: String!
     poolUpdateLiquidity24hAgoForAllPools: String!
     poolLoadSnapshotsForAllPools: String!
@@ -49,6 +49,7 @@ extend type Mutation {
     poolInitializeSnapshotsForPool(poolId: String!): String!
     poolSyncPool(poolId: String!): String!
     poolReloadPoolNestedTokens(poolId: String!): String!
+    poolReloadAllTokenNestedPoolIds: String!
 }
 
 type GqlPoolMinimal {
@@ -60,6 +61,7 @@ type GqlPoolMinimal {
     owner: Bytes
     factory: Bytes
     createTime: Int!
+    displayTokens: [GqlPoolTokenDisplay!]!
     allTokens: [GqlPoolTokenExpanded!]!
     dynamicData: GqlPoolDynamicData!
     staking: GqlPoolStaking
@@ -483,6 +485,8 @@ type GqlPoolLinearPoolWrappedToken {
 
 type GqlPoolApr {
     total: BigDecimal!
+    min: BigDecimal
+    max: BigDecimal
     swapApr: BigDecimal!
     nativeRewardApr: BigDecimal!
     thirdPartyApr: BigDecimal!
@@ -619,15 +623,30 @@ type GqlPoolStaking {
     address: String!
     farm: GqlPoolStakingMasterChefFarm
     gauge: GqlPoolStakingGauge
+    reliquary: GqlPoolStakingReliquaryFarm
 }
 
 type GqlPoolStakingMasterChefFarm {
     id: ID!
     beetsPerBlock: String!
-    rewarders: [GqlPoolStakingMasterChefFarmRewarder!]
+    rewarders: [GqlPoolStakingFarmRewarder!]
 }
 
-type GqlPoolStakingMasterChefFarmRewarder {
+type GqlPoolStakingReliquaryFarm {
+    id: ID!
+    beetsPerSecond: String!
+    levels: [GqlPoolStakingReliquarFarmLevel!]
+}
+type GqlPoolStakingReliquarFarmLevel {
+    id: ID!
+    level: Int!
+    balance: BigDecimal!
+    requiredMaturity: Int!
+    allocationPoints: Int!
+    apr: BigDecimal!
+}
+
+type GqlPoolStakingFarmRewarder {
     id: ID!
     address: String!
     tokenAddress: String!
@@ -650,6 +669,7 @@ enum GqlPoolStakingType {
     MASTER_CHEF
     GAUGE
     FRESH_BEETS
+    RELIQUARY
 }
 
 input GqlPoolJoinExitFilter {
@@ -739,4 +759,13 @@ type GqlPoolSnapshot {
     holdersCount: String!
     sharePrice: String!
     amounts: [String!]!
+}
+
+type GqlPoolTokenDisplay {
+    id: ID!
+    address: String!
+    name: String!
+    symbol: String!
+    weight: BigDecimal
+    nestedTokens: [GqlPoolTokenDisplay!]
 }

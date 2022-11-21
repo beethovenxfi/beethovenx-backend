@@ -31,6 +31,11 @@ export const prismaPoolWithExpandedNesting = Prisma.validator<Prisma.PrismaPoolA
                         rewards: true,
                     },
                 },
+                reliquary: {
+                    include: {
+                        levels: true,
+                    },
+                },
             },
         },
         categories: true,
@@ -41,9 +46,26 @@ export const prismaPoolWithExpandedNesting = Prisma.validator<Prisma.PrismaPoolA
                         types: true,
                     },
                 },
+                nestedPool: {
+                    include: {
+                        allTokens: {
+                            include: {
+                                token: {
+                                    include: {
+                                        types: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
             },
         },
-        aprItems: true,
+        aprItems: {
+            include: {
+                range: true,
+            },
+        },
         tokens: {
             orderBy: { index: 'asc' },
             include: {
@@ -189,9 +211,26 @@ export const prismaPoolMinimal = Prisma.validator<Prisma.PrismaPoolArgs>()({
                         types: true,
                     },
                 },
+                nestedPool: {
+                    include: {
+                        allTokens: {
+                            include: {
+                                token: {
+                                    include: {
+                                        types: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
             },
         },
-        aprItems: true,
+        aprItems: {
+            include: {
+                range: true,
+            },
+        },
         tokens: {
             orderBy: { index: 'asc' },
             include: {
