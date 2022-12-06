@@ -9,6 +9,12 @@ const liquidityGenerationEventResolvers: Resolvers = {
         lges: () => {
             return liquidityGenerationEventService.getLges();
         },
+        getLgeChartTokenPriceData: async (parent, args) => {
+            return liquidityGenerationEventService.getLgeChartTokenPriceData(args.id, args.steps);
+        },
+        getLgeChartPredictedPriceData: async (parent, args) => {
+            return liquidityGenerationEventService.getLgeChartPredictedPriceData(args.id, args.steps);
+        },
     },
     Mutation: {
         lgeCreate: async (parent, { lge }) => {

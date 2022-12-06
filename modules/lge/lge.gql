@@ -62,9 +62,16 @@ type GqlLge {
     adminIsMultisig: Boolean!
 }
 
+type GqlLgePriceData {
+    timestamps: [Int]!
+    prices: [String]!
+}
+
 extend type Query {
     lges: [GqlLge!]!
     lge(id: ID!): GqlLge!
+    getLgeChartTokenPriceData(id: ID!, steps: Int!): GqlLgePriceData!
+    getLgeChartPredictedPriceData(id: ID!, steps: Int!): GqlLgePriceData!
 }
 
 extend type Mutation {
