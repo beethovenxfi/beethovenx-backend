@@ -123,12 +123,12 @@ export class LiquidityGenerationEventService {
     }
 
     public async getLgeChartData(id: string, steps: number): Promise<PriceData[]> {
-        const realPriceData = await this.getLgeChartTokenPriceData(id, steps);
+        const realPriceData = await this.getLgeChartRealPriceData(id, steps);
         const predictedPriceData = await this.getLgeChartPredictedPriceData(id, steps);
         return [...realPriceData, ...predictedPriceData];
     }
 
-    public async getLgeChartPredictedPriceData(id: string, steps: number): Promise<PriceData[]> {
+    private async getLgeChartPredictedPriceData(id: string, steps: number): Promise<PriceData[]> {
         const lge = await this.getLiquidityGenerationEvent(id);
 
         const collateralToken = lge.collateralTokenAddress.toLowerCase();
@@ -163,7 +163,7 @@ export class LiquidityGenerationEventService {
         const tokenWeightStep = (tokenWeight - lge.tokenEndWeight) / steps;
         const collateralWeightStep = (lge.collateralEndWeight - collateralWeight) / steps;
 
-        const firstTime = hasStarted ? startTimestamp : moment().unix();
+        const firstTime = hasStarted ? moment().unix() : startTimestamp;
 
         const priceData: PriceData[] = [];
         priceData.push({
@@ -214,7 +214,7 @@ export class LiquidityGenerationEventService {
         return priceData;
     }
 
-    public async getLgeChartTokenPriceData(id: string, steps: number): Promise<PriceData[]> {
+    private async getLgeChartRealPriceData(id: string, steps: number): Promise<PriceData[]> {
         const lge = await this.getLiquidityGenerationEvent(id);
 
         const launchToken = lge.tokenContractAddress.toLowerCase();
