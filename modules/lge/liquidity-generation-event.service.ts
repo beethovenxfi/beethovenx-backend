@@ -62,8 +62,9 @@ export type LiquidityGenerationEvent = {
 };
 
 export type PriceData = {
-    timestamps: number[];
-    prices: string[];
+    price: number;
+    timestamp: number;
+    type: 'REAL' | 'PREDICTED';
 };
 
 export class LiquidityGenerationEventService {
@@ -123,7 +124,13 @@ export class LiquidityGenerationEventService {
         return result;
     }
 
-    public async getLgeChartPredictedPriceData(id: string, steps: number): Promise<PriceData> {
+    public async getLgeChartData(id: string, steps: number): Promise<PriceData[]> {
+        const realPriceData = await this.getLgeChartTokenPriceData(id, steps);
+        const predictedPriceData = await this.getLgeChartPredictedPriceData(id, steps);
+        return [...realPriceData, ...predictedPriceData];
+    }
+
+    public async getLgeChartPredictedPriceData(id: string, steps: number): Promise<PriceData[]> {
         const lge = await this.getLiquidityGenerationEvent(id);
 
         const collateralToken = lge.collateralTokenAddress.toLowerCase();
@@ -132,7 +139,7 @@ export class LiquidityGenerationEventService {
         const hasEnded = now > lgeEndTimestamp;
 
         if (hasEnded) {
-            return { prices: [], timestamps: [] };
+            return [];
         }
 
         const endTime = hasEnded ? lgeEndTimestamp : now;
@@ -158,19 +165,20 @@ export class LiquidityGenerationEventService {
         const tokenWeightStep = (tokenWeight - lge.tokenEndWeight) / steps;
         const collateralWeightStep = (lge.collateralEndWeight - collateralWeight) / steps;
 
-        const prices: string[] = [
-            calculateLbpTokenPrice(
+        const firstTime = hasStarted ? startTimestamp : moment().unix();
+
+        const priceData: PriceData[] = [];
+        priceData.push({
+            price: calculateLbpTokenPrice(
                 tokenWeight,
                 collateralWeight,
                 collateralBalance,
                 tokenBalance,
                 collateralTokenPrice,
             ),
-        ];
-
-        const firstTime = hasStarted ? startTimestamp : moment().unix();
-
-        const timestamps: number[] = [firstTime];
+            timestamp: firstTime,
+            type: 'PREDICTED',
+        });
         let timestamp = firstTime;
 
         while (timestamp + timeStep < endTime) {
@@ -186,25 +194,29 @@ export class LiquidityGenerationEventService {
                 collateralTokenPrice,
             );
 
-            prices.push(tokenPrice);
-            timestamps.push(timestamp);
+            priceData.push({
+                price: tokenPrice,
+                timestamp: timestamp,
+                type: 'PREDICTED',
+            });
         }
 
-        timestamps.push(endTime);
-        prices.push(
-            calculateLbpTokenPrice(
+        priceData.push({
+            price: calculateLbpTokenPrice(
                 lge.tokenEndWeight,
                 lge.collateralEndWeight,
                 collateralBalance,
                 tokenBalance,
                 collateralTokenPrice,
             ),
-        );
+            timestamp: endTime,
+            type: 'PREDICTED',
+        });
 
-        return { timestamps, prices };
+        return priceData;
     }
 
-    public async getLgeChartTokenPriceData(id: string, steps: number): Promise<PriceData> {
+    public async getLgeChartTokenPriceData(id: string, steps: number): Promise<PriceData[]> {
         const lge = await this.getLiquidityGenerationEvent(id);
 
         const launchToken = lge.tokenContractAddress.toLowerCase();
@@ -217,7 +229,7 @@ export class LiquidityGenerationEventService {
         const hasStarted = now > startTimestamp;
 
         if (!hasStarted) {
-            return { prices: [], timestamps: [] };
+            return [];
         }
 
         const endTimestamp = hasEnded ? lgeEndTimestamp : now;
@@ -225,11 +237,11 @@ export class LiquidityGenerationEventService {
         let collateralBalance = parseFloat(lge.collateralAmount);
         const timeStep = Math.floor((endTime - startTimestamp) / steps);
 
+        // TODO would need historical data for this to be accurate
         const tokenPrices = await tokenService.getTokenPrices();
         const collateralTokenPrice = tokenService.getPriceForToken(tokenPrices, collateralToken);
 
-        const prices: string[] = [];
-        const timestamps: number[] = [];
+        const priceData: PriceData[] = [];
         let timestamp = startTimestamp;
 
         while (timestamp <= endTimestamp) {
@@ -243,16 +255,17 @@ export class LiquidityGenerationEventService {
                 lgeEndTimestamp,
             );
 
-            prices.push(
-                calculateLbpTokenPrice(
+            priceData.push({
+                price: calculateLbpTokenPrice(
                     tokenWeight,
                     collateralWeight,
                     collateralBalance,
                     tokenBalance,
                     collateralTokenPrice,
                 ),
-            );
-            timestamps.push(timestamp);
+                timestamp: timestamp,
+                type: 'REAL',
+            });
 
             const filtered = await getSwapsInTimeRange(lge.id, timestamp, timestamp + timeStep);
 
@@ -273,22 +286,23 @@ export class LiquidityGenerationEventService {
                     lgeEndTimestamp,
                 );
 
-                timestamps.push(swap.timestamp);
-                prices.push(
-                    calculateLbpTokenPrice(
+                priceData.push({
+                    price: calculateLbpTokenPrice(
                         tokenWeight,
                         collateralWeight,
                         collateralBalance,
                         tokenBalance,
                         collateralTokenPrice,
                     ),
-                );
+                    timestamp: swap.timestamp,
+                    type: 'REAL',
+                });
             }
 
             timestamp += timeStep;
         }
 
-        return { timestamps, prices };
+        return priceData;
     }
 }
 
@@ -315,9 +329,10 @@ function calculateLbpTokenPrice(
     tokenBalance: number,
     collateralBalance: number,
     collateralTokenPrice: number,
-): string {
-    return `${(((tokenWeight / collateralWeight) * collateralBalance) / tokenBalance) * collateralTokenPrice}`;
+): number {
+    return (((tokenWeight / collateralWeight) * collateralBalance) / tokenBalance) * collateralTokenPrice;
 }
+
 function getSwapsInTimeRange(poolId: string, startTimestamp: number, endTimestamp: number) {
     return prisma.prismaPoolSwap.findMany({
         where: {

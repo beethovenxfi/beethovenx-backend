@@ -63,15 +63,15 @@ type GqlLge {
 }
 
 type GqlLgePriceData {
-    timestamps: [Int]!
-    prices: [String]!
+    timestamp: Int!
+    price: Float!
+    type: String!
 }
 
 extend type Query {
     lges: [GqlLge!]!
     lge(id: ID!): GqlLge!
-    getLgeChartTokenPriceData(id: ID!, steps: Int!): GqlLgePriceData!
-    getLgeChartPredictedPriceData(id: ID!, steps: Int!): GqlLgePriceData!
+    getLgeChartData(id: ID!, steps: Int!): [GqlLgePriceData]!
 }
 
 extend type Mutation {
