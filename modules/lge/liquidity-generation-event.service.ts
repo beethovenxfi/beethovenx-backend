@@ -4,10 +4,8 @@ import { copperProxyService, CopperProxyService } from '../copper/copper-proxy.s
 import { getAddress } from 'ethers/lib/utils';
 import { gnosisSafeService, GnosisSafeService } from '../gnosis/gnosis-safe.service';
 import moment from 'moment';
-import { start } from 'repl';
 import { prisma } from '../../prisma/prisma-client';
 import { TokenService, tokenService } from '../token/token.service';
-import { startTime } from 'pino-http';
 
 export type LiquidityGenerationCreateInput = {
     id: string;
@@ -239,7 +237,7 @@ export class LiquidityGenerationEventService {
 
         // TODO would need historical data for this to be accurate
         const tokenPrices = await tokenService.getTokenPrices();
-        const collateralTokenPrice = tokenService.getPriceForToken(tokenPrices, collateralToken);
+        let collateralTokenPrice = tokenService.getPriceForToken(tokenPrices, collateralToken);
 
         const priceData: PriceData[] = [];
         let timestamp = startTimestamp;
@@ -275,6 +273,10 @@ export class LiquidityGenerationEventService {
 
                 tokenBalance += swap.tokenIn === launchToken ? amountIn : -amountOut;
                 collateralBalance += swap.tokenIn === collateralToken ? amountIn : -amountOut;
+                collateralTokenPrice =
+                    swap.tokenIn === collateralToken
+                        ? swap.valueUSD / parseFloat(swap.tokenAmountIn)
+                        : swap.valueUSD / parseFloat(swap.tokenAmountOut);
 
                 const { tokenWeight, collateralWeight } = getWeightsAtTime(
                     swap.timestamp,
