@@ -123,100 +123,26 @@ export class LiquidityGenerationEventService {
     }
 
     public async getLgeChartData(id: string, steps: number): Promise<PriceData[]> {
-        const realPriceData = await this.getLgeChartRealPriceData(id, steps);
-        const predictedPriceData = await this.getLgeChartPredictedPriceData(id, steps);
-        return [...realPriceData, ...predictedPriceData];
-    }
-
-    private async getLgeChartPredictedPriceData(id: string, steps: number): Promise<PriceData[]> {
         const lge = await this.getLiquidityGenerationEvent(id);
-
-        const collateralToken = lge.collateralTokenAddress.toLowerCase();
+        const startTimestamp = moment(lge.startDate).unix();
         const lgeEndTimestamp = moment(lge.endDate).unix();
         const now = moment().unix();
         const hasEnded = now > lgeEndTimestamp;
-
-        if (hasEnded) {
-            return [];
-        }
-
-        const endTime = hasEnded ? lgeEndTimestamp : now;
-        const startTimestamp = moment(lge.startDate).unix();
         const hasStarted = now > startTimestamp;
-        const endTimestamp = hasEnded ? lgeEndTimestamp : now;
-        let tokenBalance = parseFloat(lge.tokenAmount);
-        let collateralBalance = parseFloat(lge.collateralAmount);
-        const timeStep = Math.floor((endTime - startTimestamp) / steps);
 
-        const tokenPrices = await tokenService.getTokenPrices();
-        const collateralTokenPrice = tokenService.getPriceForToken(tokenPrices, collateralToken);
-        let { tokenWeight, collateralWeight } = getWeightsAtTime(
-            now,
-            lge.tokenStartWeight,
-            lge.tokenEndWeight,
-            lge.collateralStartWeight,
-            lge.collateralEndWeight,
-            startTimestamp,
-            endTimestamp,
-        );
-
-        const tokenWeightStep = (tokenWeight - lge.tokenEndWeight) / steps;
-        const collateralWeightStep = (lge.collateralEndWeight - collateralWeight) / steps;
-
-        const firstTime = hasStarted ? moment().unix() : startTimestamp;
-
-        const priceData: PriceData[] = [];
-        priceData.push({
-            price: calculateLbpTokenPrice(
-                tokenWeight,
-                collateralWeight,
-                collateralBalance,
-                tokenBalance,
-                collateralTokenPrice,
-            ),
-            timestamp: firstTime,
-            type: 'PREDICTED',
-        });
-        let timestamp = firstTime;
-
-        while (timestamp + timeStep < endTime) {
-            timestamp = timestamp + timeStep;
-            tokenWeight -= tokenWeightStep;
-            collateralWeight += collateralWeightStep;
-
-            const tokenPrice = calculateLbpTokenPrice(
-                tokenWeight,
-                collateralWeight,
-                collateralBalance,
-                tokenBalance,
-                collateralTokenPrice,
-            );
-
-            priceData.push({
-                price: tokenPrice,
-                timestamp: timestamp,
-                type: 'PREDICTED',
-            });
+        let realPriceData: PriceData[] = [];
+        let predictedPriceData: PriceData[] = [];
+        if (hasStarted) {
+            realPriceData = await this.getLgeChartRealPriceData(lge, steps);
         }
-
-        priceData.push({
-            price: calculateLbpTokenPrice(
-                lge.tokenEndWeight,
-                lge.collateralEndWeight,
-                collateralBalance,
-                tokenBalance,
-                collateralTokenPrice,
-            ),
-            timestamp: endTime,
-            type: 'PREDICTED',
-        });
-
-        return priceData;
+        if (!hasEnded) {
+            // always predict the price with a one-minute step
+            predictedPriceData = await this.getLgeChartPredictedPriceData(lge, steps);
+        }
+        return [...realPriceData, ...predictedPriceData];
     }
 
-    private async getLgeChartRealPriceData(id: string, steps: number): Promise<PriceData[]> {
-        const lge = await this.getLiquidityGenerationEvent(id);
-
+    private async getLgeChartRealPriceData(lge: LiquidityGenerationEvent, steps: number): Promise<PriceData[]> {
         const launchToken = lge.tokenContractAddress.toLowerCase();
         const collateralToken = lge.collateralTokenAddress.toLowerCase();
         const lgeEndTimestamp = moment(lge.endDate).unix();
@@ -224,11 +150,6 @@ export class LiquidityGenerationEventService {
         const hasEnded = now > lgeEndTimestamp;
         const endTime = hasEnded ? lgeEndTimestamp : now;
         const startTimestamp = moment(lge.startDate).unix();
-        const hasStarted = now > startTimestamp;
-
-        if (!hasStarted) {
-            return [];
-        }
 
         const endTimestamp = hasEnded ? lgeEndTimestamp : now;
         let tokenBalance = parseFloat(lge.tokenAmount);
@@ -238,12 +159,13 @@ export class LiquidityGenerationEventService {
         // TODO would need historical data for this to be accurate
         const tokenPrices = await tokenService.getTokenPrices();
         let collateralTokenPrice = tokenService.getPriceForToken(tokenPrices, collateralToken);
+        // let collateralTokenPrice = 1.7;
 
         const priceData: PriceData[] = [];
         let timestamp = startTimestamp;
 
         while (timestamp <= endTimestamp) {
-            const { tokenWeight, collateralWeight } = getWeightsAtTime(
+            const { tokenWeight, collateralWeight } = this.getWeightsAtTime(
                 timestamp,
                 lge.tokenStartWeight,
                 lge.tokenEndWeight,
@@ -254,7 +176,7 @@ export class LiquidityGenerationEventService {
             );
 
             priceData.push({
-                price: calculateLbpTokenPrice(
+                price: this.calculateLbpTokenPrice(
                     tokenWeight,
                     collateralWeight,
                     collateralBalance,
@@ -265,7 +187,7 @@ export class LiquidityGenerationEventService {
                 type: 'REAL',
             });
 
-            const filtered = await getSwapsInTimeRange(lge.id, timestamp, timestamp + timeStep);
+            const filtered = await this.getSwapsInTimeRange(lge.id, timestamp, timestamp + timeStep);
 
             for (const swap of filtered) {
                 const amountIn = parseFloat(swap.tokenAmountIn);
@@ -278,7 +200,7 @@ export class LiquidityGenerationEventService {
                         ? swap.valueUSD / parseFloat(swap.tokenAmountIn)
                         : swap.valueUSD / parseFloat(swap.tokenAmountOut);
 
-                const { tokenWeight, collateralWeight } = getWeightsAtTime(
+                const { tokenWeight, collateralWeight } = this.getWeightsAtTime(
                     swap.timestamp,
                     lge.tokenStartWeight,
                     lge.tokenEndWeight,
@@ -289,7 +211,7 @@ export class LiquidityGenerationEventService {
                 );
 
                 priceData.push({
-                    price: calculateLbpTokenPrice(
+                    price: this.calculateLbpTokenPrice(
                         tokenWeight,
                         collateralWeight,
                         collateralBalance,
@@ -306,45 +228,128 @@ export class LiquidityGenerationEventService {
 
         return priceData;
     }
-}
 
-function getWeightsAtTime(
-    timestamp: number,
-    tokenStartWeight: number,
-    tokenEndWeight: number,
-    collateralStartWeight: number,
-    collateralEndWeight: number,
-    startTimestamp: number,
-    endTimestamp: number,
-): { tokenWeight: number; collateralWeight: number } {
-    const percentComplete = (timestamp - startTimestamp) / (endTimestamp - startTimestamp);
+    private async getLgeChartPredictedPriceData(lge: LiquidityGenerationEvent, steps: number): Promise<PriceData[]> {
+        // use a defined step of one minute for prediction?
 
-    const tokenWeight = tokenStartWeight - (tokenStartWeight - tokenEndWeight) * percentComplete;
-    const collateralWeight = collateralStartWeight - (collateralStartWeight - collateralEndWeight) * percentComplete;
+        const collateralToken = lge.collateralTokenAddress.toLowerCase();
+        const lgeEndTimestamp = moment(lge.endDate).unix();
+        const now = moment().unix();
+        const startTimestamp = moment(lge.startDate).unix();
+        const hasStarted = now > startTimestamp;
 
-    return { tokenWeight, collateralWeight };
-}
+        // get starting balance directly from DB if event has started? will be initial balance if event is not started, so ok
+        const tokenBalance = parseFloat(lge.tokenAmount);
+        const collateralBalance = parseFloat(lge.collateralAmount);
+        const timeStep = Math.floor((lgeEndTimestamp - startTimestamp) / steps);
 
-function calculateLbpTokenPrice(
-    tokenWeight: number,
-    collateralWeight: number,
-    tokenBalance: number,
-    collateralBalance: number,
-    collateralTokenPrice: number,
-): number {
-    return (((tokenWeight / collateralWeight) * collateralBalance) / tokenBalance) * collateralTokenPrice;
-}
+        // also use the current price of the collateral token, that is fine.
+        const tokenPrices = await tokenService.getTokenPrices();
+        const collateralTokenPrice = tokenService.getPriceForToken(tokenPrices, collateralToken);
 
-function getSwapsInTimeRange(poolId: string, startTimestamp: number, endTimestamp: number) {
-    return prisma.prismaPoolSwap.findMany({
-        where: {
-            poolId: poolId,
-            timestamp: {
-                gt: startTimestamp,
-                lte: endTimestamp,
+        const firstPredictionTimestamp = hasStarted ? moment().unix() : startTimestamp;
+
+        let { tokenWeight, collateralWeight } = this.getWeightsAtTime(
+            firstPredictionTimestamp,
+            lge.tokenStartWeight,
+            lge.tokenEndWeight,
+            lge.collateralStartWeight,
+            lge.collateralEndWeight,
+            startTimestamp,
+            lgeEndTimestamp,
+        );
+
+        const tokenWeightStep = (tokenWeight - lge.tokenEndWeight) / steps;
+        const collateralWeightStep = (lge.collateralEndWeight - collateralWeight) / steps;
+
+        const priceData: PriceData[] = [];
+        priceData.push({
+            price: this.calculateLbpTokenPrice(
+                tokenWeight,
+                collateralWeight,
+                collateralBalance,
+                tokenBalance,
+                collateralTokenPrice,
+            ),
+            timestamp: firstPredictionTimestamp,
+            type: 'PREDICTED',
+        });
+        let timestamp = firstPredictionTimestamp;
+
+        while (timestamp + timeStep < lgeEndTimestamp) {
+            timestamp = timestamp + timeStep;
+            tokenWeight -= tokenWeightStep;
+            collateralWeight += collateralWeightStep;
+
+            const tokenPrice = this.calculateLbpTokenPrice(
+                tokenWeight,
+                collateralWeight,
+                collateralBalance,
+                tokenBalance,
+                collateralTokenPrice,
+            );
+
+            priceData.push({
+                price: tokenPrice,
+                timestamp: timestamp,
+                type: 'PREDICTED',
+            });
+        }
+
+        priceData.push({
+            price: this.calculateLbpTokenPrice(
+                lge.tokenEndWeight,
+                lge.collateralEndWeight,
+                collateralBalance,
+                tokenBalance,
+                collateralTokenPrice,
+            ),
+            timestamp: lgeEndTimestamp,
+            type: 'PREDICTED',
+        });
+
+        return priceData;
+    }
+
+    private getWeightsAtTime(
+        timestamp: number,
+        tokenStartWeight: number,
+        tokenEndWeight: number,
+        collateralStartWeight: number,
+        collateralEndWeight: number,
+        startTimestamp: number,
+        endTimestamp: number,
+    ): { tokenWeight: number; collateralWeight: number } {
+        const percentComplete = (timestamp - startTimestamp) / (endTimestamp - startTimestamp);
+
+        const tokenWeight = tokenStartWeight - (tokenStartWeight - tokenEndWeight) * percentComplete;
+        const collateralWeight =
+            collateralStartWeight - (collateralStartWeight - collateralEndWeight) * percentComplete;
+
+        return { tokenWeight, collateralWeight };
+    }
+
+    private calculateLbpTokenPrice(
+        tokenWeight: number,
+        collateralWeight: number,
+        tokenBalance: number,
+        collateralBalance: number,
+        collateralTokenPrice: number,
+    ): number {
+        return (((tokenWeight / collateralWeight) * collateralBalance) / tokenBalance) * collateralTokenPrice;
+    }
+
+    private getSwapsInTimeRange(poolId: string, startTimestamp: number, endTimestamp: number) {
+        return prisma.prismaPoolSwap.findMany({
+            where: {
+                poolId: poolId,
+                timestamp: {
+                    gt: startTimestamp,
+                    lte: endTimestamp,
+                },
             },
-        },
-    });
+        });
+    }
 }
 
 export const liquidityGenerationEventService = new LiquidityGenerationEventService(
