@@ -71,6 +71,10 @@ export class LiquidityGenerationEventService {
         private readonly copperProxyService: CopperProxyService,
         private readonly tokenService: TokenService,
     ) {}
+
+    // get one data point per minute for prediction
+    readonly PREDICTION_TIME_STEP = 60;
+
     public async createLiquidityGenerationEvent(
         input: LiquidityGenerationCreateInput,
     ): Promise<LiquidityGenerationEvent> {
@@ -136,8 +140,8 @@ export class LiquidityGenerationEventService {
             realPriceData = await this.getLgeChartRealPriceData(lge, steps);
         }
         if (!hasEnded) {
-            // always predict the price with a one-minute step
-            predictedPriceData = await this.getLgeChartPredictedPriceData(lge, steps);
+            // always predict the price with a PREDICTION_TIME_STEP step
+            predictedPriceData = await this.getLgeChartPredictedPriceData(lge);
         }
         return [...realPriceData, ...predictedPriceData];
     }
@@ -229,25 +233,37 @@ export class LiquidityGenerationEventService {
         return priceData;
     }
 
-    private async getLgeChartPredictedPriceData(lge: LiquidityGenerationEvent, steps: number): Promise<PriceData[]> {
-        // use a defined step of one minute for prediction?
-
+    private async getLgeChartPredictedPriceData(lge: LiquidityGenerationEvent): Promise<PriceData[]> {
         const collateralToken = lge.collateralTokenAddress.toLowerCase();
         const lgeEndTimestamp = moment(lge.endDate).unix();
         const now = moment().unix();
         const startTimestamp = moment(lge.startDate).unix();
         const hasStarted = now > startTimestamp;
+        const firstPredictionTimestamp = hasStarted ? now : startTimestamp;
 
-        // get starting balance directly from DB if event has started? will be initial balance if event is not started, so ok
-        const tokenBalance = parseFloat(lge.tokenAmount);
-        const collateralBalance = parseFloat(lge.collateralAmount);
-        const timeStep = Math.floor((lgeEndTimestamp - startTimestamp) / steps);
+        const poolTokens = await prisma.prismaPoolToken.findMany({
+            where: { poolId: lge.id },
+            include: { dynamicData: true },
+        });
 
-        // also use the current price of the collateral token, that is fine.
+        let tokenBalance = parseFloat(lge.tokenAmount);
+        let collateralBalance = parseFloat(lge.collateralAmount);
+        for (const poolToken of poolTokens) {
+            if (poolToken.address === lge.tokenContractAddress.toLowerCase()) {
+                if (poolToken.dynamicData) {
+                    tokenBalance = parseFloat(poolToken.dynamicData.balance);
+                }
+            }
+            if (poolToken.address === lge.collateralTokenAddress.toLowerCase()) {
+                if (poolToken.dynamicData) {
+                    collateralBalance = parseFloat(poolToken.dynamicData.balance);
+                }
+            }
+        }
+
+        // for the prediction, we use the current token price of the collateral token
         const tokenPrices = await tokenService.getTokenPrices();
         const collateralTokenPrice = tokenService.getPriceForToken(tokenPrices, collateralToken);
-
-        const firstPredictionTimestamp = hasStarted ? moment().unix() : startTimestamp;
 
         let { tokenWeight, collateralWeight } = this.getWeightsAtTime(
             firstPredictionTimestamp,
@@ -258,9 +274,6 @@ export class LiquidityGenerationEventService {
             startTimestamp,
             lgeEndTimestamp,
         );
-
-        const tokenWeightStep = (tokenWeight - lge.tokenEndWeight) / steps;
-        const collateralWeightStep = (lge.collateralEndWeight - collateralWeight) / steps;
 
         const priceData: PriceData[] = [];
         priceData.push({
@@ -276,10 +289,17 @@ export class LiquidityGenerationEventService {
         });
         let timestamp = firstPredictionTimestamp;
 
-        while (timestamp + timeStep < lgeEndTimestamp) {
-            timestamp = timestamp + timeStep;
-            tokenWeight -= tokenWeightStep;
-            collateralWeight += collateralWeightStep;
+        while (timestamp + this.PREDICTION_TIME_STEP < lgeEndTimestamp) {
+            timestamp = timestamp + this.PREDICTION_TIME_STEP;
+            let { tokenWeight, collateralWeight } = this.getWeightsAtTime(
+                timestamp,
+                lge.tokenStartWeight,
+                lge.tokenEndWeight,
+                lge.collateralStartWeight,
+                lge.collateralEndWeight,
+                startTimestamp,
+                lgeEndTimestamp,
+            );
 
             const tokenPrice = this.calculateLbpTokenPrice(
                 tokenWeight,
