@@ -1,0 +1,39 @@
+model PrismaLge {
+    id                      String              @id
+    
+    address                 String              @unique
+    name                    String
+    websiteUrl              String
+    tokenIconUrl            String
+    bannerImageUrl          String
+    twitterUrl              String
+    mediumUrl               String
+    discordUrl              String
+    telegramUrl             String
+    description             String
+    startTimestamp          Int
+    endTimestamp            Int
+    tokenAddress            String
+    tokenAmount             String
+    tokenStartWeight        Float
+    tokenEndWeight          Float
+    collateralAddress       String
+    collateralAmount        String
+    collateralStartWeight   Float
+    collateralEndWeight     Float
+    swapFee                 String
+    adminAddress            String
+    adminIsMultisig         Boolean
+    chainId                 String
+
+    priceData               PrismaLgePriceData[]
+}
+
+model PrismaLgePriceData {
+    id                  String              @id
+    lge                 PrismaLge           @relation(fields:[id], references: [id])
+
+    timestamp           Int
+    blockNumber         Int
+    launchTokenPrice    Float
+}
