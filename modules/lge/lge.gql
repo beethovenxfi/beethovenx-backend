@@ -50,10 +50,12 @@ type GqlLge {
     startTimestamp: Int!
     endTimestamp: Int!
     tokenAddress: String!
+    tokenDecimals: Int!
     tokenAmount: String!
     tokenStartWeight: Int!
     tokenEndWeight: Int!
     collateralAddress: String!
+    collateralDecimals: Int!
     collateralAmount: String!
     collateralStartWeight: Int!
     collateralEndWeight: Int!

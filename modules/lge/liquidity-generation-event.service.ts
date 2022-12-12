@@ -1,6 +1,6 @@
 import { env } from '../../app/env';
 import { copperProxyService, CopperProxyService } from '../copper/copper-proxy.service';
-import { getAddress } from 'ethers/lib/utils';
+import { formatUnits, getAddress, parseUnits } from 'ethers/lib/utils';
 import { gnosisSafeService, GnosisSafeService } from '../gnosis/gnosis-safe.service';
 import moment from 'moment';
 import { prisma } from '../../prisma/prisma-client';
@@ -9,6 +9,8 @@ import { isSameAddress } from '@balancer-labs/sdk';
 import { networkConfig } from '../config/network-config';
 import { getContractAt, jsonRpcProvider } from '../web3/contract';
 import VaultAbi from '../pool/abi/Vault.json';
+import ERC20Abi from '../web3/abi/ERC20.json';
+import { BigNumber } from 'ethers';
 
 export type LiquidityGenerationCreateInput = {
     id: string;
@@ -50,10 +52,12 @@ export type LiquidityGenerationEvent = {
     startTimestamp: number;
     endTimestamp: number;
     tokenAddress: string;
+    tokenDecimals: number;
     tokenAmount: string;
     tokenStartWeight: number;
     tokenEndWeight: number;
     collateralAddress: string;
+    collateralDecimals: number;
     collateralAmount: string;
     collateralStartWeight: number;
     collateralEndWeight: number;
@@ -84,6 +88,11 @@ export class LiquidityGenerationEventService {
         const poolOwner = await this.copperProxyService.getLbpPoolOwner(getAddress(input.address));
         const adminIsMultisig = await this.gnosisSafeService.isAddressGnosisSafe(getAddress(poolOwner));
 
+        const tokenContract = getContractAt(input.tokenAddress, ERC20Abi);
+        const tokenDecimals = await tokenContract.decimals();
+
+        const collateralContract = getContractAt(input.collateralAddress, ERC20Abi);
+        const collateralDecimals = await collateralContract.decimals();
         await prisma.prismaLge.create({
             data: {
                 id: input.id,
@@ -100,10 +109,12 @@ export class LiquidityGenerationEventService {
                 startTimestamp: input.startTimestamp,
                 endTimestamp: input.endTimestamp,
                 tokenAddress: input.tokenAddress.toLowerCase(),
+                tokenDecimals: tokenDecimals,
                 tokenAmount: input.tokenAmount,
                 tokenStartWeight: input.tokenStartWeight,
                 tokenEndWeight: input.tokenEndWeight,
                 collateralAddress: input.collateralAddress.toLowerCase(),
+                collateralDecimals: collateralDecimals,
                 collateralAmount: input.collateralAmount,
                 collateralStartWeight: input.collateralStartWeight,
                 collateralEndWeight: input.collateralEndWeight,
@@ -153,8 +164,8 @@ export class LiquidityGenerationEventService {
 
     /*
     For each running LGE, this method persists the real price for the launch token. It uses two methods for this:
-    1) If there were no swaps since it was called previously, it will persist one real price using the current token balances, current token weights
-       as well as the current collateral price from the DB (coingecko).
+    1) If there were no swaps since it was called previously, it will persist one real price using the previous token balances (since they didn't change), 
+       current token weights as well as the current collateral price from the DB (coingecko).
     2) If there were swaps on the pool, it will get the persist one real price for each swap that happened. It will use the token balances and token weights 
        at the blocknumber of the swap, and the current collateral price from the DB (coingecko).
 
@@ -172,18 +183,40 @@ export class LiquidityGenerationEventService {
                     where: { id: lge.id },
                     orderBy: { timestamp: 'desc' },
                 });
-                let lastSyncedBlockNumber = 0;
-                if (latestPriceData.length > 0) {
-                    lastSyncedBlockNumber = latestPriceData[0].blockNumber;
+                if (latestPriceData.length === 0) {
+                    //make sure we have the very first price data in the db as a manual entry
+                    const collateralTokenPrice = tokenService.getPriceForToken(tokenPrices, lge.collateralAddress);
+                    const tokenPrice = this.calculateLbpTokenPrice(
+                        lge.tokenStartWeight,
+                        lge.collateralStartWeight,
+                        parseFloat(lge.tokenAmount),
+                        parseFloat(lge.collateralAmount),
+                        collateralTokenPrice,
+                    );
+                    await prisma.prismaLgePriceData.create({
+                        data: {
+                            id: lge.id,
+                            timestamp: lge.startTimestamp,
+                            blockNumber: 0,
+                            launchTokenPrice: tokenPrice,
+                            tokenBalance: lge.tokenAmount,
+                            collateralBalance: lge.collateralAmount,
+                        },
+                    });
+                    latestPriceData.push((await prisma.prismaLgePriceData.findFirst())!);
                 }
+                const lastSyncedBlockNumber = latestPriceData[0].blockNumber;
                 const latestBlockNumber = await jsonRpcProvider.getBlockNumber();
 
-                const vaulContract = getContractAt(networkConfig.balancer.vault, VaultAbi);
-                const filter = vaulContract.filters.Swap({ address: networkConfig.balancer.vault, topics: [lge.id] });
-                const swapEvents = await vaulContract.queryFilter(filter, lastSyncedBlockNumber, latestBlockNumber);
+                const vaultContract = getContractAt(networkConfig.balancer.vault, VaultAbi);
+                const filter = vaultContract.filters.Swap({ address: networkConfig.balancer.vault, topics: [lge.id] });
+                const swapEvents = await vaultContract.queryFilter(filter, lastSyncedBlockNumber, latestBlockNumber);
+
+                let previousTokenBalance = parseFloat(latestPriceData[0].tokenBalance);
+                let previousCollateralBalance = parseFloat(latestPriceData[0].collateralBalance);
 
                 if (swapEvents.length === 0) {
-                    // create a manual price entry
+                    // create a manual price entry if there where no swaps so we have a data point based on previous price data balances
                     const { tokenWeight, collateralWeight } = this.getWeightsAtTime(
                         now,
                         lge.tokenStartWeight,
@@ -193,13 +226,12 @@ export class LiquidityGenerationEventService {
                         lge.startTimestamp,
                         lge.endTimestamp,
                     );
-                    const { collateralBalance, tokenBalance } = await this.getCurrentPoolTokenBalances(lge);
                     const collateralTokenPrice = tokenService.getPriceForToken(tokenPrices, lge.collateralAddress);
                     const tokenPrice = this.calculateLbpTokenPrice(
                         tokenWeight,
                         collateralWeight,
-                        collateralBalance,
-                        tokenBalance,
+                        previousTokenBalance,
+                        previousCollateralBalance,
                         collateralTokenPrice,
                     );
                     await prisma.prismaLgePriceData.create({
@@ -208,20 +240,20 @@ export class LiquidityGenerationEventService {
                             timestamp: now,
                             blockNumber: latestBlockNumber,
                             launchTokenPrice: tokenPrice,
+                            tokenBalance: `${previousTokenBalance}`,
+                            collateralBalance: `${previousCollateralBalance}`,
                         },
                     });
                     return;
                 }
-
                 for (const swapEvent of swapEvents) {
                     const swapTimestamp = (await swapEvent.getBlock()).timestamp;
-                    const poolTokens = await vaulContract.getPoolTokens(lge.id, { blockTag: swapEvent.blockNumber });
-                    const tokenBalance = isSameAddress(poolTokens.address[0], lge.tokenAddress)
-                        ? poolTokens.balances[0]
-                        : poolTokens.balances[1];
-                    const collateralBalance = isSameAddress(poolTokens.address[0], lge.collateralAddress)
-                        ? poolTokens.balances[0]
-                        : poolTokens.balances[1];
+                    const tokenBalanceAfterSwap = isSameAddress(swapEvent.args!.tokenIn, lge.tokenAddress)
+                        ? previousTokenBalance + swapEvent.args!.amountIn
+                        : previousTokenBalance - swapEvent.args!.amountOut;
+                    const collateralBalanceAfterSwap = isSameAddress(swapEvent.args!.tokenIn, lge.collateralAddress)
+                        ? previousCollateralBalance + swapEvent.args!.amountIn
+                        : previousCollateralBalance - swapEvent.args!.amountOut;
 
                     const collateralPrice = tokenService.getPriceForToken(tokenPrices, lge.collateralAddress);
                     const { tokenWeight, collateralWeight } = this.getWeightsAtTime(
@@ -236,8 +268,8 @@ export class LiquidityGenerationEventService {
                     const tokenPrice = this.calculateLbpTokenPrice(
                         tokenWeight,
                         collateralWeight,
-                        collateralBalance,
-                        tokenBalance,
+                        tokenBalanceAfterSwap,
+                        collateralBalanceAfterSwap,
                         collateralPrice,
                     );
 
@@ -247,8 +279,12 @@ export class LiquidityGenerationEventService {
                             timestamp: swapTimestamp,
                             blockNumber: swapEvent.blockNumber,
                             launchTokenPrice: tokenPrice,
+                            tokenBalance: `${tokenBalanceAfterSwap}`,
+                            collateralBalance: `${collateralBalanceAfterSwap}`,
                         },
                     });
+                    previousTokenBalance = tokenBalanceAfterSwap;
+                    previousCollateralBalance = collateralBalanceAfterSwap;
                 }
             }
         }
@@ -304,8 +340,8 @@ export class LiquidityGenerationEventService {
             price: this.calculateLbpTokenPrice(
                 tokenWeight,
                 collateralWeight,
-                collateralBalance,
                 tokenBalance,
+                collateralBalance,
                 collateralTokenPrice,
             ),
             timestamp: firstPredictionTimestamp,
@@ -328,8 +364,8 @@ export class LiquidityGenerationEventService {
             const tokenPrice = this.calculateLbpTokenPrice(
                 tokenWeight,
                 collateralWeight,
-                collateralBalance,
                 tokenBalance,
+                collateralBalance,
                 collateralTokenPrice,
             );
 
@@ -344,8 +380,8 @@ export class LiquidityGenerationEventService {
             price: this.calculateLbpTokenPrice(
                 lge.tokenEndWeight,
                 lge.collateralEndWeight,
-                collateralBalance,
                 tokenBalance,
+                collateralBalance,
                 collateralTokenPrice,
             ),
             timestamp: lge.endTimestamp,
@@ -396,6 +432,7 @@ export class LiquidityGenerationEventService {
         return { tokenWeight, collateralWeight };
     }
 
+    // TODO need to do this with BN
     private calculateLbpTokenPrice(
         tokenWeight: number,
         collateralWeight: number,

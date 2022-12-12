@@ -14,10 +14,12 @@ model PrismaLge {
     startTimestamp          Int
     endTimestamp            Int
     tokenAddress            String
+    tokenDecimals           Int
     tokenAmount             String
     tokenStartWeight        Float
     tokenEndWeight          Float
     collateralAddress       String
+    collateralDecimals      Int
     collateralAmount        String
     collateralStartWeight   Float
     collateralEndWeight     Float
@@ -36,4 +38,6 @@ model PrismaLgePriceData {
     timestamp           Int
     blockNumber         Int
     launchTokenPrice    Float
+    tokenBalance        String
+    collateralBalance   String
 }
