@@ -19,6 +19,7 @@ export class ReliquarySnapshotService {
 
         return prisma.prismaReliquaryFarmSnapshot.findMany({
             where: { farmId: `${farmId}`, timestamp: { gte: timestamp } },
+            include: { levelBalances: true },
             orderBy: { timestamp: 'asc' },
         });
     }
@@ -26,6 +27,7 @@ export class ReliquarySnapshotService {
     public async getSnapshotForFarm(farmId: number, timestamp: number) {
         return prisma.prismaReliquaryFarmSnapshot.findFirst({
             where: { farmId: `${farmId}`, timestamp: timestamp },
+            include: { levelBalances: true },
         });
     }
 
@@ -145,14 +147,14 @@ export class ReliquarySnapshotService {
 
                 for (const level of levelsAtBlock.poolLevels) {
                     const data = {
-                        id: `${snapshot.id}-${level.id}`,
+                        id: `${level.id}-${snapshot.id}`,
                         farmSnapshotId: snapshot.id,
                         level: `${level.level}`,
                         balance: level.balance,
                     };
                     farmOperations.push(
                         prisma.prismaReliquaryLevelSnapshot.upsert({
-                            where: { id: `${snapshot.id}-${level.id}` },
+                            where: { id: `${level.id}-${snapshot.id}` },
                             create: data,
                             update: data,
                         }),
