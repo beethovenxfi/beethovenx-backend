@@ -7,8 +7,6 @@ import { ReliquarySubgraphService } from '../../subgraphs/reliquary-subgraph/rel
 import {
     DailyPoolSnapshot_OrderBy,
     OrderDirection,
-    ReliquaryFarmSnapshotsQuery,
-    ReliquaryFarmSnapshotsQueryVariables,
 } from '../../subgraphs/reliquary-subgraph/generated/reliquary-subgraph-types';
 import { blocksSubgraphService } from '../../subgraphs/blocks-subgraph/blocks-subgraph.service';
 import { oneDayInMinutes, oneDayInSeconds } from '../../common/time';
@@ -140,6 +138,27 @@ export class ReliquarySnapshotService {
                     where: { pid: farmId },
                     block: { number: parseFloat(blockAtTimestamp.number) },
                 });
+                const levelsAtBlock = await this.reliquarySubgraphService.getPoolLevels({
+                    where: { pool_: { pid: farmId } },
+                    block: { number: parseFloat(blockAtTimestamp.number) },
+                });
+
+                for (const level of levelsAtBlock.poolLevels) {
+                    const data = {
+                        id: `${snapshot.id}-${level.id}`,
+                        farmSnapshotId: snapshot.id,
+                        level: `${level.level}`,
+                        balance: level.balance,
+                    };
+                    farmOperations.push(
+                        prisma.prismaReliquaryLevelSnapshot.upsert({
+                            where: { id: `${snapshot.id}-${level.id}` },
+                            create: data,
+                            update: data,
+                        }),
+                    );
+                }
+
                 const uniqueUsers = _.uniq(relicsInFarm.map((relic) => relic.userAddress));
                 const data = {
                     id: snapshot.id,
