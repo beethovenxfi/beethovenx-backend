@@ -1,0 +1,318 @@
+enum Chain {
+    OPERA
+    OPTIMISM
+}
+
+enum PrismaPoolType {
+    WEIGHTED
+    STABLE
+    META_STABLE
+    PHANTOM_STABLE
+    ELEMENT
+    LINEAR
+    UNKNOWN
+    LIQUIDITY_BOOTSTRAPPING
+    INVESTMENT
+}
+
+model PrismaPoolLinearData {
+    @@id([poolId, chain])
+    poolId              String              
+    chain               Chain
+    pool                PrismaPool          @relation(fields:[poolId, chain] )
+
+    mainIndex           Int
+    wrappedIndex        Int
+}
+
+model PrismaPoolElementData {
+    @@id([poolId, chain])
+    poolId              String              
+    chain               Chain
+    pool                PrismaPool          @relation(fields:[poolId, chain])
+
+    unitSeconds         String
+    principalToken      String
+    baseToken           String
+}
+
+model PrismaPoolDynamicData {
+    @@id([poolId, chain])
+    poolId                  String              
+    chain                   Chain
+    pool                    PrismaPool          @relation(fields:[poolId, chain])
+    blockNumber             Int
+    updatedAt               DateTime            @updatedAt
+
+    swapFee                 String
+    swapEnabled             Boolean
+    totalShares             String
+    totalSharesNum          Float               @default(0)
+    totalLiquidity          Float
+    volume24h               Float
+    fees24h                 Float
+    apr                     Float               @default(0)
+    volume48h               Float               @default(0)
+    fees48h                 Float               @default(0)
+    totalLiquidity24hAgo    Float              @default(0)
+    totalShares24hAgo       String              @default("0")
+    lifetimeVolume          Float               @default(0)
+    lifetimeSwapFees        Float               @default(0)
+    holdersCount            Int                 @default(0)
+    swapsCount              Int                 @default(0)
+
+    sharePriceAth           Float               @default(0)
+    sharePriceAthTimestamp  Int              @default(0)
+    sharePriceAtl           Float               @default(0)
+    sharePriceAtlTimestamp  Int              @default(0)
+
+    totalLiquidityAth       Float               @default(0)
+    totalLiquidityAthTimestamp Int              @default(0)
+    totalLiquidityAtl       Float               @default(0)
+    totalLiquidityAtlTimestamp Int              @default(0)
+
+    volume24hAth            Float               @default(0)
+    volume24hAthTimestamp   Int              @default(0)
+    volume24hAtl            Float               @default(0)
+    volume24hAtlTimestamp   Int              @default(0)
+
+    fees24hAth              Float               @default(0)
+    fees24hAthTimestamp     Int              @default(0)
+    fees24hAtl              Float               @default(0)
+    fees24hAtlTimestamp     Int              @default(0)
+}
+
+model PrismaPoolStableDynamicData {
+    @@id([poolId, chain])
+    poolId              String              
+    chain               Chain
+    pool                PrismaPool          @relation(fields:[poolId, chain])
+    blockNumber         Int
+    updatedAt           DateTime            @updatedAt
+
+    amp                 String
+}
+
+model PrismaPoolLinearDynamicData {
+    @@id([poolId, chain])
+    poolId              String              @unique
+    chain               Chain
+    pool                PrismaPool          @relation(fields:[poolId, chain])
+    blockNumber         Int
+    updatedAt           DateTime            @updatedAt
+
+    lowerTarget         String
+    upperTarget         String
+}
+
+model PrismaPoolToken {
+    @@id([poolId, chain, address])
+    poolId              String
+    chain               Chain
+    pool                PrismaPool          @relation(fields:[poolId, chain])
+
+    address             String
+    token               PrismaToken          @relation(fields:[address, chain] )
+    index               Int
+
+    nestedPoolId        String?
+    nestedPool          PrismaPool?         @relation(name: "PoolNestedInToken", fields:[nestedPoolId, chain], references: [poolId, chain] )
+
+    dynamicData         PrismaPoolTokenDynamicData?
+}
+
+model PrismaPoolTokenDynamicData {
+    @@id([poolId, chain, address])
+    poolId              String
+    chain               Chain
+    address             String
+    poolToken           PrismaPoolToken     @relation(fields:[poolId, chain, address])
+    blockNumber         Int
+    updatedAt           DateTime            @updatedAt
+
+    balance             String
+    balanceUSD          Float
+    weight              String?
+    priceRate           String
+}
+
+model PrismaPoolBatchSwap {
+    @@id([poolId, chain])
+    poolId              String
+    chain               Chain
+    userAddress         String
+    tokenIn             String
+    tokenOut            String
+    tokenAmountIn       String
+    tokenAmountOut      String
+    timestamp           Int
+    tx                  String
+    valueUSD            Float
+    tokenInPrice        Float               @default(0)
+    tokenOutPrice       Float               @default(0)
+
+    swaps               PrismaPoolSwap[]
+}
+
+
+model PrismaPoolSwap {
+    @@id([poolId, chain])
+    poolId              String
+    chain               Chain
+    pool                PrismaPool          @relation(fields:[poolId, chain])
+    userAddress         String
+    tokenIn             String
+    tokenInSym          String
+    tokenOut            String
+    tokenOutSym         String
+    tokenAmountIn       String
+    tokenAmountOut      String
+    timestamp           Int
+    tx                  String
+    valueUSD            Float
+
+    batchSwapId         String?
+    batchSwap           PrismaPoolBatchSwap? @relation(fields:[poolId, chain] )
+    batchSwapIdx        Int?
+}
+
+enum PrismaPoolAprType {
+    SWAP_FEE
+    NATIVE_REWARD
+    THIRD_PARTY_REWARD
+    LINEAR_BOOSTED
+    PHANTOM_STABLE_BOOSTED
+    IB_YIELD
+}
+
+enum PrismaPoolAprItemGroup {
+    YEARN
+    REAPER
+    OVERNIGHT
+}
+
+model PrismaPoolAprRange {
+    @@id([poolId, chain, title])
+    poolId              String
+    chain               Chain
+    title               String
+    aprItem             PrismaPoolAprItem   @relation(fields:[poolId, chain, title] )
+    min                 Float
+    max                 Float
+}
+
+model PrismaPoolAprItem {
+    @@id([poolId, chain, title]) // title should really be unique, but a little weird
+    poolId              String
+    chain               Chain
+    pool                PrismaPool          @relation(fields:[poolId, chain] )
+    title               String
+    apr                 Float
+    range               PrismaPoolAprRange?
+
+    type                PrismaPoolAprType?
+    group               PrismaPoolAprItemGroup?
+}
+
+enum PrismaPoolCategoryType {
+    INCENTIVIZED
+    BLACK_LISTED
+}
+
+model PrismaPoolCategory {
+    @@id([poolId, chain])
+    poolId              String
+    chain               Chain
+    pool                PrismaPool          @relation(fields:[poolId, chain])
+    category            PrismaPoolCategoryType
+}
+
+model PrismaPoolExpandedTokens {
+    @@id([tokenAddress, poolId, chain])
+    tokenAddress        String
+    chain               Chain
+    token               PrismaToken         @relation(fields:[tokenAddress, chain], references: [address, chain])
+    poolId              String
+    pool                PrismaPool          @relation(fields:[poolId], references: [id])
+
+    nestedPoolId        String?
+    nestedPool          PrismaPool?         @relation(name: "NestedPoolForAllToken", fields:[nestedPoolId], references: [id])
+
+}
+
+model PrismaPoolFilterMap {
+    @@id([poolId, chain])
+    chain               Chain
+    filterId            String
+    filter              PrismaPoolFilter    @relation(fields:[filterId], references: [id])
+    poolId              String
+    pool                PrismaPool          @relation(fields:[poolId, chain])
+}
+
+model PrismaPoolFilter {
+    id                  String              @id
+    title               String
+
+    pools               PrismaPoolFilterMap[]
+}
+
+enum PrismaPoolStakingType {
+    MASTER_CHEF
+    GAUGE
+    RELIQUARY
+    FRESH_BEETS
+}
+
+model PrismaPoolStaking {
+    @@id([poolId, chain])
+    chain               Chain
+    poolId              String              @unique
+    pool                PrismaPool          @relation(fields:[poolId], references: [id])
+    type                PrismaPoolStakingType
+    address             String
+    farm                PrismaPoolStakingMasterChefFarm?
+    gauge               PrismaPoolStakingGauge?
+    reliquary           PrismaPoolStakingReliquaryFarm?
+
+    userStakedBalances  PrismaUserStakedBalance[]
+}
+
+model PrismaPool {
+    @@id([id, chain])
+    id                  String              
+    chain               Chain 
+
+    createTime          Int
+    address             String              @unique
+    symbol              String
+    name                String
+    type                PrismaPoolType
+    decimals            Int                 @default(18)
+    owner               String
+    factory             String?
+
+    linearData          PrismaPoolLinearData?
+    elementData         PrismaPoolElementData?
+
+    tokens              PrismaPoolToken[]
+
+    dynamicData         PrismaPoolDynamicData?
+    stableDynamicData   PrismaPoolStableDynamicData?
+    linearDynamicData   PrismaPoolLinearDynamicData?
+
+    snapshots           PrismaPoolSnapshot[]
+    swaps               PrismaPoolSwap[]
+    aprItems            PrismaPoolAprItem[]
+    categories          PrismaPoolCategory[]
+    tokensWithPoolNested PrismaPoolToken[] @relation(name: "PoolNestedInToken")
+
+    allTokens           PrismaPoolExpandedTokens[]
+    allTokensNested     PrismaPoolExpandedTokens[] @relation(name: "NestedPoolForAllToken")
+    filters             PrismaPoolFilterMap[]
+    staking             PrismaPoolStaking?
+
+    userWalletBalances  PrismaUserWalletBalance[]
+    userStakedBalances  PrismaUserStakedBalance[]
+
+    userPoolBalanceSnapshots    PrismaUserPoolBalanceSnapshot[]
+}

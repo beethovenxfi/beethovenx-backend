@@ -1,0 +1,92 @@
+model PrismaToken {
+    @@id([address, chain])
+    address             String              
+    chain               String
+    symbol              String
+    name                String
+    description         String?
+    decimals            Int
+
+    logoURI             String?
+    websiteUrl          String?
+    discordUrl          String?
+    telegramUrl         String?
+    twitterUsername     String?
+    priority            Int                 @default(0)
+    coingeckoPlatformId String?
+    coingeckoContractAddress String?
+    coingeckoTokenId    String?
+
+    dynamicData         PrismaTokenDynamicData?
+    currentPrice        PrismaTokenCurrentPrice?
+    prices              PrismaTokenPrice[]
+    types               PrismaTokenType[]
+
+    expandedPools       PrismaPoolExpandedTokens[]
+    poolTokens          PrismaPoolToken[]
+
+    walletBalances  PrismaUserWalletBalance[]
+    stakedBalances  PrismaUserStakedBalance[]
+}
+
+
+model PrismaTokenCurrentPrice {
+    tokenAddress        String               @id
+    token               PrismaToken          @relation(fields:[tokenAddress], references: [address])
+    updatedAt           DateTime             @updatedAt
+    timestamp           Int
+    price               Float
+    coingecko           Boolean?
+}
+
+model PrismaTokenPrice {
+    tokenAddress        String
+    token               PrismaToken         @relation(fields:[tokenAddress], references: [address])
+    updatedAt           DateTime             @updatedAt
+    timestamp           Int
+    price               Float
+    coingecko           Boolean?
+
+    high                Float
+    low                 Float
+    open                Float
+    close               Float
+
+    @@id([tokenAddress, timestamp])
+}
+
+model PrismaTokenDynamicData {
+    coingeckoId         String
+    tokenAddress        String              @id
+    token               PrismaToken         @relation(fields:[tokenAddress], references: [address])
+    updatedAt           DateTime            @updatedAt
+
+    price               Float
+    ath                 Float
+    atl                 Float
+    marketCap           Float?
+    fdv                 Float?
+    high24h             Float
+    low24h              Float
+    priceChange24h      Float
+    priceChangePercent24h Float
+    priceChangePercent7d Float?
+    priceChangePercent14d Float?
+    priceChangePercent30d Float?
+}
+
+model PrismaTokenType {
+    id                  String              @id
+    tokenAddress        String
+    token               PrismaToken         @relation(fields:[tokenAddress], references: [address])
+    type                PrismaTokenTypeOption
+
+    @@unique([tokenAddress, type])
+}
+
+enum PrismaTokenTypeOption {
+    WHITE_LISTED
+    BPT
+    PHANTOM_BPT
+    LINEAR_WRAPPED_TOKEN
+}
