@@ -7,20 +7,20 @@ import { ReliquarySubgraphService } from '../../subgraphs/reliquary-subgraph/rel
 import {
     DailyPoolSnapshot_OrderBy,
     OrderDirection,
-    ReliquaryFarmSnapshotsQuery,
-    ReliquaryFarmSnapshotsQueryVariables,
 } from '../../subgraphs/reliquary-subgraph/generated/reliquary-subgraph-types';
 import { blocksSubgraphService } from '../../subgraphs/blocks-subgraph/blocks-subgraph.service';
-import { oneDayInMinutes } from '../../common/time';
+import { oneDayInMinutes, oneDayInSeconds } from '../../common/time';
+import { time } from 'console';
+import { PrismaReliquaryLevelSnapshot, PrismaReliquaryTokenBalanceSnapshot } from '@prisma/client';
 
 export class ReliquarySnapshotService {
     constructor(private readonly reliquarySubgraphService: ReliquarySubgraphService) {}
 
     public async getSnapshotsForFarm(farmId: number, range: GqlPoolSnapshotDataRange) {
         const timestamp = this.getTimestampForRange(range);
-
         return prisma.prismaReliquaryFarmSnapshot.findMany({
             where: { farmId: `${farmId}`, timestamp: { gte: timestamp } },
+            include: { levelBalances: true, tokenBalances: true },
             orderBy: { timestamp: 'asc' },
         });
     }
@@ -28,55 +28,137 @@ export class ReliquarySnapshotService {
     public async getSnapshotForFarm(farmId: number, timestamp: number) {
         return prisma.prismaReliquaryFarmSnapshot.findFirst({
             where: { farmId: `${farmId}`, timestamp: timestamp },
+            include: { levelBalances: true },
         });
     }
 
-    public async syncLatestSnapshotsForAllFarms(daysToSync = 1) {
-        const oneDayAgoStartOfDay = moment().utc().startOf('day').subtract(daysToSync, 'days').unix();
+    public async syncLatestSnapshotsForAllFarms() {
+        const thisMorning = moment().utc().startOf('day').unix();
 
-        const farmSnapshots = await this.reliquarySubgraphService.getFarmSnapshots({
-            where: { snapshotTimestamp_gte: oneDayAgoStartOfDay },
+        const { farmSnapshots } = await this.reliquarySubgraphService.getFarmSnapshots({
+            where: { snapshotTimestamp_gte: thisMorning },
             orderBy: DailyPoolSnapshot_OrderBy.SnapshotTimestamp,
             orderDirection: OrderDirection.Asc,
         });
 
-        const farmIds = _.uniq(farmSnapshots.farmSnapshots.map((snapshot) => snapshot.farmId));
+        const reliquaryFarms = await prisma.prismaPoolStakingReliquaryFarm.findMany({ include: { snapshots: true } });
 
-        await this.saveFarmSnapshots(farmIds, farmSnapshots);
+        const farmIdsInSubgraphSnapshots = _.uniq(farmSnapshots.map((snapshot) => snapshot.farmId));
+        // check if we have a farm that doesn't have snapshots and create it manually
+        for (const farm of reliquaryFarms) {
+            if (!farmIdsInSubgraphSnapshots.includes(parseFloat(farm.id))) {
+                const yesterdaysSnapshot = farm.snapshots.find(
+                    (snapshot) => snapshot.timestamp === thisMorning - oneDayInSeconds,
+                );
+                if (yesterdaysSnapshot) {
+                    farmSnapshots.push({
+                        id: `${yesterdaysSnapshot.id.split('-')[0]}-${thisMorning}`,
+                        farmId: parseFloat(yesterdaysSnapshot.farmId),
+                        relicCount: yesterdaysSnapshot.relicCount,
+                        snapshotTimestamp: thisMorning,
+                        dailyDeposited: `0`,
+                        dailyWithdrawn: `0`,
+                        totalBalance: yesterdaysSnapshot.totalBalance,
+                    });
+                }
+            }
+        }
+
+        await this.upsertFarmSnapshots(farmIdsInSubgraphSnapshots, farmSnapshots);
     }
 
-    public async loadAllSnapshotsForFarms(farmIds: number[]) {
+    public async loadAllSnapshotsForFarm(farmId: number) {
         //assuming the we don't have more than 1,000 snapshots, we should be ok.
         // todo implement proper getAll function
         const farmSnapshots = await this.reliquarySubgraphService.getFarmSnapshots({
-            where: { poolId_in: farmIds },
+            where: { poolId: farmId },
             orderBy: DailyPoolSnapshot_OrderBy.SnapshotTimestamp,
             orderDirection: OrderDirection.Asc,
             first: 1000,
         });
+        const firstSnapshot = farmSnapshots.farmSnapshots.shift();
+        if (!firstSnapshot) {
+            return;
+        }
+        const snapshotsToSave = [firstSnapshot];
+        for (const snapshot of farmSnapshots.farmSnapshots) {
+            // if the previous snapshot is older than 1 day, manually derive a snapshot
+            let previousSnapshot = snapshotsToSave[snapshotsToSave.length - 1];
+            while (previousSnapshot.snapshotTimestamp + oneDayInSeconds < snapshot.snapshotTimestamp) {
+                snapshotsToSave.push({
+                    ...previousSnapshot,
+                    id: `${snapshot.id}-${previousSnapshot.snapshotTimestamp + oneDayInSeconds}`,
+                    snapshotTimestamp: previousSnapshot.snapshotTimestamp + oneDayInSeconds,
+                    dailyDeposited: `0`,
+                    dailyWithdrawn: `0`,
+                });
+                previousSnapshot = snapshotsToSave[snapshotsToSave.length - 1];
+            }
 
-        await this.saveFarmSnapshots(farmIds, farmSnapshots);
+            snapshotsToSave.push(snapshot);
+        }
+        // fill gaps until today
+        const lastRealSnapshot = snapshotsToSave[snapshotsToSave.length - 1];
+        let previousSnapshot = snapshotsToSave[snapshotsToSave.length - 1];
+        while (previousSnapshot.snapshotTimestamp < moment().startOf('day').unix()) {
+            snapshotsToSave.push({
+                ...lastRealSnapshot,
+                id: `${lastRealSnapshot.id}-${previousSnapshot.snapshotTimestamp + oneDayInSeconds}`,
+                snapshotTimestamp: previousSnapshot.snapshotTimestamp + oneDayInSeconds,
+                dailyDeposited: `0`,
+                dailyWithdrawn: `0`,
+            });
+            previousSnapshot = snapshotsToSave[snapshotsToSave.length - 1];
+        }
+        await this.upsertFarmSnapshots([farmId], snapshotsToSave);
     }
 
-    private async saveFarmSnapshots(farmIds: number[], farmSnapshotsQuery: ReliquaryFarmSnapshotsQuery) {
+    private async upsertFarmSnapshots(
+        farmIds: number[],
+        farmSnapshots: {
+            id: string;
+            snapshotTimestamp: number;
+            totalBalance: string;
+            dailyDeposited: string;
+            dailyWithdrawn: string;
+            relicCount: number;
+            farmId: number;
+        }[],
+    ) {
         let operations: any[] = [];
-        const farmSnapshots = farmSnapshotsQuery.farmSnapshots;
         for (const farmId of farmIds) {
             const snapshots = farmSnapshots.filter((snapshot) => snapshot.farmId === farmId);
 
             const farmOperations = [];
             for (const snapshot of snapshots) {
-                // if we sync snapshots from the past, we want relics from end of that day. If we sync from today, we want relics up to now
+                // If we sync snapshots from the past, we want relics from end of that day.
+                // If we sync from today, we want relics up to nowish (accomodate for subgraph lagging)
                 const timestampForSnapshot =
                     snapshot.snapshotTimestamp + oneDayInMinutes * 60 < moment().utc().unix()
                         ? snapshot.snapshotTimestamp + oneDayInMinutes * 60
-                        : moment().utc().unix();
-                const blockAtTimestamp = await blocksSubgraphService.getBlockForTimestamp(timestampForSnapshot - 20);
+                        : moment().utc().unix() - 600;
+
+                const pool = await prisma.prismaPool.findFirstOrThrow({
+                    where: { staking: { reliquary: { id: `${farmId}` } } },
+                    include: { tokens: { include: { token: true } } },
+                });
+
+                const mostRecentPoolSnapshot = await prisma.prismaPoolSnapshot.findFirstOrThrow({
+                    where: { poolId: pool.id, timestamp: { lte: timestampForSnapshot } },
+                    orderBy: { timestamp: 'desc' },
+                });
+
+                const blockAtTimestamp = await blocksSubgraphService.getBlockForTimestamp(timestampForSnapshot);
                 const relicsInFarm = await this.reliquarySubgraphService.getAllRelics({
                     where: { pid: farmId },
                     block: { number: parseFloat(blockAtTimestamp.number) },
                 });
-                const uniqueUsers = _.uniq((await relicsInFarm).map((relic) => relic.userAddress));
+                const levelsAtBlock = await this.reliquarySubgraphService.getPoolLevels({
+                    where: { pool_: { pid: farmId } },
+                    block: { number: parseFloat(blockAtTimestamp.number) },
+                });
+
+                const uniqueUsers = _.uniq(relicsInFarm.map((relic) => relic.userAddress));
                 const data = {
                     id: snapshot.id,
                     farmId: `${snapshot.farmId}`,
@@ -94,6 +176,43 @@ export class ReliquarySnapshotService {
                         update: data,
                     }),
                 );
+
+                for (const level of levelsAtBlock.poolLevels) {
+                    const data: PrismaReliquaryLevelSnapshot = {
+                        id: `${level.id}-${snapshot.id}`,
+                        farmSnapshotId: snapshot.id,
+                        level: `${level.level}`,
+                        balance: level.balance,
+                    };
+                    farmOperations.push(
+                        prisma.prismaReliquaryLevelSnapshot.upsert({
+                            where: { id: `${level.id}-${snapshot.id}` },
+                            create: data,
+                            update: data,
+                        }),
+                    );
+                }
+
+                const sharePercentage = parseFloat(snapshot.totalBalance) / mostRecentPoolSnapshot.totalSharesNum;
+
+                for (const token of pool.tokens) {
+                    const data: PrismaReliquaryTokenBalanceSnapshot = {
+                        id: `${token.id}-${snapshot.id}`,
+                        farmSnapshotId: snapshot.id,
+                        address: token.address,
+                        symbol: token.token.symbol,
+                        name: token.token.name,
+                        decimals: token.token.decimals,
+                        balance: `${parseFloat(mostRecentPoolSnapshot.amounts[token.index]) * sharePercentage}`,
+                    };
+                    farmOperations.push(
+                        prisma.prismaReliquaryTokenBalanceSnapshot.upsert({
+                            where: { id: `${token.id}-${snapshot.id}` },
+                            create: data,
+                            update: data,
+                        }),
+                    );
+                }
             }
             operations.push(...farmOperations);
         }

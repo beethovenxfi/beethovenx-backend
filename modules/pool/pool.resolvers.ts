@@ -78,6 +78,8 @@ const balancerResolvers: Resolvers = {
                 totalBalance: snapshot.totalBalance,
                 dailyDeposited: snapshot.dailyDeposited,
                 dailyWithdrawn: snapshot.dailyWithdrawn,
+                levelBalances: snapshot.levelBalances,
+                tokenBalances: snapshot.tokenBalances,
             }));
         },
     },
@@ -194,6 +196,13 @@ const balancerResolvers: Resolvers = {
             isAdminRoute(context);
 
             await poolService.loadSnapshotsForAllPools();
+
+            return 'success';
+        },
+        poolLoadSnapshotsForPools: async (parent, { poolIds }, context) => {
+            isAdminRoute(context);
+
+            await poolService.loadSnapshotsForPools(poolIds);
 
             return 'success';
         },

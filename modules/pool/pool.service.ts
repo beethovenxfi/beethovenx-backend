@@ -260,6 +260,10 @@ export class PoolService {
         await this.poolUsdDataService.updateLiquidity24hAgoForAllPools();
     }
 
+    public async loadSnapshotsForPools(poolIds: string[]) {
+        await this.poolSnapshotService.loadAllSnapshotsForPools(poolIds);
+    }
+
     public async loadSnapshotsForAllPools() {
         await prisma.prismaPoolSnapshot.deleteMany({});
         const pools = await prisma.prismaPool.findMany({
@@ -284,14 +288,16 @@ export class PoolService {
         await this.poolSnapshotService.syncLatestSnapshotsForAllPools(daysToSync);
     }
 
-    public async syncLatestReliquarySnapshotsForAllFarms(daysToSync?: number) {
-        await this.reliquarySnapshotService.syncLatestSnapshotsForAllFarms(daysToSync);
+    public async syncLatestReliquarySnapshotsForAllFarms() {
+        await this.reliquarySnapshotService.syncLatestSnapshotsForAllFarms();
     }
 
     public async loadReliquarySnapshotsForAllFarms() {
         const farms = await prisma.prismaPoolStakingReliquaryFarm.findMany({});
         const farmIds = farms.map((farm) => parseFloat(farm.id));
-        await this.reliquarySnapshotService.loadAllSnapshotsForFarms(farmIds);
+        for (const farmId of farmIds) {
+            await this.reliquarySnapshotService.loadAllSnapshotsForFarm(farmId);
+        }
     }
 
     public async updateLifetimeValuesForAllPools() {

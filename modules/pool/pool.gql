@@ -26,7 +26,6 @@ extend type Query {
     poolGetAllPoolsSnapshots(range: GqlPoolSnapshotDataRange!): [GqlPoolSnapshot!]!
     poolGetLinearPools: [GqlPoolLinear!]!
     poolGetReliquaryFarmSnapshots(id: String!, range: GqlPoolSnapshotDataRange!): [GqlReliquaryFarmSnapshot!]!
-    # poolGetAllReliquaryPoolsSnapshots(range: GqlPoolSnapshotDataRange!): [GqlPoolSnapshot!]!
 }
 
 extend type Mutation {
@@ -46,6 +45,7 @@ extend type Mutation {
     poolSyncStakingForPools: String!
     poolUpdateLiquidity24hAgoForAllPools: String!
     poolLoadSnapshotsForAllPools: String!
+    poolLoadSnapshotsForPools(poolIds: [String!]!): String!
     poolSyncLatestSnapshotsForAllPools(daysToSync: Int): String!
     poolUpdateLifetimeValuesForAllPools: String!
     poolInitializeSnapshotsForPool(poolId: String!): String!
@@ -781,6 +781,23 @@ type GqlReliquaryFarmSnapshot {
     totalBalance: String!
     dailyDeposited: String!
     dailyWithdrawn: String!
+    levelBalances: [GqlReliquaryFarmLevelSnapshot!]!
+    tokenBalances: [GqlReliquaryTokenBalanceSnapshot!]!
+}
+
+type GqlReliquaryFarmLevelSnapshot {
+    id: ID!
+    level: String!
+    balance: String!
+}
+
+type GqlReliquaryTokenBalanceSnapshot {
+    id: ID!
+    address: String!
+    balance: String!
+    symbol: String!
+    name: String!
+    decimals: Int!
 }
 
 type GqlPoolTokenDisplay {
