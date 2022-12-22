@@ -1,6 +1,5 @@
 import { isSameAddress } from '@balancer-labs/sdk';
 import { PrismaPoolStakingType } from '@prisma/client';
-import { BigNumber } from 'ethers';
 import _ from 'lodash';
 import { prisma } from '../../../../../prisma/prisma-client';
 import { prismaBulkExecuteOperations } from '../../../../../prisma/prisma-util';
