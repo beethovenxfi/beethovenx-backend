@@ -1,5 +1,7 @@
 model PrismaToken {
-    address             String              @id
+    @@id([tokenAddress, chain])
+    tokenAddress        String              
+    chain               Chain
     symbol              String
     name                String
     description         String?
@@ -29,8 +31,10 @@ model PrismaToken {
 
 
 model PrismaTokenCurrentPrice {
-    tokenAddress        String               @id
-    token               PrismaToken          @relation(fields:[tokenAddress], references: [address])
+    @@id([tokenAddress, chain])
+    tokenAddress        String               
+    token               PrismaToken          @relation(fields:[tokenAddress, chain], references: [tokenAddress, chain])
+    chain               Chain
     updatedAt           DateTime             @updatedAt
     timestamp           Int
     price               Float
@@ -38,8 +42,10 @@ model PrismaTokenCurrentPrice {
 }
 
 model PrismaTokenPrice {
+    @@id([tokenAddress, chain, timestamp])
     tokenAddress        String
-    token               PrismaToken         @relation(fields:[tokenAddress], references: [address])
+    token               PrismaToken         @relation(fields:[tokenAddress, chain], references: [tokenAddress, chain])
+    chain               Chain
     updatedAt           DateTime             @updatedAt
     timestamp           Int
     price               Float
@@ -49,14 +55,14 @@ model PrismaTokenPrice {
     low                 Float
     open                Float
     close               Float
-
-    @@id([tokenAddress, timestamp])
 }
 
 model PrismaTokenDynamicData {
+    @@id([tokenAddress, chain])
+    tokenAddress        String       
+    chain               Chain
     coingeckoId         String
-    tokenAddress        String              @id
-    token               PrismaToken         @relation(fields:[tokenAddress], references: [address])
+    token               PrismaToken         @relation(fields:[tokenAddress, chain], references: [tokenAddress, chain])
     updatedAt           DateTime            @updatedAt
 
     price               Float
@@ -73,16 +79,7 @@ model PrismaTokenDynamicData {
     priceChangePercent30d Float?
 }
 
-model PrismaTokenType {
-    id                  String              @id
-    tokenAddress        String
-    token               PrismaToken         @relation(fields:[tokenAddress], references: [address])
-    type                PrismaTokenTypeOption
-
-    @@unique([tokenAddress, type])
-}
-
-enum PrismaTokenTypeOption {
+enum PrismaTokenType { 
     WHITE_LISTED
     BPT
     PHANTOM_BPT

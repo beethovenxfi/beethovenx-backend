@@ -29,43 +29,9 @@ model PrismaFbeets {
     ratio               String
 }
 
-model PrismaPool {
-    id                  String              @id
-    createTime          Int
-
-    address             String              @unique
-    symbol              String
-    name                String
-    type                PrismaPoolType
-    decimals            Int                 @default(18)
-    owner               String
-    factory             String?
-
-    linearData          PrismaPoolLinearData?
-    elementData         PrismaPoolElementData?
-
-    tokens              PrismaPoolToken[]
-
-    dynamicData         PrismaPoolDynamicData?
-    stableDynamicData   PrismaPoolStableDynamicData?
-    linearDynamicData   PrismaPoolLinearDynamicData?
-
-    snapshots           PrismaPoolSnapshot[]
-    swaps               PrismaPoolSwap[]
-    aprItems            PrismaPoolAprItem[]
-    categories          PrismaPoolCategory[]
-    tokensWithPoolNested PrismaPoolToken[] @relation(name: "PoolNestedInToken")
-
-    allTokens           PrismaPoolExpandedTokens[]
-    allTokensNested     PrismaPoolExpandedTokens[] @relation(name: "NestedPoolForAllToken")
-    filters             PrismaPoolFilterMap[]
-    staking             PrismaPoolStaking?
-
-    userWalletBalances  PrismaUserWalletBalance[]
-    userStakedBalances  PrismaUserStakedBalance[]
-
-    userPoolBalanceSnapshots    PrismaUserPoolBalanceSnapshot[]
-
+enum Chain {
+    OPERA
+    OPTIMISM
 }
 
 enum PrismaPoolType {
@@ -81,18 +47,20 @@ enum PrismaPoolType {
 }
 
 model PrismaPoolLinearData {
-    id                  String              @id
-    poolId              String              @unique
-    pool                PrismaPool          @relation(fields:[poolId], references: [id])
+    @@id([poolId, chain])
+    poolId              String              
+    chain               Chain
+    pool                PrismaPool          @relation(fields:[poolId, chain], references: [id, chain] )
 
     mainIndex           Int
     wrappedIndex        Int
 }
 
 model PrismaPoolElementData {
-    id                  String              @id
-    poolId              String              @unique
-    pool                PrismaPool          @relation(fields:[poolId], references: [id])
+    @@id([poolId, chain])
+    poolId              String              
+    chain               Chain
+    pool                PrismaPool          @relation(fields:[poolId, chain], references: [id, chain] )
 
     unitSeconds         String
     principalToken      String
@@ -100,9 +68,10 @@ model PrismaPoolElementData {
 }
 
 model PrismaPoolDynamicData {
-    id                      String              @id
-    poolId                  String              @unique
-    pool                    PrismaPool          @relation(fields:[poolId], references: [id])
+    @@id([poolId, chain])
+    poolId                  String              
+    chain                   Chain
+    pool                    PrismaPool          @relation(fields:[poolId, chain], references: [id, chain] )
     blockNumber             Int
     updatedAt               DateTime            @updatedAt
 
@@ -145,9 +114,10 @@ model PrismaPoolDynamicData {
 }
 
 model PrismaPoolStableDynamicData {
-    id                  String              @id
-    poolId              String              @unique
-    pool                PrismaPool          @relation(fields:[poolId], references: [id])
+    @@id([poolId, chain])
+    poolId              String              
+    chain               Chain
+    pool                PrismaPool          @relation(fields:[poolId, chain], references: [id, chain] )
     blockNumber         Int
     updatedAt           DateTime            @updatedAt
 
@@ -155,9 +125,10 @@ model PrismaPoolStableDynamicData {
 }
 
 model PrismaPoolLinearDynamicData {
-    id                  String              @id
+    @@id([poolId, chain])
     poolId              String              @unique
-    pool                PrismaPool          @relation(fields:[poolId], references: [id])
+    chain               Chain
+    pool                PrismaPool          @relation(fields:[poolId, chain], references: [id, chain] )
     blockNumber         Int
     updatedAt           DateTime            @updatedAt
 
@@ -166,24 +137,27 @@ model PrismaPoolLinearDynamicData {
 }
 
 model PrismaPoolToken {
-    id                  String              @id
+    @@id([poolId, chain, tokenAddress])
     poolId              String
-    pool                PrismaPool          @relation(fields:[poolId], references: [id])
+    chain               Chain
+    pool                PrismaPool          @relation(fields:[poolId, chain], references: [id, chain] )
 
-    address             String
-    token               PrismaToken          @relation(fields:[address], references: [address])
+    tokenAddress             String
+    token               PrismaToken          @relation(fields:[tokenAddress, chain], references: [tokenAddress, chain] )
     index               Int
 
     nestedPoolId        String?
-    nestedPool          PrismaPool?         @relation(name: "PoolNestedInToken", fields:[nestedPoolId], references: [id])
+    nestedPool          PrismaPool?         @relation(name: "PoolNestedInToken", fields:[nestedPoolId, chain], references: [id, chain] )
 
     dynamicData         PrismaPoolTokenDynamicData?
 }
 
 model PrismaPoolTokenDynamicData {
-    id                  String              @id
-    poolTokenId         String              @unique
-    poolToken           PrismaPoolToken     @relation(fields:[poolTokenId], references: [id])
+    @@id([poolId, chain, tokenAddress])
+    poolId              String
+    chain               Chain
+    tokenAddress        String
+    poolToken           PrismaPoolToken     @relation(fields:[poolId, chain, tokenAddress], references: [poolId, chain, tokenAddress] )
     blockNumber         Int
     updatedAt           DateTime            @updatedAt
 
@@ -193,28 +167,10 @@ model PrismaPoolTokenDynamicData {
     priceRate           String
 }
 
-model PrismaPoolSwap {
-    id                  String              @id
-    poolId              String
-    pool                PrismaPool          @relation(fields:[poolId], references: [id])
-    userAddress         String
-    tokenIn             String
-    tokenInSym          String
-    tokenOut            String
-    tokenOutSym         String
-    tokenAmountIn       String
-    tokenAmountOut      String
-    timestamp           Int
-    tx                  String
-    valueUSD            Float
-
-    batchSwapId         String?
-    batchSwap           PrismaPoolBatchSwap? @relation(fields:[batchSwapId], references: [id])
-    batchSwapIdx        Int?
-}
-
 model PrismaPoolBatchSwap {
-    id                  String              @id
+    @@id([poolId, chain])
+    poolId              String
+    chain               Chain
     userAddress         String
     tokenIn             String
     tokenOut            String
@@ -229,24 +185,26 @@ model PrismaPoolBatchSwap {
     swaps               PrismaPoolSwap[]
 }
 
-model PrismaPoolAprItem {
-    id                  String              @id
+
+model PrismaPoolSwap {
+    @@id([poolId, chain])
     poolId              String
-    pool                PrismaPool          @relation(fields:[poolId], references: [id])
-    title               String
-    apr                 Float
-    range               PrismaPoolAprRange?
+    chain               Chain
+    pool                PrismaPool          @relation(fields:[poolId, chain], references: [id, chain], map: "PrismaPoolSwap_pool_fkey" )
+    userAddress         String
+    tokenIn             String
+    tokenInSym          String
+    tokenOut            String
+    tokenOutSym         String
+    tokenAmountIn       String
+    tokenAmountOut      String
+    timestamp           Int
+    tx                  String
+    valueUSD            Float
 
-    type                PrismaPoolAprType?
-    group               PrismaPoolAprItemGroup?
-}
-
-model PrismaPoolAprRange {
-    id                  String              @id
-    aprItemId           String              @unique
-    aprItem             PrismaPoolAprItem   @relation(fields:[aprItemId], references: [id])
-    min                 Float
-    max                 Float
+    batchSwapId         String?
+    batchSwap           PrismaPoolBatchSwap? @relation(fields:[poolId, chain], references: [poolId, chain], map: "PrismaPoolSwap_BatchSwap_fkey" )
+    batchSwapIdx        Int?
 }
 
 enum PrismaPoolAprType {
@@ -264,11 +222,27 @@ enum PrismaPoolAprItemGroup {
     OVERNIGHT
 }
 
-model PrismaPoolCategory {
-    id                  String              @id
+model PrismaPoolAprRange {
+    @@id([poolId, chain, title])
     poolId              String
-    pool                PrismaPool          @relation(fields:[poolId], references: [id])
-    category            PrismaPoolCategoryType
+    chain               Chain
+    title               String
+    aprItem             PrismaPoolAprItem   @relation(fields:[poolId, chain, title], references: [poolId, chain, title] )
+    min                 Float
+    max                 Float
+}
+
+model PrismaPoolAprItem {
+    @@id([poolId, chain, title]) // title should really be unique, but a little weird
+    poolId              String
+    chain               Chain
+    pool                PrismaPool          @relation(fields:[poolId, chain], references: [id, chain] )
+    title               String
+    apr                 Float
+    range               PrismaPoolAprRange?
+
+    type                PrismaPoolAprType?
+    group               PrismaPoolAprItemGroup?
 }
 
 enum PrismaPoolCategoryType {
@@ -276,18 +250,35 @@ enum PrismaPoolCategoryType {
     BLACK_LISTED
 }
 
-model PrismaPoolExpandedTokens {
-    tokenAddress        String
-    token               PrismaToken         @relation(fields:[tokenAddress], references: [address])
+model PrismaPoolCategory {
+    @@id([poolId, chain])
     poolId              String
-    pool                PrismaPool          @relation(fields:[poolId], references: [id])
-
-    nestedPoolId        String?
-    nestedPool          PrismaPool?         @relation(name: "NestedPoolForAllToken", fields:[nestedPoolId], references: [id])
-
-    @@id([tokenAddress, poolId])
+    chain               Chain
+    pool                PrismaPool          @relation(fields:[poolId, chain], references: [id, chain] )
+    category            PrismaPoolCategoryType
 }
 
+model PrismaPoolExpandedTokens {
+    @@id([tokenAddress, poolId, chain])
+    tokenAddress        String
+    chain               Chain
+    token               PrismaToken         @relation(fields:[tokenAddress, chain], references: [tokenAddress, chain])
+    poolId              String
+    pool                PrismaPool          @relation(fields:[poolId, chain], references: [id, chain])
+
+    nestedPoolId        String?
+    nestedPool          PrismaPool?         @relation(name: "NestedPoolForAllToken", fields:[nestedPoolId, chain], references: [id, chain])
+
+}
+
+model PrismaPoolFilterMap {
+    @@id([poolId, chain])
+    chain               Chain
+    filterId            String
+    filter              PrismaPoolFilter    @relation(fields:[filterId], references: [id])
+    poolId              String
+    pool                PrismaPool          @relation(fields:[poolId, chain], references: [id, chain])
+}
 
 model PrismaPoolFilter {
     id                  String              @id
@@ -296,18 +287,18 @@ model PrismaPoolFilter {
     pools               PrismaPoolFilterMap[]
 }
 
-model PrismaPoolFilterMap {
-    id                  String              @id
-    filterId            String
-    filter              PrismaPoolFilter    @relation(fields:[filterId], references: [id])
-    poolId              String
-    pool                PrismaPool          @relation(fields:[poolId], references: [id])
+enum PrismaPoolStakingType {
+    MASTER_CHEF
+    GAUGE
+    RELIQUARY
+    FRESH_BEETS
 }
 
 model PrismaPoolStaking {
-    id                  String              @id
+    @@id([poolId, chain])
+    chain               Chain
     poolId              String              @unique
-    pool                PrismaPool          @relation(fields:[poolId], references: [id])
+    pool                PrismaPool          @relation(fields:[poolId, chain], references: [id, chain])
     type                PrismaPoolStakingType
     address             String
     farm                PrismaPoolStakingMasterChefFarm?
@@ -317,26 +308,20 @@ model PrismaPoolStaking {
     userStakedBalances  PrismaUserStakedBalance[]
 }
 
-
-enum PrismaPoolStakingType {
-    MASTER_CHEF
-    GAUGE
-    RELIQUARY
-    FRESH_BEETS
-}
-
 model PrismaPoolStakingMasterChefFarm {
-    id                  String              @id
-    stakingId           String              @unique
-    staking             PrismaPoolStaking   @relation(fields:[stakingId], references: [id])
+    @@id([poolId, chain])
+    chain               Chain
+    poolId              String              
+    staking             PrismaPoolStaking   @relation(fields:[poolId, chain], references: [poolId, chain])
     beetsPerBlock       String
     rewarders           PrismaPoolStakingMasterChefFarmRewarder[]
 }
 
 model PrismaPoolStakingMasterChefFarmRewarder {
-    id                  String              @id
-    farmId              String
-    farm                PrismaPoolStakingMasterChefFarm  @relation(fields:[farmId], references: [id])
+    @@id([poolId, chain])
+    chain               Chain
+    poolId              String              
+    farm                PrismaPoolStakingMasterChefFarm  @relation(fields:[poolId, chain], references: [poolId, chain])
 
     address             String
     tokenAddress        String
@@ -344,35 +329,40 @@ model PrismaPoolStakingMasterChefFarmRewarder {
 }
 
 model PrismaPoolStakingGauge {
-    id                  String              @id
-    stakingId           String              @unique
-    staking             PrismaPoolStaking   @relation(fields:[stakingId], references: [id])
+    @@id([poolId, chain])
+    chain               Chain
+    poolId              String              
+    staking             PrismaPoolStaking   @relation(fields:[poolId, chain], references: [poolId, chain])
     gaugeAddress        String
     rewards             PrismaPoolStakingGaugeReward[]
 }
 
 model PrismaPoolStakingGaugeReward{
-    id                  String              @id
-    gaugeId             String
-    gauge               PrismaPoolStakingGauge @relation(fields:[gaugeId], references: [id])
+    @@id([poolId, chain])
+    chain               Chain
+    poolId              String              
+    gauge               PrismaPoolStakingGauge @relation(fields:[poolId, chain], references: [poolId, chain])
     tokenAddress        String
     rewardPerSecond     String
 }
 
 
 model PrismaPoolStakingReliquaryFarm {
-    id                  String              @id
-    stakingId           String              @unique
-    staking             PrismaPoolStaking   @relation(fields:[stakingId], references: [id])
+    @@id([poolId, chain])
+    chain               Chain
+    poolId              String              
+    staking             PrismaPoolStaking   @relation(fields:[poolId, chain], references: [poolId, chain] )
     name                String
     beetsPerSecond      String
     levels              PrismaPoolStakingReliquaryFarmLevel[]
 }
 
 model PrismaPoolStakingReliquaryFarmLevel {
-    id                  String              @id
-    farmId              String
-    farm                PrismaPoolStakingReliquaryFarm  @relation(fields:[farmId], references: [id])
+    @@id([poolId, chain])
+
+    chain               Chain
+    poolId              String              
+    farm                PrismaPoolStakingReliquaryFarm  @relation(fields:[poolId, chain], references: [poolId, chain] )
     level               Int
     balance             String
     requiredMaturity    Int
@@ -380,12 +370,12 @@ model PrismaPoolStakingReliquaryFarmLevel {
     apr                 Float
 }
 
-
 model PrismaPoolSnapshot {
-    id                  String              @id
+    @@id([poolId, timestamp, chain])
+    chain               Chain
     poolId              String
-    pool                PrismaPool          @relation(fields:[poolId], references: [id])
     timestamp           Int
+    pool                PrismaPool          @relation(fields:[poolId, chain], references: [id, chain])
 
     totalLiquidity      Float
     sharePrice          Float
@@ -394,15 +384,57 @@ model PrismaPoolSnapshot {
     totalShares         String
     totalSharesNum      Float
     totalSwapVolume     Float
-    totalSwapFee        Float
+    totalSwapFee        Float 
     swapsCount          Int
     holdersCount        Int
     amounts             String[]
 }
 
 
+model PrismaPool {
+    @@id([id, chain])
+    id                  String              
+    chain               Chain 
+
+    createTime          Int
+    address             String              @unique
+    symbol              String
+    name                String
+    type                PrismaPoolType
+    decimals            Int                 @default(18)
+    owner               String
+    factory             String?
+
+    linearData          PrismaPoolLinearData?
+    elementData         PrismaPoolElementData?
+
+    tokens              PrismaPoolToken[]
+
+    dynamicData         PrismaPoolDynamicData?
+    stableDynamicData   PrismaPoolStableDynamicData?
+    linearDynamicData   PrismaPoolLinearDynamicData?
+
+    snapshots           PrismaPoolSnapshot[]
+    swaps               PrismaPoolSwap[]
+    aprItems            PrismaPoolAprItem[]
+    categories          PrismaPoolCategory[]
+    tokensWithPoolNested PrismaPoolToken[] @relation(name: "PoolNestedInToken")
+
+    allTokens           PrismaPoolExpandedTokens[]
+    allTokensNested     PrismaPoolExpandedTokens[] @relation(name: "NestedPoolForAllToken")
+    filters             PrismaPoolFilterMap[]
+    staking             PrismaPoolStaking?
+
+    userWalletBalances  PrismaUserWalletBalance[]
+    userStakedBalances  PrismaUserStakedBalance[]
+
+    userPoolBalanceSnapshots    PrismaUserPoolBalanceSnapshot[]
+}
+
 model PrismaToken {
-    address             String              @id
+    @@id([tokenAddress, chain])
+    tokenAddress        String              
+    chain               Chain
     symbol              String
     name                String
     description         String?
@@ -432,8 +464,10 @@ model PrismaToken {
 
 
 model PrismaTokenCurrentPrice {
-    tokenAddress        String               @id
-    token               PrismaToken          @relation(fields:[tokenAddress], references: [address])
+    @@id([tokenAddress, chain])
+    tokenAddress        String               
+    token               PrismaToken          @relation(fields:[tokenAddress, chain], references: [tokenAddress, chain])
+    chain               Chain
     updatedAt           DateTime             @updatedAt
     timestamp           Int
     price               Float
@@ -441,8 +475,10 @@ model PrismaTokenCurrentPrice {
 }
 
 model PrismaTokenPrice {
+    @@id([tokenAddress, chain, timestamp])
     tokenAddress        String
-    token               PrismaToken         @relation(fields:[tokenAddress], references: [address])
+    token               PrismaToken         @relation(fields:[tokenAddress, chain], references: [tokenAddress, chain])
+    chain               Chain
     updatedAt           DateTime             @updatedAt
     timestamp           Int
     price               Float
@@ -452,14 +488,14 @@ model PrismaTokenPrice {
     low                 Float
     open                Float
     close               Float
-
-    @@id([tokenAddress, timestamp])
 }
 
 model PrismaTokenDynamicData {
+    @@id([tokenAddress, chain])
+    tokenAddress        String       
+    chain               Chain
     coingeckoId         String
-    tokenAddress        String              @id
-    token               PrismaToken         @relation(fields:[tokenAddress], references: [address])
+    token               PrismaToken         @relation(fields:[tokenAddress, chain], references: [tokenAddress, chain])
     updatedAt           DateTime            @updatedAt
 
     price               Float
@@ -476,16 +512,7 @@ model PrismaTokenDynamicData {
     priceChangePercent30d Float?
 }
 
-model PrismaTokenType {
-    id                  String              @id
-    tokenAddress        String
-    token               PrismaToken         @relation(fields:[tokenAddress], references: [address])
-    type                PrismaTokenTypeOption
-
-    @@unique([tokenAddress, type])
-}
-
-enum PrismaTokenTypeOption {
+enum PrismaTokenType { 
     WHITE_LISTED
     BPT
     PHANTOM_BPT
@@ -503,39 +530,35 @@ model PrismaUser {
 }
 
 model PrismaUserWalletBalance {
-    id                      String              @id
+    @@id([userAddress, tokenAddress, chain])
+    poolId                  String?
+    pool                    PrismaPool?         @relation(fields:[poolId, chain], references: [id, chain])
+    userAddress             String
+    user                    PrismaUser          @relation(fields:[userAddress], references: [address])
+    tokenAddress            String
+    token                   PrismaToken         @relation(fields:[tokenAddress, chain], references: [tokenAddress, chain])
+    chain                   Chain
+
     balance                 String
     balanceNum              Float
     updatedAt               DateTime            @updatedAt
 
-    userAddress             String
-    user                    PrismaUser          @relation(fields:[userAddress], references: [address])
 
-    poolId                  String?
-    pool                    PrismaPool?         @relation(fields:[poolId], references: [id])
 
-    tokenAddress            String
-    token                   PrismaToken         @relation(fields:[tokenAddress], references: [address])
 }
-
-
 model PrismaUserStakedBalance {
-    id                      String              @id
+    @@id([userAddress, tokenAddress, chain])
+    userAddress             String
+    user                    PrismaUser          @relation(fields:[userAddress], references: [address])
+    poolId                  String
+    pool                    PrismaPool          @relation(fields:[poolId, chain], references: [id, chain], map: "PrismaUserStakedBalance_Pool_fkey")
+    tokenAddress            String
+    token                   PrismaToken         @relation(fields:[tokenAddress, chain], references: [tokenAddress, chain])
+    staking                 PrismaPoolStaking   @relation(fields:[poolId, chain], references: [poolId, chain])
+    chain                   Chain
     balance                 String
     balanceNum              Float
     updatedAt               DateTime            @updatedAt
-
-    userAddress             String
-    user                    PrismaUser          @relation(fields:[userAddress], references: [address])
-
-    poolId                  String?
-    pool                    PrismaPool?          @relation(fields:[poolId], references: [id])
-
-    tokenAddress            String
-    token                   PrismaToken         @relation(fields:[tokenAddress], references: [address])
-
-    stakingId               String
-    staking                 PrismaPoolStaking   @relation(fields:[stakingId], references: [id])
 }
 
 model PrismaUserBalanceSyncStatus {
@@ -550,15 +573,16 @@ enum PrismaUserBalanceType {
 }
 
 model PrismaUserPoolBalanceSnapshot {
-    id                      String              @id
-
+    @@id([userAddress, poolId, chain, timestamp])
     userAddress             String
     user                    PrismaUser          @relation(fields:[userAddress], references: [address])
     timestamp               Int
 
     poolToken               String
-    poolId                  String?
-    pool                    PrismaPool?          @relation(fields:[poolId], references:[id])
+    poolId                  String
+    pool                    PrismaPool          @relation(fields:[poolId, chain], references: [id, chain])
+
+    chain                   Chain
 
     walletBalance           String
     gaugeBalance            String
