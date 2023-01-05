@@ -153,9 +153,9 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             farmId: '22',
             reliquaryFarmPid: 1,
             poolId: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019',
-            poolIdV2: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019', // set when pool created
+            poolIdV2: '0x9e4341acef4147196e99d648c5e43b3fc9d026780002000000000000000005ec',
             poolAddress: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837',
-            poolAddressV2: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837', // test fidelio duetto bpt v2
+            poolAddressV2: '0x9e4341acef4147196e99d648c5e43b3fc9d02678',
         },
         bal: {
             address: '',
@@ -185,7 +185,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             ],
         },
         reliquary: {
-            address: '0xb0FC43069089d0fA02baAa896ac2eFcb596D7D05',
+            address: '0x1ed6411670c709F4e163854654BD52c74E66D7eC',
         },
         avgBlockSpeed: 1,
         sor: {
