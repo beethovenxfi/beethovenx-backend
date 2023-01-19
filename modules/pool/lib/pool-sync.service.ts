@@ -21,7 +21,7 @@ export class PoolSyncService {
 
         const events = await contract.queryFilter({ address: networkConfig.balancer.vault }, startBlock, endBlock);
         const filteredEvents = events.filter((event) =>
-            ['PoolBalanceChanged', 'PoolBalanceManaged', 'Swap'].includes(event.event!),
+            ['PoolBalanceChanged', 'PoolBalanceManaged', 'Swap', 'RecoveryModeStateChanged'].includes(event.event!),
         );
         const poolIds: string[] = _.uniq(filteredEvents.map((event) => event.args!.poolId));
         if (poolIds.length !== 0) {

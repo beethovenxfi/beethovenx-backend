@@ -33,6 +33,7 @@ interface MulticallExecuteResult {
     wrappedTokenRate?: BigNumber;
     rate?: BigNumber;
     swapEnabled?: boolean;
+    recoveryModeEnabled?: boolean;
     tokenRates?: BigNumber[];
     metaPriceRateCache?: [BigNumber, BigNumber, BigNumber][];
     linearPools?: Record<
@@ -118,6 +119,7 @@ export class PoolOnChainDataService {
                 console.error(`Unknown pool type: ${pool.type} ${pool.id}`);
                 return;
             }
+
             multiPool.call(`${pool.id}.poolTokens`, this.vaultAddress, 'getPoolTokens', [pool.id]);
 
             // TO DO - Make this part of class to make more flexible?
@@ -134,7 +136,11 @@ export class PoolOnChainDataService {
                 multiPool.call(`${pool.id}.swapFee`, pool.address, 'getSwapFeePercentage');
 
                 multiPool.call(`${pool.id}.targets`, pool.address, 'getTargets');
-                multiPool.call(`${pool.id}.rate`, pool.address, 'getRate');
+                // this fails if a pool has not yet been initialized
+                // TODO what happens if a pool is drained? totalShares become 0?
+                if (pool.dynamicData && pool.dynamicData?.totalSharesNum > 0) {
+                    multiPool.call(`${pool.id}.rate`, pool.address, 'getRate');
+                }
                 multiPool.call(`${pool.id}.wrappedTokenRate`, pool.address, 'getWrappedTokenRate');
             }
 
@@ -152,7 +158,14 @@ export class PoolOnChainDataService {
 
             if (isComposableStablePool(pool) || isWeightedPoolV2(pool)) {
                 // the new ComposableStablePool and WeightedPool mint bpts for protocol fees which are included in the getActualSupply call
-                multiPool.call(`${pool.id}.totalSupply`, pool.address, 'getActualSupply');
+                // getActualSupply fails for not initialized pools (pools where totalSupply = 0)
+                // until it is initialized, we'll use the totalSupply since it is also also updated but not 100% accurate it should be good enough
+                if (pool.dynamicData && pool.dynamicData?.totalSharesNum === 0) {
+                    multiPool.call(`${pool.id}.totalSupply`, pool.address, 'totalSupply');
+                } else {
+                    multiPool.call(`${pool.id}.totalSupply`, pool.address, 'getActualSupply');
+                }
+                multiPool.call(`${pool.id}.recoveryModeEnabled`, pool.address, 'inRecoveryMode');
             } else if (pool.type === 'LINEAR' || pool.type === 'PHANTOM_STABLE') {
                 // the old phantom stable and linear pool does not have this and expose the actual supply as virtualSupply
                 multiPool.call(`${pool.id}.totalSupply`, pool.address, 'getVirtualSupply');
@@ -260,12 +273,17 @@ export class PoolOnChainDataService {
                     typeof onchainData.swapEnabled !== 'undefined'
                         ? onchainData.swapEnabled
                         : pool.dynamicData?.swapEnabled;
+                const recoveryModeEnabled =
+                    typeof onchainData.recoveryModeEnabled !== 'undefined'
+                        ? onchainData.recoveryModeEnabled
+                        : pool.dynamicData?.recoveryModeEnabled;
 
                 if (
                     pool.dynamicData &&
                     (pool.dynamicData.swapFee !== swapFee ||
                         pool.dynamicData.totalShares !== totalShares ||
-                        pool.dynamicData.swapEnabled !== swapEnabled)
+                        pool.dynamicData.swapEnabled !== swapEnabled ||
+                        pool.dynamicData.recoveryModeEnabled !== recoveryModeEnabled)
                 ) {
                     await prisma.prismaPoolDynamicData.update({
                         where: { id: pool.id },
@@ -273,7 +291,8 @@ export class PoolOnChainDataService {
                             swapFee,
                             totalShares,
                             totalSharesNum: parseFloat(totalShares),
-                            swapEnabled: typeof swapEnabled !== 'undefined' ? swapEnabled : true,
+                            swapEnabled,
+                            recoveryModeEnabled,
                             blockNumber,
                         },
                     });
@@ -290,7 +309,10 @@ export class PoolOnChainDataService {
                     const balance = formatFixed(poolTokens.balances[i], poolToken.token.decimals);
                     const weight = onchainData.weights ? formatFixed(onchainData.weights[i], 18) : null;
 
-                    let priceRate = onchainData.tokenRates ? formatFixed(onchainData.tokenRates[i], 18) : '1.0';
+                    let priceRate = '1.0';
+                    if (onchainData.tokenRates && onchainData.tokenRates[i]) {
+                        priceRate = formatFixed(onchainData.tokenRates[i], 18);
+                    }
 
                     if (onchainData.metaPriceRateCache && onchainData.metaPriceRateCache[i][0].gt('0')) {
                         priceRate = formatFixed(onchainData.metaPriceRateCache[i][0], 18);

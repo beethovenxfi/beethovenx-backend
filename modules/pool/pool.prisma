@@ -75,6 +75,8 @@ model PrismaPoolDynamicData {
     blockNumber             Int
     updatedAt               DateTime            @updatedAt
 
+    recoveryModeEnabled     Boolean             @default(false)
+
     swapFee                 String
     swapEnabled             Boolean
     totalShares             String
