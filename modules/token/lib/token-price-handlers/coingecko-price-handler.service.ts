@@ -23,33 +23,36 @@ export class CoingeckoPriceHandlerService implements TokenPriceHandler {
 
     public async updatePricesForTokens(tokens: PrismaTokenWithTypes[]): Promise<string[]> {
         const timestamp = timestampRoundedUpToNearestHour();
-        const nativeAsset = tokens.find((token) => token.address === this.weth);
+        // const nativeAsset = tokens.find((token) => token.address === this.weth);
         const tokensUpdated: string[] = [];
 
-        if (nativeAsset) {
-            const price = await this.coingeckoService.getNativeAssetPrice();
-            const usdPrice = price.usd;
+        // TODO don't need, already handle this in the getTokenPrices function of the coingecko service
+        // why needed anyway?
 
-            if (typeof usdPrice === 'undefined') {
-                throw new Error('failed to load native asset price');
-            }
+        // if (nativeAsset) {
+        //     const price = await this.coingeckoService.getNativeAssetPrice();
+        //     const usdPrice = price.usd;
 
-            await prisma.prismaTokenPrice.upsert({
-                where: { tokenAddress_timestamp: { tokenAddress: this.weth, timestamp } },
-                update: { price: usdPrice, close: usdPrice },
-                create: {
-                    tokenAddress: this.weth,
-                    timestamp,
-                    price: usdPrice,
-                    high: usdPrice,
-                    low: usdPrice,
-                    open: usdPrice,
-                    close: usdPrice,
-                },
-            });
+        //     if (typeof usdPrice === 'undefined') {
+        //         throw new Error('failed to load native asset price');
+        //     }
 
-            tokensUpdated.push(this.weth);
-        }
+        //     await prisma.prismaTokenPrice.upsert({
+        //         where: { tokenAddress_timestamp: { tokenAddress: this.weth, timestamp } },
+        //         update: { price: usdPrice, close: usdPrice },
+        //         create: {
+        //             tokenAddress: this.weth,
+        //             timestamp,
+        //             price: usdPrice,
+        //             high: usdPrice,
+        //             low: usdPrice,
+        //             open: usdPrice,
+        //             close: usdPrice,
+        //         },
+        //     });
+
+        //     tokensUpdated.push(this.weth);
+        // }
 
         const tokenAddresses = tokens.map((item) => item.address);
 

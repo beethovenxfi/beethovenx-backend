@@ -125,6 +125,7 @@ export class CoingeckoService {
             const results = this.parsePaginatedTokens(paginatedResults, mapped);
 
             // Inject native asset price if included in requested addresses
+            // TODO why insert it separately?
             if (addresses.includes(this.nativeAssetAddress)) {
                 results[this.nativeAssetAddress] = await this.getNativeAssetPrice();
             }
@@ -200,9 +201,14 @@ export class CoingeckoService {
     }
 
     public async getMarketDataForTokenIds(tokenIds: string[]): Promise<CoingeckoTokenMarketData[]> {
-        const endpoint = `/coins/markets?vs_currency=${this.fiatParam}&ids=${tokenIds}&per_page=100&page=1&sparkline=false&price_change_percentage=1h%2C24h%2C7d%2C14d%2C30d`;
-
-        return this.get<CoingeckoTokenMarketData[]>(endpoint);
+        const chunks = _.chunk(tokenIds, 100);
+        const allMarketData: CoingeckoTokenMarketData[] = [];
+        for (const chunk of chunks) {
+            const endpoint = `/coins/markets?vs_currency=${this.fiatParam}&ids=${chunk}&per_page=100&page=1&sparkline=false&price_change_percentage=1h%2C24h%2C7d%2C14d%2C30d`;
+            const response = await this.get<CoingeckoTokenMarketData[]>(endpoint);
+            allMarketData.push(...response);
+        }
+        return allMarketData;
     }
 
     public async getCoinCandlestickData(

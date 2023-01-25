@@ -16,6 +16,14 @@ import { FbeetsPriceHandlerService } from './lib/token-price-handlers/fbeets-pri
 import { coingeckoService } from '../coingecko/coingecko.service';
 import { BeetsPriceHandlerService } from './lib/token-price-handlers/beets-price-handler.service';
 import { ClqdrPriceHandlerService } from './lib/token-price-handlers/clqdr-price-handler.service';
+import moment from 'moment';
+import { applyExtensions } from '@graphql-tools/merge';
+import axios from 'axios';
+import { time } from 'console';
+import { sleep } from '../common/promise';
+import { oneDayInSeconds, secondsPerDay } from '../common/time';
+import { blocksSubgraphService } from '../subgraphs/blocks-subgraph/blocks-subgraph.service';
+import { balancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer-subgraph.service';
 
 const TOKEN_PRICES_CACHE_KEY = 'token:prices:current';
 const TOKEN_PRICES_24H_AGO_CACHE_KEY = 'token:prices:24h-ago';
@@ -160,6 +168,131 @@ export class TokenService {
 
     public async deleteTokenType({ tokenAddress, type }: MutationTokenDeleteTokenTypeArgs) {
         await prisma.prismaTokenType.delete({ where: { tokenAddress_type: { tokenAddress, type } } });
+    }
+
+    public async backfillHistoricalData() {
+        // backfill daily data for all tokens (00:00 timestamp for previous day)
+        const backfillFrom = moment('2021-07-02', 'YYYY-MM-DD').utc().startOf('day').unix();
+        const allTokens = await prisma.prismaTokenPrice.findMany({
+            distinct: ['tokenAddress'],
+            orderBy: { timestamp: 'asc' },
+        });
+        const tokensToBackfill = allTokens.filter(
+            (tokenPrice) =>
+                tokenPrice.timestamp > backfillFrom ||
+                tokenPrice.updatedAt.getTime() < moment().startOf('day').unix() * 1000,
+        );
+
+        console.log(tokensToBackfill.length);
+        for (const token of tokensToBackfill) {
+            if (token.timestamp > backfillFrom) {
+                //https://api.coingecko.com/api/v3/coins/bitcoin/market_chart/range?vs_currency=usd&from=1643033655&to=1645712055
+                const tokenDefinition = await prisma.prismaToken.findUniqueOrThrow({
+                    where: { address: token.tokenAddress },
+                });
+
+                const backFillTo = moment.unix(token.timestamp).startOf('day').unix();
+
+                const normalizedTokenAddress = token.tokenAddress.toLowerCase();
+                if (tokenDefinition.coingeckoTokenId) {
+                    let response;
+                    try {
+                        response = await axios.get(
+                            `https://api.coingecko.com/api/v3/coins/${tokenDefinition.coingeckoTokenId}/market_chart/range?vs_currency=usd&from=${backfillFrom}&to=${backFillTo}`,
+                        );
+                    } catch (e) {
+                        console.log(`Got ratelimited, will sleep`);
+                        await sleep(120000);
+                        continue;
+                    }
+
+                    // const numberOfDaysToFill = (backFillTo - backfillFrom) / secondsPerDay;
+
+                    // if (numberOfDaysToFill !== response.data.prices.length) {
+                    //     console.log(
+                    //         `Got ${numberOfDaysToFill} of days to fill but got ${response.data.prices.length} results.`,
+                    //     );
+                    // }
+
+                    for (const priceData of response.data.prices) {
+                        let timestamp = (priceData[0] - (priceData[0] % 1000)) / 1000;
+                        const priceUsd = priceData[1];
+
+                        const timestampDate = moment.unix(priceData[0]).utc();
+                        if (
+                            timestampDate.hour() !== 0 ||
+                            timestampDate.minute() !== 0 ||
+                            timestampDate.second() !== 0
+                        ) {
+                            timestamp = timestampDate.startOf('day').unix();
+                            console.log(timestamp);
+                        }
+
+                        await prisma.prismaTokenPrice.upsert({
+                            where: { tokenAddress_timestamp: { tokenAddress: normalizedTokenAddress, timestamp } },
+                            update: { price: priceUsd, close: priceUsd },
+                            create: {
+                                tokenAddress: normalizedTokenAddress,
+                                timestamp,
+                                price: priceUsd,
+                                high: priceUsd,
+                                low: priceUsd,
+                                open: priceUsd,
+                                close: priceUsd,
+                                coingecko: true,
+                            },
+                        });
+                    }
+                } else {
+                    console.log(`No coingecko ID for ${token.tokenAddress}`);
+
+                    // if it is a bpt, let's get price from subgraph
+                    const pool = await prisma.prismaPool.findUnique({
+                        where: { address: normalizedTokenAddress },
+                    });
+                    if (pool) {
+                        // it's a bpt
+                        for (
+                            let timestamp = backfillFrom;
+                            timestamp <= backFillTo;
+                            timestamp = timestamp + secondsPerDay
+                        ) {
+                            const block = await blocksSubgraphService.getBlockForTimestamp(timestamp);
+
+                            const { pool: poolAtBlock } = await balancerSubgraphService.getPool({
+                                id: pool.id,
+                                block: { number: parseInt(block.number) },
+                            });
+
+                            if (poolAtBlock) {
+                                const priceUsd =
+                                    parseFloat(poolAtBlock.totalLiquidity) / parseFloat(poolAtBlock.totalShares);
+                                await prisma.prismaTokenPrice.upsert({
+                                    where: {
+                                        tokenAddress_timestamp: { tokenAddress: normalizedTokenAddress, timestamp },
+                                    },
+                                    update: { price: priceUsd, close: priceUsd },
+                                    create: {
+                                        tokenAddress: normalizedTokenAddress,
+                                        timestamp,
+                                        price: priceUsd,
+                                        high: priceUsd,
+                                        low: priceUsd,
+                                        open: priceUsd,
+                                        close: priceUsd,
+                                        coingecko: false,
+                                    },
+                                });
+                            }
+                        }
+                    } else {
+                        console.log(`could not price ${token.tokenAddress}`);
+                    }
+                }
+            } else {
+                console.log(`dont backfill ${token.tokenAddress}`);
+            }
+        }
     }
 }
 
