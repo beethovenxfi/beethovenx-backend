@@ -405,10 +405,9 @@ model PrismaPoolSnapshot {
 }
 
 model PrismaReliquaryFarmSnapshot {
-    id                  String                          @id
     farmId              String
-    stakingFarm         PrismaPoolStakingReliquaryFarm  @relation(fields:[farmId], references: [id])
     timestamp           Int
+    stakingFarm         PrismaPoolStakingReliquaryFarm  @relation(fields:[farmId], references: [id])
     relicCount          Int
     userCount           Int
     totalBalance        String
@@ -417,25 +416,30 @@ model PrismaReliquaryFarmSnapshot {
     totalLiquidity      String                          @default("0")
     levelBalances       PrismaReliquaryLevelSnapshot[]
     tokenBalances       PrismaReliquaryTokenBalanceSnapshot[]
+
+    @@id([farmId, timestamp])
 }
 
 model PrismaReliquaryLevelSnapshot {
-    id                  String                      @id
-    farmSnapshotId      String              
-    farmSnapshot        PrismaReliquaryFarmSnapshot @relation(fields:[farmSnapshotId], references: [id])
+    farmId              String                      @default("0")
+    timestamp           Int                         @default(0)
     level               String
+    farmSnapshot        PrismaReliquaryFarmSnapshot @relation(fields:[farmId, timestamp], references: [farmId, timestamp])
     balance             String
+
+    @@id([farmId, timestamp, level])
 }
 
 model PrismaReliquaryTokenBalanceSnapshot {
-    id                  String                      @id
-    farmSnapshotId      String
-    farmSnapshot        PrismaReliquaryFarmSnapshot @relation(fields:[farmSnapshotId], references: [id])
+    farmId              String                      @default("0")
+    timestamp           Int                         @default(0)
     address             String
+    farmSnapshot        PrismaReliquaryFarmSnapshot @relation(fields:[farmId, timestamp], references: [farmId, timestamp])
     symbol              String
     name                String
     decimals            Int
     balance             String
+    @@id([farmId, timestamp, address])
 }
 
 

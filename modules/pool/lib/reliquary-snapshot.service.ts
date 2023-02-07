@@ -58,7 +58,7 @@ export class ReliquarySnapshotService {
                 const yesterdaysSnapshot = farm.snapshots.find((snapshot) => snapshot.timestamp === yesterdayMorning);
                 if (yesterdaysSnapshot) {
                     latestFarmSnapshots.push({
-                        id: `${yesterdaysSnapshot.id.split('-')[0]}-${thisMorning}`,
+                        id: `${yesterdaysSnapshot.timestamp}-${thisMorning}`,
                         farmId: parseFloat(yesterdaysSnapshot.farmId),
                         relicCount: yesterdaysSnapshot.relicCount,
                         snapshotTimestamp: thisMorning,
@@ -169,7 +169,6 @@ export class ReliquarySnapshotService {
 
                 const uniqueUsers = _.uniq(relicsInFarm.map((relic) => relic.userAddress));
                 const data: PrismaReliquaryFarmSnapshot = {
-                    id: snapshot.id,
                     farmId: `${snapshot.farmId}`,
                     timestamp: snapshot.snapshotTimestamp,
                     relicCount: snapshot.relicCount,
@@ -181,7 +180,9 @@ export class ReliquarySnapshotService {
                 };
                 farmOperations.push(
                     prisma.prismaReliquaryFarmSnapshot.upsert({
-                        where: { id: snapshot.id },
+                        where: {
+                            farmId_timestamp: { farmId: `${snapshot.farmId}`, timestamp: snapshot.snapshotTimestamp },
+                        },
                         create: data,
                         update: data,
                     }),
@@ -189,14 +190,20 @@ export class ReliquarySnapshotService {
 
                 for (const level of levelsAtBlock.poolLevels) {
                     const data: PrismaReliquaryLevelSnapshot = {
-                        id: `${level.id}-${snapshot.id}`,
-                        farmSnapshotId: snapshot.id,
+                        farmId: `${snapshot.farmId}`,
+                        timestamp: snapshot.snapshotTimestamp,
                         level: `${level.level}`,
                         balance: level.balance,
                     };
                     farmOperations.push(
                         prisma.prismaReliquaryLevelSnapshot.upsert({
-                            where: { id: `${level.id}-${snapshot.id}` },
+                            where: {
+                                farmId_timestamp_level: {
+                                    farmId: `${snapshot.farmId}`,
+                                    timestamp: snapshot.snapshotTimestamp,
+                                    level: `${level.level}`,
+                                },
+                            },
                             create: data,
                             update: data,
                         }),
@@ -205,8 +212,8 @@ export class ReliquarySnapshotService {
 
                 for (const token of pool.tokens) {
                     const data: PrismaReliquaryTokenBalanceSnapshot = {
-                        id: `${token.id}-${snapshot.id}`,
-                        farmSnapshotId: snapshot.id,
+                        farmId: `${snapshot.farmId}`,
+                        timestamp: snapshot.snapshotTimestamp,
                         address: token.address,
                         symbol: token.token.symbol,
                         name: token.token.name,
@@ -215,7 +222,13 @@ export class ReliquarySnapshotService {
                     };
                     farmOperations.push(
                         prisma.prismaReliquaryTokenBalanceSnapshot.upsert({
-                            where: { id: `${token.id}-${snapshot.id}` },
+                            where: {
+                                farmId_timestamp_address: {
+                                    farmId: `${snapshot.farmId}`,
+                                    timestamp: snapshot.snapshotTimestamp,
+                                    address: token.address,
+                                },
+                            },
                             create: data,
                             update: data,
                         }),
