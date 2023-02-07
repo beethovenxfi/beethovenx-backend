@@ -3,9 +3,9 @@ hooks:
     afterAllFileWrite:
         - prettier --write
 generates:
-    modules/subgraphs/balancer-subgraph/generated/balancer-subgraph-types.ts:
+    modules/balancer-subgraph/generated/balancer-subgraph-types.ts:
         schema: ${BALANCER_SUBGRAPH}
-        documents: 'modules/subgraphs/balancer-subgraph/balancer-subgraph-queries.graphql'
+        documents: 'modules/balancer-subgraph/balancer-subgraph-queries.graphql'
         plugins:
             - typescript
             - typescript-operations
@@ -15,13 +15,13 @@ generates:
                 BigInt: string
                 Bytes: string
                 BigDecimal: string
-    modules/subgraphs/balancer-subgraph/generated/balancer-subgraph-schema.graphql:
+    modules/balancer-subgraph/generated/balancer-subgraph-schema.graphql:
         schema: ${BALANCER_SUBGRAPH}
         plugins:
             - schema-ast
-    modules/subgraphs/masterchef-subgraph/generated/masterchef-subgraph-types.ts:
+    modules/masterchef-subgraph/generated/masterchef-subgraph-types.ts:
         schema: ${MASTERCHEF_SUBGRAPH}
-        documents: 'modules/subgraphs/masterchef-subgraph/masterchef-subgraph-queries.graphql'
+        documents: 'modules/masterchef-subgraph/masterchef-subgraph-queries.graphql'
         plugins:
             - typescript
             - typescript-operations
@@ -31,13 +31,13 @@ generates:
                 BigInt: string
                 Bytes: string
                 BigDecimal: string
-    modules/subgraphs/masterchef-subgraph/generated/masterchef-subgraph-schema.graphql:
+    modules/masterchef-subgraph/generated/masterchef-subgraph-schema.graphql:
         schema: ${MASTERCHEF_SUBGRAPH}
         plugins:
             - schema-ast
-    modules/subgraphs/reliquary-subgraph/generated/reliquary-subgraph-types.ts:
-        schema: ${RELIQUARY_SUBGRAPH}
-        documents: 'modules/subgraphs/reliquary-subgraph/reliquary-subgraph-queries.graphql'
+    modules/locking/generated/locking-subgraph-types.ts:
+        schema: ${LOCKING_SUBGRAPH}
+        documents: 'modules/locking/locking-subgraph-queries.graphql'
         plugins:
             - typescript
             - typescript-operations
@@ -47,13 +47,13 @@ generates:
                 BigInt: string
                 Bytes: string
                 BigDecimal: string
-    modules/subgraphs/reliquary-subgraph/generated/reliquary-subgraph-schema.graphql:
-        schema: ${RELIQUARY_SUBGRAPH}
+    modules/locking/generated/locking-subgraph-schema.graphql:
+        schema: ${LOCKING_SUBGRAPH}
         plugins:
             - schema-ast
-    modules/subgraphs/blocks-subgraph/generated/blocks-subgraph-types.ts:
+    modules/blocks-subgraph/generated/blocks-subgraph-types.ts:
         schema: ${BLOCKS_SUBGRAPH}
-        documents: 'modules/subgraphs/blocks-subgraph/block-subgraph-queries.graphql'
+        documents: 'modules/blocks-subgraph/block-subgraph-queries.graphql'
         plugins:
             - typescript
             - typescript-operations
@@ -63,13 +63,13 @@ generates:
                 BigInt: string
                 Bytes: string
                 BigDecimal: string
-    modules/subgraphs/blocks-subgraph/generated/blocks-subgraph-schema.graphql:
+    modules/blocks-subgraph/generated/blocks-subgraph-schema.graphql:
         schema: ${BLOCKS_SUBGRAPH}
         plugins:
             - schema-ast
-    modules/subgraphs/beets-bar-subgraph/generated/beets-bar-subgraph-types.ts:
+    modules/beets-bar-subgraph/generated/beets-bar-subgraph-types.ts:
         schema: ${BEETS_BAR_SUBGRAPH}
-        documents: 'modules/subgraphs/beets-bar-subgraph/beets-bar-subgraph-queries.graphql'
+        documents: 'modules/beets-bar-subgraph/beets-bar-subgraph-queries.graphql'
         plugins:
             - typescript
             - typescript-operations
@@ -79,40 +79,8 @@ generates:
                 BigInt: string
                 Bytes: string
                 BigDecimal: string
-    modules/subgraphs/beets-bar-subgraph/generated/beets-bar-subgraph-schema.graphql:
+    modules/beets-bar-subgraph/generated/beets-bar-subgraph-schema.graphql:
         schema: ${BEETS_BAR_SUBGRAPH}
-        plugins:
-            - schema-ast
-    modules/subgraphs/gauge-subgraph/generated/gauge-subgraph-types.ts:
-        schema: ${GAUGE_SUBGRAPH}
-        documents: 'modules/subgraphs/gauge-subgraph/gauge-subgraph-queries.graphql'
-        plugins:
-            - typescript
-            - typescript-operations
-            - typescript-graphql-request
-        config:
-            scalars:
-                BigInt: string
-                Bytes: string
-                BigDecimal: string
-    modules/subgraphs/gauge-subgraph/generated/gauge-subgraph-schema.graphql:
-        schema: ${GAUGE_SUBGRAPH}
-        plugins:
-            - schema-ast
-    modules/subgraphs/user-snapshot-subgraph/generated/user-snapshot-subgraph-types.ts:
-        schema: ${USER_SNAPSHOT_SUBGRPAH}
-        documents: 'modules/subgraphs/user-snapshot-subgraph/user-snapshot-subgraph-queries.graphql'
-        plugins:
-            - typescript
-            - typescript-operations
-            - typescript-graphql-request
-        config:
-            scalars:
-                BigInt: string
-                Bytes: string
-                BigDecimal: string
-    modules/subgraphs/user-snapshot-subgraph/generated/user-snapshot-schema.graphql:
-        schema: ${USER_SNAPSHOT_SUBGRPAH}
         plugins:
             - schema-ast
     graphql_schema_generated.ts:
@@ -134,13 +102,12 @@ generates:
                   content: "/*\n * THIS FILE IS AUTOGENERATED — DO NOT EDIT IT\n */"
             - typescript
             - typescript-resolvers
-
         config:
             declarationKind: interface
             immutableTypes: false
             useIndexSignature: true
             enumsAsTypes: true
-            contextType: ./app/gql/gql-context#Context
+            contextType: ./app/Context#Context
             #defaultMapper: Partial<{T}> #uncomment this to handle partial query resolution easier
             scalars:
                 #    Binary: Buffer
@@ -151,4 +118,3 @@ generates:
                 Bytes: string
                 BigDecimal: string
                 BigInt: string
-                AmountHumanReadable: string

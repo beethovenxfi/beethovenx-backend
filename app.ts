@@ -80,19 +80,15 @@ async function startServer() {
     loadRestRoutes(app);
 
     const httpServer = http.createServer(app);
-
     const plugins = [
         ApolloServerPluginDrainHttpServer({ httpServer }),
-        ApolloServerPluginLandingPageGraphQLPlayground({
-            settings: { 'schema.polling.interval': 20000 },
-        }),
-        sentryPlugin,
+        ApolloServerPluginLandingPageGraphQLPlayground(),
     ];
     if (env.NODE_ENV === 'production') {
         plugins.push(
             ApolloServerPluginUsageReporting({
                 sendVariableValues: { all: true },
-                sendHeaders: { all: true },
+                sendHeaders: { onlyNames: ['AccountAddress'] },
             }),
         );
     }
@@ -103,7 +99,7 @@ async function startServer() {
         },
         typeDefs: schema,
         introspection: true,
-        plugins,
+        plugins: plugins,
         context: ({ req }) => req.context,
     });
     await server.start();
