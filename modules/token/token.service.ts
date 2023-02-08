@@ -172,7 +172,7 @@ export class TokenService {
 
     public async backfillHistoricalData() {
         // backfill daily data for all tokens (00:00 timestamp for previous day)
-        const backfillFrom = moment('2021-07-02', 'YYYY-MM-DD').utc().startOf('day').unix();
+        const backfillFrom = moment('2021-10-02', 'YYYY-MM-DD').utc().startOf('day').unix();
         const allTokens = await prisma.prismaTokenPrice.findMany({
             distinct: ['tokenAddress'],
             orderBy: { timestamp: 'asc' },
@@ -233,7 +233,7 @@ export class TokenService {
 
                         if (previousTimestamp > 0 && previousTimestamp + oneDayInSeconds !== timestamp) {
                             console.log(
-                                `Missing price for token ${normalizedTokenAddress}. Got timestamp ${timestamp} but should be ${
+                                `Missing price for token ${normalizedTokenAddress}. Got timestamp ${timestamp} but expecting ${
                                     previousTimestamp + oneDayInSeconds
                                 }`,
                             );
@@ -269,7 +269,12 @@ export class TokenService {
                             timestamp <= backFillTo;
                             timestamp = timestamp + secondsPerDay
                         ) {
-                            const block = await blocksSubgraphService.getBlockForTimestamp(timestamp);
+                            let block;
+                            try {
+                                block = await blocksSubgraphService.getBlockForTimestamp(timestamp);
+                            } catch (e) {
+                                continue;
+                            }
 
                             const { pool: poolAtBlock } = await balancerSubgraphService.getPool({
                                 id: pool.id,
