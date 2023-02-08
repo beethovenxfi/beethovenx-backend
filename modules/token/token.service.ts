@@ -177,12 +177,9 @@ export class TokenService {
             distinct: ['tokenAddress'],
             orderBy: { timestamp: 'asc' },
         });
-        const tokensToBackfill = allTokens.filter(
-            (tokenPrice) =>
-                tokenPrice.timestamp > backfillFrom ||
-                tokenPrice.updatedAt.getTime() < moment().startOf('day').unix() * 1000,
-        );
-
+        // only backfill tokens that don't have a price for the backfill date
+        // will always backfill tokens that only launched after backfill date and therefore don't have prices that far back
+        const tokensToBackfill = allTokens.filter((tokenPrice) => tokenPrice.timestamp > backfillFrom);
         console.log(tokensToBackfill.length);
         for (const token of tokensToBackfill) {
             if (token.timestamp > backfillFrom) {
@@ -195,15 +192,18 @@ export class TokenService {
 
                 const normalizedTokenAddress = token.tokenAddress.toLowerCase();
                 if (tokenDefinition.coingeckoTokenId) {
+                    let retries = 1;
                     let response;
-                    try {
-                        response = await axios.get(
-                            `https://api.coingecko.com/api/v3/coins/${tokenDefinition.coingeckoTokenId}/market_chart/range?vs_currency=usd&from=${backfillFrom}&to=${backFillTo}`,
-                        );
-                    } catch (e) {
-                        console.log(`Got ratelimited, will sleep`);
-                        await sleep(120000);
-                        continue;
+                    while (!response) {
+                        try {
+                            response = await axios.get(
+                                `https://api.coingecko.com/api/v3/coins/${tokenDefinition.coingeckoTokenId}/market_chart/range?vs_currency=usd&from=${backfillFrom}&to=${backFillTo}`,
+                            );
+                        } catch (e) {
+                            console.log(`Got ratelimited, will sleep for ${2 * retries} minutes`);
+                            await sleep(120000 * retries);
+                            retries++;
+                        }
                     }
 
                     // const numberOfDaysToFill = (backFillTo - backfillFrom) / secondsPerDay;
@@ -214,18 +214,29 @@ export class TokenService {
                     //     );
                     // }
 
+                    let previousTimestamp = 0;
                     for (const priceData of response.data.prices) {
                         let timestamp = (priceData[0] - (priceData[0] % 1000)) / 1000;
                         const priceUsd = priceData[1];
 
-                        const timestampDate = moment.unix(priceData[0]).utc();
+                        //make sure the timestamp is midnight
+                        const timestampDate = moment.unix(timestamp).utc();
                         if (
                             timestampDate.hour() !== 0 ||
                             timestampDate.minute() !== 0 ||
                             timestampDate.second() !== 0
                         ) {
+                            console.log(`Timestamp before: ${timestamp}`);
                             timestamp = timestampDate.startOf('day').unix();
-                            console.log(timestamp);
+                            console.log(`Timestamp after: ${timestamp}`);
+                        }
+
+                        if (previousTimestamp > 0 && previousTimestamp + oneDayInSeconds !== timestamp) {
+                            console.log(
+                                `Missing price for token ${normalizedTokenAddress}. Got timestamp ${timestamp} but should be ${
+                                    previousTimestamp + oneDayInSeconds
+                                }`,
+                            );
                         }
 
                         await prisma.prismaTokenPrice.upsert({
@@ -242,6 +253,7 @@ export class TokenService {
                                 coingecko: true,
                             },
                         });
+                        previousTimestamp = timestamp;
                     }
                 } else {
                     console.log(`No coingecko ID for ${token.tokenAddress}`);
