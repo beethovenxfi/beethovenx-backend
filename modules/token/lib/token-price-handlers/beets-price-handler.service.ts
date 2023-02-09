@@ -11,6 +11,7 @@ import { AddressZero } from '@ethersproject/constants';
 import VaultAbi from '../../../pool/abi/Vault.json';
 import { BigNumber, ethers } from 'ethers';
 import { formatFixed } from '@ethersproject/bignumber';
+import moment from 'moment';
 
 export class BeetsPriceHandlerService implements TokenPriceHandler {
     public readonly exitIfFails = false;
@@ -94,6 +95,20 @@ export class BeetsPriceHandlerService implements TokenPriceHandler {
                 low: beetsPrice,
                 open: beetsPrice,
                 close: beetsPrice,
+            },
+        });
+
+        const todayTimestamp = moment().utc().startOf('day').add(1, 'day').unix();
+
+        await prisma.prismaTokenHistoricalPrice.upsert({
+            where: { tokenAddress_timestamp: { tokenAddress: networkConfig.beets.address, timestamp: todayTimestamp } },
+            update: { price: beetsPrice },
+            create: {
+                tokenAddress: networkConfig.beets.address,
+                timestamp: todayTimestamp,
+                price: beetsPrice,
+                coingecko: false,
+                oldestPrice: false,
             },
         });
 

@@ -3,6 +3,7 @@ import { PrismaTokenWithTypes } from '../../../../prisma/prisma-types';
 import { prisma } from '../../../../prisma/prisma-client';
 import { timestampRoundedUpToNearestHour } from '../../../common/time';
 import { CoingeckoService } from '../../../coingecko/coingecko.service';
+import moment from 'moment';
 
 export class CoingeckoPriceHandlerService implements TokenPriceHandler {
     public readonly exitIfFails = true;
@@ -23,36 +24,34 @@ export class CoingeckoPriceHandlerService implements TokenPriceHandler {
 
     public async updatePricesForTokens(tokens: PrismaTokenWithTypes[]): Promise<string[]> {
         const timestamp = timestampRoundedUpToNearestHour();
-        // const nativeAsset = tokens.find((token) => token.address === this.weth);
+        const nativeAsset = tokens.find((token) => token.address === this.weth);
         const tokensUpdated: string[] = [];
 
-        // TODO don't need, already handle this in the getTokenPrices function of the coingecko service
-        // why needed anyway?
+        // why needed ? if it's in the token list with the config.weth address, it can be queried using this address
+        if (nativeAsset) {
+            const price = await this.coingeckoService.getNativeAssetPrice();
+            const usdPrice = price.usd;
 
-        // if (nativeAsset) {
-        //     const price = await this.coingeckoService.getNativeAssetPrice();
-        //     const usdPrice = price.usd;
+            if (typeof usdPrice === 'undefined') {
+                throw new Error('failed to load native asset price');
+            }
 
-        //     if (typeof usdPrice === 'undefined') {
-        //         throw new Error('failed to load native asset price');
-        //     }
+            await prisma.prismaTokenPrice.upsert({
+                where: { tokenAddress_timestamp: { tokenAddress: this.weth, timestamp } },
+                update: { price: usdPrice, close: usdPrice },
+                create: {
+                    tokenAddress: this.weth,
+                    timestamp,
+                    price: usdPrice,
+                    high: usdPrice,
+                    low: usdPrice,
+                    open: usdPrice,
+                    close: usdPrice,
+                },
+            });
 
-        //     await prisma.prismaTokenPrice.upsert({
-        //         where: { tokenAddress_timestamp: { tokenAddress: this.weth, timestamp } },
-        //         update: { price: usdPrice, close: usdPrice },
-        //         create: {
-        //             tokenAddress: this.weth,
-        //             timestamp,
-        //             price: usdPrice,
-        //             high: usdPrice,
-        //             low: usdPrice,
-        //             open: usdPrice,
-        //             close: usdPrice,
-        //         },
-        //     });
-
-        //     tokensUpdated.push(this.weth);
-        // }
+            tokensUpdated.push(this.weth);
+        }
 
         const tokenAddresses = tokens.map((item) => item.address);
 
@@ -93,6 +92,24 @@ export class CoingeckoPriceHandlerService implements TokenPriceHandler {
                             timestamp,
                             price: priceUsd,
                             coingecko: true,
+                        },
+                    }),
+                );
+
+                const todayTimestamp = moment().utc().startOf('day').add(1, 'day').unix();
+
+                operations.push(
+                    prisma.prismaTokenHistoricalPrice.upsert({
+                        where: {
+                            tokenAddress_timestamp: { tokenAddress: normalizedTokenAddress, timestamp: todayTimestamp },
+                        },
+                        update: { price: priceUsd },
+                        create: {
+                            tokenAddress: normalizedTokenAddress,
+                            timestamp: todayTimestamp,
+                            price: priceUsd,
+                            coingecko: true,
+                            oldestPrice: false,
                         },
                     }),
                 );

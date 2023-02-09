@@ -26,6 +26,10 @@ export interface NetworkConfig {
         nativeAssetId: string;
         platformId: string;
     };
+    tokenPrices: {
+        maxDailyPriceHistoryTimestamp: number;
+        maxHourlyPriceHistoryNumDays: number;
+    };
     subgraphs: {
         startDate: string;
         balancer: string;
@@ -139,6 +143,10 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         coingecko: {
             nativeAssetId: 'fantom',
             platformId: 'fantom',
+        },
+        tokenPrices: {
+            maxDailyPriceHistoryTimestamp: 1631318400, // Sept 11 2021 vault launch
+            maxHourlyPriceHistoryNumDays: 180,
         },
         rpcUrl: 'https://rpc.ftm.tools',
         beetsPriceProviderRpcUrl: 'https://rpc.ftm.tools',
@@ -262,6 +270,10 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         coingecko: {
             nativeAssetId: 'ethereum',
             platformId: 'optimistic-ethereum',
+        },
+        tokenPrices: {
+            maxDailyPriceHistoryTimestamp: 1651536000, // May 3rd 2023 vault launch
+            maxHourlyPriceHistoryNumDays: 180,
         },
         rpcUrl: 'https://rpc.ankr.com/optimism',
         beetsPriceProviderRpcUrl: 'https://rpc.ftm.tools',

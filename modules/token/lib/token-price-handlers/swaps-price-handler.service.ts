@@ -88,6 +88,24 @@ export class SwapsPriceHandlerService implements TokenPriceHandler {
                         }),
                     );
 
+                    const todayTimestamp = moment().utc().startOf('day').add(1, 'day').unix();
+
+                    operations.push(
+                        prisma.prismaTokenHistoricalPrice.upsert({
+                            where: {
+                                tokenAddress_timestamp: { tokenAddress: token.address, timestamp: todayTimestamp },
+                            },
+                            update: { price: price },
+                            create: {
+                                tokenAddress: token.address,
+                                timestamp: todayTimestamp,
+                                price: price,
+                                coingecko: false,
+                                oldestPrice: false,
+                            },
+                        }),
+                    );
+
                     tokensUpdated.push(token.address);
                 }
             }

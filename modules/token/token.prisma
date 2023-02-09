@@ -18,6 +18,7 @@ model PrismaToken {
     dynamicData         PrismaTokenDynamicData?
     currentPrice        PrismaTokenCurrentPrice?
     prices              PrismaTokenPrice[]
+    historicalPrices    PrismaTokenHistoricalPrice[]
     types               PrismaTokenType[]
 
     expandedPools       PrismaPoolExpandedTokens[]
@@ -26,7 +27,6 @@ model PrismaToken {
     walletBalances  PrismaUserWalletBalance[]
     stakedBalances  PrismaUserStakedBalance[]
 }
-
 
 model PrismaTokenCurrentPrice {
     tokenAddress        String               @id
@@ -52,6 +52,20 @@ model PrismaTokenPrice {
 
     @@id([tokenAddress, timestamp])
 }
+
+model PrismaTokenHistoricalPrice {
+    tokenAddress        String
+    token               PrismaToken         @relation(fields:[tokenAddress], references: [address])
+    updatedAt           DateTime             @updatedAt
+    timestamp           Int
+    price               Float
+    coingecko           Boolean?
+
+    oldestPrice         Boolean
+
+    @@id([tokenAddress, timestamp])
+}
+
 
 model PrismaTokenDynamicData {
     coingeckoId         String

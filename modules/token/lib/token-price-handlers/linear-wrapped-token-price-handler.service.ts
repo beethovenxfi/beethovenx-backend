@@ -2,6 +2,7 @@ import { TokenPriceHandler } from '../../token-types';
 import { PrismaTokenWithTypes } from '../../../../prisma/prisma-types';
 import { prisma } from '../../../../prisma/prisma-client';
 import { timestampRoundedUpToNearestHour } from '../../../common/time';
+import moment from 'moment';
 
 export class LinearWrappedTokenPriceHandlerService implements TokenPriceHandler {
     public readonly exitIfFails = false;
@@ -65,6 +66,24 @@ export class LinearWrappedTokenPriceHandlerService implements TokenPriceHandler 
                                 tokenAddress: token.address,
                                 timestamp,
                                 price,
+                            },
+                        }),
+                    );
+
+                    const todayTimestamp = moment().utc().startOf('day').add(1, 'day').unix();
+
+                    operations.push(
+                        prisma.prismaTokenHistoricalPrice.upsert({
+                            where: {
+                                tokenAddress_timestamp: { tokenAddress: token.address, timestamp: todayTimestamp },
+                            },
+                            update: { price: price },
+                            create: {
+                                tokenAddress: token.address,
+                                timestamp: todayTimestamp,
+                                price: price,
+                                coingecko: false,
+                                oldestPrice: false,
                             },
                         }),
                     );

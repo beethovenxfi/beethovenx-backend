@@ -17,17 +17,21 @@ import { coingeckoService } from '../coingecko/coingecko.service';
 import { BeetsPriceHandlerService } from './lib/token-price-handlers/beets-price-handler.service';
 import { ClqdrPriceHandlerService } from './lib/token-price-handlers/clqdr-price-handler.service';
 import moment from 'moment';
-import { applyExtensions } from '@graphql-tools/merge';
 import axios from 'axios';
-import { time } from 'console';
 import { sleep } from '../common/promise';
-import { oneDayInSeconds, secondsPerDay } from '../common/time';
+import { secondsPerDay } from '../common/time';
 import { blocksSubgraphService } from '../subgraphs/blocks-subgraph/blocks-subgraph.service';
 import { balancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer-subgraph.service';
+import { prismaBulkExecuteOperations } from '../../prisma/prisma-util';
 
 const TOKEN_PRICES_CACHE_KEY = 'token:prices:current';
 const TOKEN_PRICES_24H_AGO_CACHE_KEY = 'token:prices:24h-ago';
 const ALL_TOKENS_CACHE_KEY = 'tokens:all';
+
+interface PriceData {
+    timestamp: number;
+    price: number;
+}
 
 export class TokenService {
     cache: CacheClass<string, any>;
@@ -170,144 +174,156 @@ export class TokenService {
         await prisma.prismaTokenType.delete({ where: { tokenAddress_type: { tokenAddress, type } } });
     }
 
-    public async backfillHistoricalData() {
-        // backfill daily data for all tokens (00:00 timestamp for previous day)
-        const backfillFrom = moment('2021-10-02', 'YYYY-MM-DD').utc().startOf('day').unix();
-        const allTokens = await prisma.prismaTokenPrice.findMany({
-            distinct: ['tokenAddress'],
-            orderBy: { timestamp: 'asc' },
+    public async updateAllHistoricalPrices() {
+        // backfill daily data for all tokens (00:00 timestamp for previous day) since Oct 1st 2021
+        const updateFromTimestamp = moment.unix(networkConfig.tokenPrices.maxDailyPriceHistoryTimestamp).unix();
+        // only get tokens that don't have an oldest price yet and get the oldest historical price
+        const tokensWithoutOldestPrice = await prisma.prismaToken.findMany({
+            where: {
+                historicalPrices: {
+                    none: {
+                        oldestPrice: true,
+                    },
+                },
+            },
+            select: {
+                address: true,
+                historicalPrices: {
+                    orderBy: {
+                        timestamp: 'asc',
+                    },
+                    take: 1,
+                },
+            },
         });
-        // only backfill tokens that don't have a price for the backfill date
-        // will always backfill tokens that only launched after backfill date and therefore don't have prices that far back
-        const tokensToBackfill = allTokens.filter((tokenPrice) => tokenPrice.timestamp > backfillFrom);
-        console.log(tokensToBackfill.length);
-        for (const token of tokensToBackfill) {
-            if (token.timestamp > backfillFrom) {
-                //https://api.coingecko.com/api/v3/coins/bitcoin/market_chart/range?vs_currency=usd&from=1643033655&to=1645712055
-                const tokenDefinition = await prisma.prismaToken.findUniqueOrThrow({
-                    where: { address: token.tokenAddress },
-                });
 
-                const backFillTo = moment.unix(token.timestamp).startOf('day').unix();
+        // only update tokens which don't have historical prices or which are younger than what we request
+        const tokensToUpdate = tokensWithoutOldestPrice.filter(
+            (token) => token.historicalPrices.length === 0 || token.historicalPrices[0].timestamp > updateFromTimestamp,
+        );
 
-                const normalizedTokenAddress = token.tokenAddress.toLowerCase();
-                if (tokenDefinition.coingeckoTokenId) {
-                    let retries = 1;
-                    let response;
-                    while (!response) {
-                        try {
-                            response = await axios.get(
-                                `https://api.coingecko.com/api/v3/coins/${tokenDefinition.coingeckoTokenId}/market_chart/range?vs_currency=usd&from=${backfillFrom}&to=${backFillTo}`,
-                            );
-                        } catch (e) {
-                            console.log(`Got ratelimited, will sleep for ${2 * retries} minutes`);
-                            await sleep(120000 * retries);
-                            retries++;
-                        }
+        console.log(`Updating ${tokensToUpdate.length} tokens`);
+        let i = 0;
+        for (const token of tokensToUpdate) {
+            const tokenDefinition = await prisma.prismaToken.findUniqueOrThrow({
+                where: { address: token.address },
+            });
+
+            // either update until to day or until the oldest price we have stored
+            let updateToTimestamp = moment().utc().unix();
+            if (token.historicalPrices.length > 0) {
+                updateToTimestamp = token.historicalPrices[0].timestamp;
+            }
+
+            const normalizedTokenAddress = token.address.toLowerCase();
+            if (tokenDefinition.coingeckoTokenId) {
+                let retries = 1;
+                let response;
+                while (!response) {
+                    try {
+                        response = await axios.get(
+                            // `https://api.coingecko.com/api/v3/coins/${tokenDefinition.coingeckoTokenId}/market_chart/range?vs_currency=usd&from=${backfillFrom}&to=${backFillTo}`,
+                            `https://api.coingecko.com/api/v3/coins/${tokenDefinition.coingeckoTokenId}/market_chart?vs_currency=usd&days=max&interval=daily`,
+                        );
+                    } catch (e) {
+                        console.log(`Got ratelimited, will sleep for ${2 * retries} minutes`);
+                        await sleep(120000 * retries);
+                        retries++;
+                    }
+                }
+
+                const prices: PriceData[] = response.data.prices;
+
+                let operations: any[] = [];
+                for (const priceData of prices) {
+                    // parse to second timestamp from milisecond timestamp
+                    priceData.timestamp = priceData.timestamp / 1000;
+
+                    // only update the needed timestamps
+                    if (priceData.timestamp > updateToTimestamp || priceData.timestamp < updateFromTimestamp) {
+                        continue;
                     }
 
-                    // const numberOfDaysToFill = (backFillTo - backfillFrom) / secondsPerDay;
+                    //make sure the timestamp is midnight
+                    const timestampDate = moment.unix(priceData.timestamp).utc();
+                    if (timestampDate.hour() !== 0 || timestampDate.minute() !== 0 || timestampDate.second() !== 0) {
+                        priceData.timestamp = timestampDate.startOf('day').unix();
+                    }
 
-                    // if (numberOfDaysToFill !== response.data.prices.length) {
-                    //     console.log(
-                    //         `Got ${numberOfDaysToFill} of days to fill but got ${response.data.prices.length} results.`,
-                    //     );
-                    // }
-
-                    let previousTimestamp = 0;
-                    for (const priceData of response.data.prices) {
-                        let timestamp = (priceData[0] - (priceData[0] % 1000)) / 1000;
-                        const priceUsd = priceData[1];
-
-                        //make sure the timestamp is midnight
-                        const timestampDate = moment.unix(timestamp).utc();
-                        if (
-                            timestampDate.hour() !== 0 ||
-                            timestampDate.minute() !== 0 ||
-                            timestampDate.second() !== 0
-                        ) {
-                            console.log(`Timestamp before: ${timestamp}`);
-                            timestamp = timestampDate.startOf('day').unix();
-                            console.log(`Timestamp after: ${timestamp}`);
-                        }
-
-                        if (previousTimestamp > 0 && previousTimestamp + oneDayInSeconds !== timestamp) {
-                            console.log(
-                                `Missing price for token ${normalizedTokenAddress}. Got timestamp ${timestamp} but expecting ${
-                                    previousTimestamp + oneDayInSeconds
-                                }`,
-                            );
-                        }
-
-                        await prisma.prismaTokenPrice.upsert({
-                            where: { tokenAddress_timestamp: { tokenAddress: normalizedTokenAddress, timestamp } },
-                            update: { price: priceUsd, close: priceUsd },
+                    operations.push(
+                        prisma.prismaTokenHistoricalPrice.upsert({
+                            where: {
+                                tokenAddress_timestamp: {
+                                    tokenAddress: normalizedTokenAddress,
+                                    timestamp: priceData.timestamp,
+                                },
+                            },
+                            update: { price: priceData.price },
                             create: {
                                 tokenAddress: normalizedTokenAddress,
-                                timestamp,
-                                price: priceUsd,
-                                high: priceUsd,
-                                low: priceUsd,
-                                open: priceUsd,
-                                close: priceUsd,
+                                timestamp: priceData.timestamp,
+                                price: priceData.price,
                                 coingecko: true,
+                                // we get the max number of days from coingecko, it is the oldest price if there is no older on coingecko
+                                oldestPrice: priceData.timestamp === prices[0].timestamp,
                             },
+                        }),
+                    );
+                }
+                await prismaBulkExecuteOperations(operations);
+            } else {
+                const pool = await prisma.prismaPool.findUnique({
+                    where: { address: normalizedTokenAddress },
+                });
+                // if it is a bpt, get the prices from subgraph for each day
+                if (pool) {
+                    const operations: any[] = [];
+                    let oldestPrice = true;
+                    for (
+                        let timestamp = updateFromTimestamp;
+                        timestamp <= updateToTimestamp;
+                        timestamp = timestamp + secondsPerDay
+                    ) {
+                        let block;
+                        try {
+                            block = await blocksSubgraphService.getBlockForTimestamp(timestamp);
+                        } catch (e) {
+                            oldestPrice = false;
+                            continue;
+                        }
+
+                        const { pool: poolAtBlock } = await balancerSubgraphService.getPool({
+                            id: pool.id,
+                            block: { number: parseInt(block.number) },
                         });
-                        previousTimestamp = timestamp;
-                    }
-                } else {
-                    console.log(`No coingecko ID for ${token.tokenAddress}`);
 
-                    // if it is a bpt, let's get price from subgraph
-                    const pool = await prisma.prismaPool.findUnique({
-                        where: { address: normalizedTokenAddress },
-                    });
-                    if (pool) {
-                        // it's a bpt
-                        for (
-                            let timestamp = backfillFrom;
-                            timestamp <= backFillTo;
-                            timestamp = timestamp + secondsPerDay
-                        ) {
-                            let block;
-                            try {
-                                block = await blocksSubgraphService.getBlockForTimestamp(timestamp);
-                            } catch (e) {
-                                continue;
-                            }
-
-                            const { pool: poolAtBlock } = await balancerSubgraphService.getPool({
-                                id: pool.id,
-                                block: { number: parseInt(block.number) },
-                            });
-
-                            if (poolAtBlock) {
-                                const priceUsd =
-                                    parseFloat(poolAtBlock.totalLiquidity) / parseFloat(poolAtBlock.totalShares);
-                                await prisma.prismaTokenPrice.upsert({
+                        if (poolAtBlock) {
+                            const priceUsd =
+                                parseFloat(poolAtBlock.totalLiquidity) / parseFloat(poolAtBlock.totalShares);
+                            operations.push(
+                                prisma.prismaTokenHistoricalPrice.upsert({
                                     where: {
                                         tokenAddress_timestamp: { tokenAddress: normalizedTokenAddress, timestamp },
                                     },
-                                    update: { price: priceUsd, close: priceUsd },
+                                    update: { price: priceUsd },
                                     create: {
                                         tokenAddress: normalizedTokenAddress,
                                         timestamp,
                                         price: priceUsd,
-                                        high: priceUsd,
-                                        low: priceUsd,
-                                        open: priceUsd,
-                                        close: priceUsd,
                                         coingecko: false,
+                                        oldestPrice: oldestPrice,
                                     },
-                                });
-                            }
+                                }),
+                            );
+                            oldestPrice = false;
                         }
-                    } else {
-                        console.log(`could not price ${token.tokenAddress}`);
                     }
+                    await prismaBulkExecuteOperations(operations);
                 }
-            } else {
-                console.log(`dont backfill ${token.tokenAddress}`);
+            }
+            i++;
+            if (i % 100 === 0) {
+                console.log(`Updated ${i} tokens`);
             }
         }
     }

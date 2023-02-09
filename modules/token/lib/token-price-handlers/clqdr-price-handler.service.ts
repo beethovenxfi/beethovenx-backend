@@ -7,6 +7,7 @@ import { Contract } from '@ethersproject/contracts';
 import { ethers } from 'ethers';
 import { formatFixed } from '@ethersproject/bignumber';
 import PriceRateProviderAbi from '../../abi/CLQDRPerpetualEscrowTokenRateProvider.json';
+import moment from 'moment';
 
 export class ClqdrPriceHandlerService implements TokenPriceHandler {
     public readonly exitIfFails = false;
@@ -75,6 +76,20 @@ export class ClqdrPriceHandlerService implements TokenPriceHandler {
                 low: clqdrPrice,
                 open: clqdrPrice,
                 close: clqdrPrice,
+            },
+        });
+
+        const todayTimestamp = moment().utc().startOf('day').add(1, 'day').unix();
+
+        await prisma.prismaTokenHistoricalPrice.upsert({
+            where: { tokenAddress_timestamp: { tokenAddress: this.clqdrAddress, timestamp: todayTimestamp } },
+            update: { price: clqdrPrice },
+            create: {
+                tokenAddress: this.clqdrAddress,
+                timestamp: todayTimestamp,
+                price: clqdrPrice,
+                coingecko: false,
+                oldestPrice: false,
             },
         });
 

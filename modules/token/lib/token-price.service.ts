@@ -151,9 +151,11 @@ export class TokenPriceService {
 
         await this.updateCandleStickData();
 
-        //we only keep token prices for the last 24 hours
-        //const yesterday = moment().subtract(1, 'day').unix();
-        //await prisma.prismaTokenPrice.deleteMany({ where: { timestamp: { lt: yesterday } } });
+        //we only keep token prices for the last n days
+        const maxHourlyPriceHistoryTimestamp = moment()
+            .subtract(networkConfig.tokenPrices.maxHourlyPriceHistoryNumDays, 'day')
+            .unix();
+        await prisma.prismaTokenPrice.deleteMany({ where: { timestamp: { lt: maxHourlyPriceHistoryTimestamp } } });
     }
 
     public async getDataForRange(tokenAddress: string, range: GqlTokenChartDataRange): Promise<PrismaTokenPrice[]> {
