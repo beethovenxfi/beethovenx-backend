@@ -46,6 +46,10 @@ export const optimismJobs = [
         interval: every(2, 'minutes'),
     },
     {
+        name: 'sync-historical-token-prices',
+        interval: every(1, 'hours'),
+    },
+    {
         name: 'sync-staking-for-pools',
         interval: every(5, 'minutes'),
     },

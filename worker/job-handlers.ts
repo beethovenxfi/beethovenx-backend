@@ -262,6 +262,9 @@ export function configureWorkerRoutes(app: Express) {
                     next,
                 );
                 break;
+            case 'sync-historical-token-prices':
+                await runIfNotAlreadyRunning(job.name, () => tokenService.syncAllHistoricalPrices(), 0.01, res, next);
+                break;
             default:
                 res.sendStatus(400);
                 throw new Error(`Unhandled job type ${job.name}`);

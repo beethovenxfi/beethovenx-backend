@@ -174,7 +174,7 @@ export class TokenService {
         await prisma.prismaTokenType.delete({ where: { tokenAddress_type: { tokenAddress, type } } });
     }
 
-    public async updateAllHistoricalPrices() {
+    public async syncAllHistoricalPrices() {
         // backfill daily data for all tokens (00:00 timestamp for previous day) since Oct 1st 2021
         const updateFromTimestamp = moment.unix(networkConfig.tokenPrices.maxDailyPriceHistoryTimestamp).unix();
         // only get tokens that don't have an oldest price yet and get the oldest historical price
@@ -285,6 +285,7 @@ export class TokenService {
                         timestamp = timestamp + secondsPerDay
                     ) {
                         let block;
+                        // unfortunately our blocks subgraph doesn't have the blocks all the way to the start...
                         try {
                             block = await blocksSubgraphService.getBlockForTimestamp(timestamp);
                         } catch (e) {
