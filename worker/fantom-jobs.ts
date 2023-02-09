@@ -52,7 +52,7 @@ export const fantomJobs: WorkerJob[] = [
     },
     {
         name: 'sync-historical-token-prices',
-        interval: every(1, 'hours'),
+        interval: every(6, 'hours'),
     },
     {
         name: 'sync-staking-for-pools',
