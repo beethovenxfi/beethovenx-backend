@@ -27,6 +27,11 @@ export class SwapFeeAprService implements PoolAprService {
                     userApr = apr;
                 }
 
+                // max int for DB
+                if (userApr > 9223372036854775807) {
+                    userApr = 0;
+                }
+
                 operations.push(
                     prisma.prismaPoolAprItem.upsert({
                         where: { id: `${pool.id}-swap-apr` },
