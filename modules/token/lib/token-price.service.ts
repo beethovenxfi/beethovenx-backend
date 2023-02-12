@@ -57,7 +57,7 @@ export class TokenPriceService {
             });
         }
 
-        return tokenPrices.filter((tokenPrice) => tokenPrice.price > 0.000000001);
+        return tokenPrices.filter((tokenPrice) => tokenPrice.price > 0.000000000001);
     }
 
     public async getTokenPriceFrom24hAgo(): Promise<PrismaTokenCurrentPrice[]> {
