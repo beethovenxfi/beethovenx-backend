@@ -167,11 +167,13 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
                 '0x5AdAF6509BCEc3219455348AC45d6D3261b1A990',
                 '0xB384A86F2Fd7788720db42f9daa60fc07EcBeA06',
                 '0x44814E3A603bb7F1198617995c5696C232F6e8Ed',
+                '0x911566c808bF00acB200B418564440A2Af177548',
             ],
             weightedPoolV2Factories: [
                 '0xB2ED595Afc445b47Db7043bEC25e772bf0FA1fbb',
                 '0x8ea1c497c16726E097f62C8C9FBD944143F27090',
                 '0xea87F3dFfc679035653C0FBa70e7bfe46E3FB733',
+                '0xd678b6Acd834Cc969Bb19Ce82727f2a541fb7941',
             ],
             poolsInRecoveryMode: [''],
             swapProtocolFeePercentage: 0.25,
@@ -280,10 +282,12 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             composableStablePoolFactories: [
                 '0xf145caFB67081895EE80eB7c04A30Cf87f07b745',
                 '0xe2e901ab09f37884ba31622df3ca7fc19aa443be',
+                '0xe2E901AB09f37884BA31622dF3Ca7FC19AA443Be',
             ],
             weightedPoolV2Factories: [
                 '0xad901309d9e9DbC5Df19c84f729f429F0189a633',
                 '0xa0dabebaad1b243bbb243f933013d560819eb66f',
+                '0xA0DAbEBAAd1b243BBb243f933013d560819eB66f',
             ],
             poolsInRecoveryMode: [
                 '0x05e7732bf9ae5592e6aa05afe8cd80f7ab0a7bea',
