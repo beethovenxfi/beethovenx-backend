@@ -4,6 +4,7 @@ import { timestampRoundedUpToNearestHour } from '../../../common/time';
 import { prisma } from '../../../../prisma/prisma-client';
 import _ from 'lodash';
 import { networkContext } from '../../../network/network-context.service';
+import moment from 'moment';
 
 export class FbeetsPriceHandlerService implements TokenPriceHandler {
     constructor(private readonly fbeetsAddress: string, private readonly fbeetsPoolId: string) {}
@@ -69,6 +70,26 @@ export class FbeetsPriceHandlerService implements TokenPriceHandler {
                 low: fbeetsPrice,
                 open: fbeetsPrice,
                 close: fbeetsPrice,
+            },
+        });
+
+        const todayClosingPriceTimestamp = moment().utc().startOf('day').add(1, 'day').unix();
+
+        await prisma.prismaTokenHistoricalPrice.upsert({
+            where: {
+                tokenAddress_timestamp_chain: {
+                    tokenAddress: fbeetsAddress,
+                    timestamp: todayClosingPriceTimestamp,
+                    chain: networkContext.chain,
+                },
+            },
+            update: { price: fbeetsPrice },
+            create: {
+                tokenAddress: fbeetsAddress,
+                chain: networkContext.chain,
+                timestamp: todayClosingPriceTimestamp,
+                price: fbeetsPrice,
+                coingecko: false,
             },
         });
 

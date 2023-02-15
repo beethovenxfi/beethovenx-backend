@@ -10,6 +10,7 @@ import VaultAbi from '../../../pool/abi/Vault.json';
 import { ethers } from 'ethers';
 import { formatFixed } from '@ethersproject/bignumber';
 import { networkContext } from '../../../network/network-context.service';
+import moment from 'moment';
 
 export class BeetsPriceHandlerService implements TokenPriceHandler {
     public readonly exitIfFails = false;
@@ -103,6 +104,26 @@ export class BeetsPriceHandlerService implements TokenPriceHandler {
                 low: beetsPrice,
                 open: beetsPrice,
                 close: beetsPrice,
+            },
+        });
+
+        const todayClosingPriceTimestamp = moment().utc().startOf('day').add(1, 'day').unix();
+
+        await prisma.prismaTokenHistoricalPrice.upsert({
+            where: {
+                tokenAddress_timestamp_chain: {
+                    tokenAddress: networkContext.data.beets.address,
+                    timestamp: todayClosingPriceTimestamp,
+                    chain: networkContext.chain,
+                },
+            },
+            update: { price: beetsPrice },
+            create: {
+                tokenAddress: networkContext.data.beets.address,
+                chain: networkContext.chain,
+                timestamp: todayClosingPriceTimestamp,
+                price: beetsPrice,
+                coingecko: false,
             },
         });
 

@@ -57,6 +57,9 @@ const fantomNetworkData: NetworkData = {
         nativeAssetId: 'fantom',
         platformId: 'fantom',
     },
+    tokenPrices: {
+        maxHourlyPriceHistoryNumDays: 180,
+    },
     rpcUrl: 'https://rpc.ftm.tools',
     beetsPriceProviderRpcUrl: 'https://rpc.ftm.tools',
     sanity: {

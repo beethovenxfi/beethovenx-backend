@@ -4,6 +4,7 @@ import { prisma } from '../../../../prisma/prisma-client';
 import { timestampRoundedUpToNearestHour } from '../../../common/time';
 import { CoingeckoService } from '../../../coingecko/coingecko.service';
 import { networkContext } from '../../../network/network-context.service';
+import moment from 'moment';
 
 export class CoingeckoPriceHandlerService implements TokenPriceHandler {
     public readonly exitIfFails = true;
@@ -108,6 +109,28 @@ export class CoingeckoPriceHandlerService implements TokenPriceHandler {
                             timestamp,
                             price: priceUsd,
                             coingecko: true,
+                        },
+                    }),
+                );
+
+                const todayClosingPriceTimestamp = moment().utc().startOf('day').add(1, 'day').unix();
+
+                operations.push(
+                    prisma.prismaTokenHistoricalPrice.upsert({
+                        where: {
+                            tokenAddress_timestamp_chain: {
+                                tokenAddress: normalizedTokenAddress,
+                                timestamp: todayClosingPriceTimestamp,
+                                chain: networkContext.chain,
+                            },
+                        },
+                        update: { price: priceUsd },
+                        create: {
+                            tokenAddress: normalizedTokenAddress,
+                            chain: networkContext.chain,
+                            timestamp: todayClosingPriceTimestamp,
+                            price: priceUsd,
+                            coingecko: false,
                         },
                     }),
                 );

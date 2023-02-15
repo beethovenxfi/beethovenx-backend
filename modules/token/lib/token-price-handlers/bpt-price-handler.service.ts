@@ -3,6 +3,7 @@ import { PrismaTokenWithTypes } from '../../../../prisma/prisma-types';
 import { timestampRoundedUpToNearestHour } from '../../../common/time';
 import { prisma } from '../../../../prisma/prisma-client';
 import { networkContext } from '../../../network/network-context.service';
+import moment from 'moment';
 
 export class BptPriceHandlerService implements TokenPriceHandler {
     public readonly exitIfFails = false;
@@ -63,6 +64,28 @@ export class BptPriceHandlerService implements TokenPriceHandler {
                             chain: networkContext.chain,
                             timestamp,
                             price,
+                        },
+                    }),
+                );
+
+                const todayClosingPriceTimestamp = moment().utc().startOf('day').add(1, 'day').unix();
+
+                operations.push(
+                    prisma.prismaTokenHistoricalPrice.upsert({
+                        where: {
+                            tokenAddress_timestamp_chain: {
+                                tokenAddress: token.address,
+                                timestamp: todayClosingPriceTimestamp,
+                                chain: networkContext.chain,
+                            },
+                        },
+                        update: { price: price },
+                        create: {
+                            tokenAddress: token.address,
+                            chain: networkContext.chain,
+                            timestamp: todayClosingPriceTimestamp,
+                            price: price,
+                            coingecko: false,
                         },
                     }),
                 );

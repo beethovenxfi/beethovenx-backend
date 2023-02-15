@@ -52,6 +52,9 @@ const optimismNetworkData: NetworkData = {
         nativeAssetId: 'ethereum',
         platformId: 'optimistic-ethereum',
     },
+    tokenPrices: {
+        maxHourlyPriceHistoryNumDays: 180,
+    },
     rpcUrl: 'https://rpc.ankr.com/optimism',
     beetsPriceProviderRpcUrl: 'https://rpc.ftm.tools',
     sanity: {
