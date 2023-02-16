@@ -6,6 +6,7 @@ import { prisma } from '../prisma/prisma-client';
 import { configureWorkerRoutes } from './job-handlers';
 import { createAlerts, scheduleJobs as scheduleJobs } from './manual-jobs';
 import { AllNetworkConfigs } from '../modules/network/network-config';
+import { scheduleLocalWorkerTasks } from './scheduleLocalWorkerTasks';
 
 export function startWorker() {
     const app = express();
@@ -35,6 +36,19 @@ export function startWorker() {
             },
         }),
     );
+
+    
+    if (process.env.NODE_ENV === 'local' && process.env.CRONS === 'true') {
+        const supportedNetworks = process.env.SUPPORTED_NETWORKS?.split(',') ?? Object.keys(AllNetworkConfigs);
+
+        try {
+            for (const chainId of supportedNetworks) {
+                scheduleLocalWorkerTasks(chainId);
+            }
+        } catch (e) {
+            console.log(`Fatal error happened during cron scheduling.`, e);
+        }
+    }
 
     if (env.NODE_ENV !== 'local') {
         const supportedNetworks = process.env.SUPPORTED_NETWORKS?.split(',') ?? Object.keys(AllNetworkConfigs);

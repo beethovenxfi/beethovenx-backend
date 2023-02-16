@@ -17,7 +17,25 @@ There are 2 kinds of graphql types to generate. We have types for interacting wi
 for our exposed graphql api schema.
 Run `yarn generate` to generate all gql types
 
+<<<<<<< HEAD
 ### Setup empty database & Prisma
+=======
+
+## Running with docker
+
+```
+docker compose up -d 
+```
+
+Viewing logs:
+```
+docker compose logs -f
+```
+
+## Running Manually
+
+### Setup database & Prisma
+>>>>>>> b0b7998 (Dockerize local development)
 
 #### Start docker container (or manually set up your database)
 
@@ -59,6 +77,27 @@ with the container-ID from the step before.
 ## Run locally
 
 `yarn start:local`
+You can do this by sending the following GraphQL command to the server:
+
+```
+mutation init {
+  poolSyncAllPoolsFromSubgraph
+  poolReloadStakingForAllPools(stakingTypes: [MASTER_CHEF, GAUGE, RELIQUARY, FRESH_BEETS])
+  userInitWalletBalancesForAllPools
+  userInitStakedBalances(stakingTypes: [MASTER_CHEF, GAUGE, RELIQUARY, FRESH_BEETS])
+}
+```
+
+With the following HTTP headers:
+```
+{"AdminApiKey": "key-you-set-in-env-file"}
+```
+
+### Start a local server
+
+```
+yarn start:local
+```
 
 ## Branching and deployment environments
 

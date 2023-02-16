@@ -15,7 +15,6 @@ import {
 import { beethovenSchema } from './graphql_schema_generated_beethoven';
 import { balancerSchema } from './graphql_schema_generated_balancer';
 import { balancerResolvers, beethovenResolvers } from './app/gql/resolvers';
-import { scheduleLocalWorkerTasks } from './worker/scheduleLocalWorkerTasks';
 import helmet from 'helmet';
 import GraphQLJSON from 'graphql-type-json';
 import * as Sentry from '@sentry/node';
@@ -117,18 +116,6 @@ async function startServer() {
 
     await new Promise<void>((resolve) => httpServer.listen({ port: env.PORT }, resolve));
     console.log(`🚀 Server ready at http://localhost:${env.PORT}${server.graphqlPath}`);
-
-    if (process.env.NODE_ENV === 'local' && process.env.CRONS === 'true') {
-        const supportedNetworks = process.env.SUPPORTED_NETWORKS?.split(',') ?? Object.keys(AllNetworkConfigs);
-
-        try {
-            for (const chainId of supportedNetworks) {
-                scheduleLocalWorkerTasks(chainId);
-            }
-        } catch (e) {
-            console.log(`Fatal error happened during cron scheduling.`, e);
-        }
-    }
 }
 
 if (process.env.WORKER === 'true') {

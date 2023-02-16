@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 FROM node:16-slim AS base
 
 ENV APP_ROOT /app
@@ -16,4 +17,12 @@ FROM dependencies AS build
 
 COPY ./dist .
 
+=======
+FROM node:16-slim
+
+WORKDIR /app
+
+RUN apt-get update -y && apt-get install -y openssl
+
+>>>>>>> a7ead6b (Dockerize local development)
 CMD ["yarn","start:local"]
