@@ -6,6 +6,56 @@ services:
         ports:
             - '5431:5432'
         environment:
-            POSTGRES_USER: beetx
-            POSTGRES_PASSWORD: let-me-in
-            POSTGRES_DB: beetx
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            POSTGRES_DB: ${POSTGRES_DB}
+        volumes:
+            - postgres:/var/lib/postgresql/data
+    app:
+        restart: on-failure
+        build: ./
+        hostname: app
+        ports:
+            - '4000:4000'
+        env_file:
+            - ./.env
+        environment:
+            - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+        volumes:
+            - ./:/app
+        depends_on:
+            - postgres
+    worker:
+        restart: on-failure
+        build: ./
+        hostname: worker
+        ports:
+            - '5000:4000'
+        env_file:
+            - ./.env
+        environment:
+            - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+            - WORKER=true
+            - CRONS=true
+        volumes:
+            - ./:/app
+        depends_on:
+            - postgres
+            - app
+    setup:
+        restart: 'no'
+        build: ./
+        hostname: setup
+        volumes:
+            - ./:/app
+        env_file:
+            - ./.env
+        environment:
+            - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+        entrypoint: ["/bin/sh", "-c" , "yarn generate && yarn prisma migrate dev"]
+        depends_on:
+            - postgres
+            - app
+
+volumes:
+    postgres:
