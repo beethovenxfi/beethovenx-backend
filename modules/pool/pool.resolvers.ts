@@ -109,6 +109,13 @@ const balancerResolvers: Resolvers = {
 
             return 'success';
         },
+        poolUpdateLiquidityValuesForAllEmptyPools: async (parent, { maxShares }, context) => {
+            isAdminRoute(context);
+
+            await poolService.updateLiquidityValuesForPools(0, parseFloat(maxShares));
+
+            return 'success';
+        },
         poolUpdateVolumeAndFeeValuesForAllPools: async (parent, {}, context) => {
             isAdminRoute(context);
 

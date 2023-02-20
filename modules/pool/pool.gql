@@ -34,6 +34,7 @@ extend type Mutation {
     poolLoadOnChainDataForAllPools: String!
     poolLoadOnChainDataForPoolsWithActiveUpdates: String!
     poolUpdateLiquidityValuesForAllPools: String!
+    poolUpdateLiquidityValuesForAllEmptyPools(maxShares: String!): String!
     poolUpdateVolumeAndFeeValuesForAllPools: String!
     poolSyncSwapsForLast48Hours: String!
     poolSyncSanityPoolData: String!
