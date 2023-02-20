@@ -13,9 +13,9 @@ import { AddressZero } from '@ethersproject/constants';
 import { Contract } from '@ethersproject/contracts';
 import VaultAbi from '../pool/abi/Vault.json';
 import { jsonRpcProvider } from '../web3/contract';
-import { balancerSdk } from './src/balancer-sdk';
 import { env } from '../../app/env';
-import { fp, fromFp, scaleDown } from '../big-number/big-number';
+import { Logger } from '@ethersproject/logger';
+import * as Sentry from '@sentry/node';
 
 interface GetSwapsInput {
     tokenIn: string;
@@ -47,55 +47,42 @@ export class BalancerSorService {
             throw new Error('SOR: invalid swap amount input');
         }
 
-        const { data } = await axios.post<{ swapInfo: SwapInfo }>(
-            networkConfig.sor[env.DEPLOYMENT_ENV as DeploymentEnv].url,
-            {
-                swapType,
-                tokenIn,
-                tokenOut,
-                swapAmountScaled,
-                swapOptions: {
-                    maxPools: swapOptions.maxPools || networkConfig.sor[env.DEPLOYMENT_ENV as DeploymentEnv].maxPools,
-                    forceRefresh:
-                        swapOptions.forceRefresh || networkConfig.sor[env.DEPLOYMENT_ENV as DeploymentEnv].forceRefresh,
-                },
-            },
-        );
-        const swapInfo = data.swapInfo;
-
-        /*const swapInfo = await balancerSdk.sor.getSwaps(
-            tokenIn,
-            tokenOut,
-            swapType === 'EXACT_IN' ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
-            swapAmountScaled,
-            {
-                timestamp: swapOptions.timestamp || Math.floor(Date.now() / 1000),
-                //TODO: move this to env
-                maxPools: swapOptions.maxPools || 8,
-                forceRefresh: swapOptions.forceRefresh || false,
-                boostedPools,
-                //TODO: support gas price and swap gas
-            },
-        );*/
-
-        const pools = await poolService.getGqlPools({
-            where: { idIn: swapInfo.routes.map((route) => route.hops.map((hop) => hop.poolId)).flat() },
-        });
-
-        // const tokenInAmount = swapType === 'EXACT_IN' ? swapAmount : returnAmount;
-        // const tokenOutAmount = swapType === 'EXACT_IN' ? returnAmount : swapAmount;
+        let swapInfo = await this.querySor(swapType, tokenIn, tokenOut, swapAmountScaled, swapOptions);
 
         let deltas: string[] = [];
-        let deltasStrings;
         try {
             deltas = await this.queryBatchSwap(
                 swapType === 'EXACT_IN' ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
                 swapInfo.swaps,
                 swapInfo.tokenAddresses,
             );
-        } catch (e) {
-            console.log(e);
+        } catch (error: any) {
+            if (error.code === Logger.errors.CALL_EXCEPTION) {
+                const message: string = error.error.error.message;
+                // if we have shallow liquidity try to refresh pools and try again once
+                if (message.includes('BAL#304')) {
+                    Sentry.captureException(`Got a BAL#304, retrying after pool liquidity updated: ${error}`);
+                    poolService.updateLiquidityValuesForPools(0, Number.MAX_SAFE_INTEGER);
+                    swapInfo = await this.querySor(swapType, tokenIn, tokenOut, swapAmountScaled, swapOptions);
+                    try {
+                        deltas = await this.queryBatchSwap(
+                            swapType === 'EXACT_IN' ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
+                            swapInfo.swaps,
+                            swapInfo.tokenAddresses,
+                        );
+                    } catch (e: any) {
+                        throw new Error(e);
+                    }
+                }
+            } else {
+                // could not handle, throw
+                throw new Error(error);
+            }
         }
+
+        const pools = await poolService.getGqlPools({
+            where: { idIn: swapInfo.routes.map((route) => route.hops.map((hop) => hop.poolId)).flat() },
+        });
 
         const tokenInAmount = BigNumber.from(deltas[swapInfo.tokenAddresses.indexOf(tokenIn)]);
         const tokenOutAmount = BigNumber.from(deltas[swapInfo.tokenAddresses.indexOf(tokenOut)]).abs();
@@ -154,6 +141,31 @@ export class BalancerSorService {
             effectivePriceReversed: effectivePriceReversed.toString(),
             priceImpact: priceImpact.toString(),
         };
+    }
+
+    private async querySor(
+        swapType: string,
+        tokenIn: string,
+        tokenOut: string,
+        swapAmountScaled: BigNumber,
+        swapOptions: GqlSorSwapOptionsInput,
+    ) {
+        const { data } = await axios.post<{ swapInfo: SwapInfo }>(
+            networkConfig.sor[env.DEPLOYMENT_ENV as DeploymentEnv].url,
+            {
+                swapType,
+                tokenIn,
+                tokenOut,
+                swapAmountScaled,
+                swapOptions: {
+                    maxPools: swapOptions.maxPools || networkConfig.sor[env.DEPLOYMENT_ENV as DeploymentEnv].maxPools,
+                    forceRefresh:
+                        swapOptions.forceRefresh || networkConfig.sor[env.DEPLOYMENT_ENV as DeploymentEnv].forceRefresh,
+                },
+            },
+        );
+        const swapInfo = data.swapInfo;
+        return swapInfo;
     }
 
     public async getBatchSwapForTokensIn({
