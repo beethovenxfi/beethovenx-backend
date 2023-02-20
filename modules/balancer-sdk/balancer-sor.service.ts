@@ -15,6 +15,7 @@ import VaultAbi from '../pool/abi/Vault.json';
 import { jsonRpcProvider } from '../web3/contract';
 import { balancerSdk } from './src/balancer-sdk';
 import { env } from '../../app/env';
+import { fp, fromFp, scaleDown } from '../big-number/big-number';
 
 interface GetSwapsInput {
     tokenIn: string;
@@ -77,36 +78,67 @@ export class BalancerSorService {
             },
         );*/
 
-        const returnAmount = formatFixed(
-            swapInfo.returnAmount,
-            this.getTokenDecimals(swapType === 'EXACT_IN' ? tokenOut : tokenIn, tokens),
-        );
-
         const pools = await poolService.getGqlPools({
             where: { idIn: swapInfo.routes.map((route) => route.hops.map((hop) => hop.poolId)).flat() },
         });
 
-        const tokenInAmount = swapType === 'EXACT_IN' ? swapAmount : returnAmount;
-        const tokenOutAmount = swapType === 'EXACT_IN' ? returnAmount : swapAmount;
+        // const tokenInAmount = swapType === 'EXACT_IN' ? swapAmount : returnAmount;
+        // const tokenOutAmount = swapType === 'EXACT_IN' ? returnAmount : swapAmount;
 
-        const effectivePrice = oldBnum(tokenInAmount).div(tokenOutAmount);
-        const effectivePriceReversed = oldBnum(tokenOutAmount).div(tokenInAmount);
+        let deltas: string[] = [];
+        let deltasStrings;
+        try {
+            deltas = await this.queryBatchSwap(
+                swapType === 'EXACT_IN' ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
+                swapInfo.swaps,
+                swapInfo.tokenAddresses,
+            );
+        } catch (e) {
+            console.log(e);
+        }
+
+        const tokenInAmount = BigNumber.from(deltas[swapInfo.tokenAddresses.indexOf(tokenIn)]);
+        const tokenOutAmount = BigNumber.from(deltas[swapInfo.tokenAddresses.indexOf(tokenOut)]).abs();
+
+        const swapAmountQuery = swapType === 'EXACT_OUT' ? tokenOutAmount : tokenInAmount;
+        const returnAmount = swapType === 'EXACT_IN' ? tokenOutAmount : tokenInAmount;
+
+        const returnAmountFixed = formatFixed(
+            returnAmount,
+            this.getTokenDecimals(swapType === 'EXACT_IN' ? tokenOut : tokenIn, tokens),
+        );
+
+        const swapAmountQueryFixed = formatFixed(
+            swapAmountQuery,
+            this.getTokenDecimals(swapType === 'EXACT_OUT' ? tokenOut : tokenIn, tokens),
+        );
+
+        const tokenInAmountFixed = formatFixed(tokenInAmount, this.getTokenDecimals(tokenIn, tokens));
+        const tokenOutAmountFixed = formatFixed(tokenOutAmount, this.getTokenDecimals(tokenOut, tokens));
+
+        const effectivePrice = oldBnum(tokenInAmountFixed).div(tokenOutAmountFixed);
+        const effectivePriceReversed = oldBnum(tokenOutAmountFixed).div(tokenInAmountFixed);
         const priceImpact = effectivePrice.div(swapInfo.marketSp).minus(1);
+
+        for (const route of swapInfo.routes) {
+            route.tokenInAmount = oldBnum(tokenInAmountFixed).multipliedBy(route.share).toString();
+            route.tokenOutAmount = oldBnum(tokenOutAmountFixed).multipliedBy(route.share).toString();
+        }
 
         return {
             ...swapInfo,
             tokenIn: replaceZeroAddressWithEth(swapInfo.tokenIn),
             tokenOut: replaceZeroAddressWithEth(swapInfo.tokenOut),
             swapType,
-            tokenInAmount,
-            tokenOutAmount,
-            swapAmount,
-            swapAmountScaled: BigNumber.from(swapInfo.swapAmount).toString(),
+            tokenInAmount: tokenInAmountFixed,
+            tokenOutAmount: tokenOutAmountFixed,
+            swapAmount: swapAmountQueryFixed,
+            swapAmountScaled: swapAmountQuery.toString(),
             swapAmountForSwaps: swapInfo.swapAmountForSwaps
                 ? BigNumber.from(swapInfo.swapAmountForSwaps).toString()
                 : undefined,
-            returnAmount,
-            returnAmountScaled: BigNumber.from(swapInfo.returnAmount).toString(),
+            returnAmount: returnAmountFixed,
+            returnAmountScaled: returnAmount.toString(),
             returnAmountConsideringFees: BigNumber.from(swapInfo.returnAmountConsideringFees).toString(),
             returnAmountFromSwaps: swapInfo.returnAmountFromSwaps
                 ? BigNumber.from(swapInfo.returnAmountFromSwaps).toString()
