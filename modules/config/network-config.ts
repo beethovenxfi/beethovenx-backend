@@ -119,7 +119,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         subgraphs: {
             startDate: '2021-10-08',
-            balancer: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx',
+            balancer: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx-v2-fantom',
             beetsBar: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beets-bar',
             blocks: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/fantom-blocks',
             masterchef: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/masterchefv2',
