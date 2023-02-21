@@ -109,8 +109,14 @@ export class BalancerSorService {
         const priceImpact = effectivePrice.div(swapInfo.marketSp).minus(1);
 
         for (const route of swapInfo.routes) {
-            route.tokenInAmount = oldBnum(tokenInAmountFixed).multipliedBy(route.share).toString();
-            route.tokenOutAmount = oldBnum(tokenOutAmountFixed).multipliedBy(route.share).toString();
+            route.tokenInAmount = oldBnum(tokenInAmountFixed)
+                .multipliedBy(route.share)
+                .dp(this.getTokenDecimals(tokenIn, tokens))
+                .toString();
+            route.tokenOutAmount = oldBnum(tokenOutAmountFixed)
+                .multipliedBy(route.share)
+                .dp(this.getTokenDecimals(tokenOut, tokens))
+                .toString();
         }
 
         return {
