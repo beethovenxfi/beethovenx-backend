@@ -16,6 +16,8 @@ import { jsonRpcProvider } from '../web3/contract';
 import { env } from '../../app/env';
 import { Logger } from '@ethersproject/logger';
 import * as Sentry from '@sentry/node';
+import { Provider } from '@ethersproject/providers';
+import _ from 'lodash';
 
 interface GetSwapsInput {
     tokenIn: string;
@@ -27,6 +29,8 @@ interface GetSwapsInput {
 }
 
 export class BalancerSorService {
+    constructor(private readonly provider: Provider) {}
+
     public async getSwaps({
         tokenIn,
         tokenOut,
@@ -39,6 +43,7 @@ export class BalancerSorService {
         tokenOut = replaceEthWithZeroAddress(tokenOut);
 
         const tokenDecimals = this.getTokenDecimals(swapType === 'EXACT_IN' ? tokenIn : tokenOut, tokens);
+
         let swapAmountScaled = BigNumber.from(`0`);
         try {
             swapAmountScaled = parseFixed(swapAmount, tokenDecimals);
@@ -48,8 +53,8 @@ export class BalancerSorService {
         }
 
         let swapInfo = await this.querySor(swapType, tokenIn, tokenOut, swapAmountScaled, swapOptions);
-
         let deltas: string[] = [];
+
         try {
             deltas = await this.queryBatchSwap(
                 swapType === 'EXACT_IN' ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
@@ -58,26 +63,22 @@ export class BalancerSorService {
             );
         } catch (error: any) {
             if (error.code === Logger.errors.CALL_EXCEPTION) {
-                const message: string = error.error.error.message;
-                // if we have shallow liquidity try to refresh pools and try again once
-                if (message.includes('BAL#304')) {
-                    Sentry.captureException(`Got a BAL#304, retrying after pool liquidity updated: ${error}`);
-                    poolService.updateLiquidityValuesForPools(0, Number.MAX_SAFE_INTEGER);
-                    swapInfo = await this.querySor(swapType, tokenIn, tokenOut, swapAmountScaled, swapOptions);
-                    try {
-                        deltas = await this.queryBatchSwap(
-                            swapType === 'EXACT_IN' ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut,
-                            swapInfo.swaps,
-                            swapInfo.tokenAddresses,
-                        );
-                    } catch (e: any) {
-                        throw new Error(e);
-                    }
+                // Chances are a 304 means that we missed a pool draining event, and the pool data is stale.
+                // We force an update on any pools inside of the swapInfo
+                if (error.error?.error?.message.includes('BAL#304')) {
+                    const poolIds = _.uniq(swapInfo.swaps.map((swap) => swap.poolId));
+
+                    Sentry.captureException(
+                        `Received a BAL#304 during getSwaps, forcing an on-chain refresh for: ${poolIds.join(',')}`,
+                    );
+
+                    const blockNumber = await this.provider.getBlockNumber();
+
+                    poolService.updateOnChainDataForPools(poolIds, blockNumber).catch();
                 }
-            } else {
-                // could not handle, throw
-                throw new Error(error);
             }
+
+            throw new Error(error);
         }
 
         const pools = await poolService.getGqlPools({
@@ -255,7 +256,7 @@ export class BalancerSorService {
     }
 
     private queryBatchSwap(swapType: SwapTypes, swaps: SwapV2[], assets: string[]): Promise<string[]> {
-        const vaultContract = new Contract(networkConfig.balancer.vault, VaultAbi, jsonRpcProvider);
+        const vaultContract = new Contract(networkConfig.balancer.vault, VaultAbi, this.provider);
         const funds: FundManagement = {
             sender: AddressZero,
             recipient: AddressZero,
@@ -267,4 +268,4 @@ export class BalancerSorService {
     }
 }
 
-export const balancerSorService = new BalancerSorService();
+export const balancerSorService = new BalancerSorService(jsonRpcProvider);
