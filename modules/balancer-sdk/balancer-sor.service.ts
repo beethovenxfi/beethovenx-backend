@@ -65,7 +65,7 @@ export class BalancerSorService {
             if (error.code === Logger.errors.CALL_EXCEPTION) {
                 // Chances are a 304 means that we missed a pool draining event, and the pool data is stale.
                 // We force an update on any pools inside of the swapInfo
-                if (error.error?.error?.message.includes('BAL#304')) {
+                if (error.error?.error?.message?.includes('BAL#304')) {
                     const poolIds = _.uniq(swapInfo.swaps.map((swap) => swap.poolId));
 
                     Sentry.captureException(
