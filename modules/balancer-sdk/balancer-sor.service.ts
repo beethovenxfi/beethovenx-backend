@@ -62,19 +62,40 @@ export class BalancerSorService {
                 swapInfo.tokenAddresses,
             );
         } catch (error: any) {
+            const poolIds = _.uniq(swapInfo.swaps.map((swap) => swap.poolId));
             if (error.code === Logger.errors.CALL_EXCEPTION) {
                 // Chances are a 304 means that we missed a pool draining event, and the pool data is stale.
                 // We force an update on any pools inside of the swapInfo
                 if (error.error?.error?.message?.includes('BAL#304')) {
-                    const poolIds = _.uniq(swapInfo.swaps.map((swap) => swap.poolId));
-
                     Sentry.captureException(
                         `Received a BAL#304 during getSwaps, forcing an on-chain refresh for: ${poolIds.join(',')}`,
+                        {
+                            tags: {
+                                tokenIn,
+                                tokenOut,
+                                swapType,
+                                swapAmount,
+                                swapPools: `${poolIds.join(',')}`,
+                            },
+                        },
                     );
 
                     const blockNumber = await this.provider.getBlockNumber();
 
                     poolService.updateOnChainDataForPools(poolIds, blockNumber).catch();
+                } else if (error.error?.error?.message?.includes('BAL#')) {
+                    Sentry.captureException(
+                        `Received an unhandled BAL error during getSwaps: ${error.error?.error?.message}`,
+                        {
+                            tags: {
+                                tokenIn,
+                                tokenOut,
+                                swapType,
+                                swapAmount,
+                                swapPools: `${poolIds.join(',')}`,
+                            },
+                        },
+                    );
                 }
             }
 
