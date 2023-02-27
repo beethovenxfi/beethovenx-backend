@@ -3,6 +3,7 @@ import { PrismaPoolStakingType } from '@prisma/client';
 import _ from 'lodash';
 import { prisma } from '../../../../../prisma/prisma-client';
 import { prismaBulkExecuteOperations } from '../../../../../prisma/prisma-util';
+import { networkConfig } from '../../../../config/network-config';
 import { ReliquarySubgraphService } from '../../../../subgraphs/reliquary-subgraph/reliquary.service';
 import { PoolStakingService } from '../../../pool-types';
 
@@ -18,12 +19,13 @@ export class ReliquaryStakingService implements PoolStakingService {
             throw new Error(`Reliquary with id ${this.reliquaryAddress} not found in subgraph`);
         }
         const farms = await this.reliquarySubgraphService.getAllFarms({});
+        const filteredFarms = farms.filter((farm) => !networkConfig.reliquary!.excludedFarmIds.includes(farm.id));
         const pools = await prisma.prismaPool.findMany({
             include: { staking: { include: { farm: { include: { rewarders: true } } } } },
         });
         const operations: any[] = [];
 
-        for (const farm of farms) {
+        for (const farm of filteredFarms) {
             const pool = pools.find((pool) => isSameAddress(pool.address, farm.poolTokenAddress));
 
             if (!pool) {
