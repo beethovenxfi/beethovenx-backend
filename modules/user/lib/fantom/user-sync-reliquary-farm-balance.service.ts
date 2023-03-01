@@ -75,6 +75,9 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
         });
         const latestBlock = await jsonRpcProvider.getBlockNumber();
         const farms = await reliquarySubgraphService.getAllFarms({});
+        const filteredFarms = farms.filter(
+            (farm) => !networkConfig.reliquary!.excludedFarmIds.includes(farm.pid.toString()),
+        );
 
         const startBlock = status.blockNumber + 1;
         const endBlock = latestBlock - startBlock > 2_000 ? startBlock + 2_000 : latestBlock;
@@ -103,7 +106,7 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
                 ...amountUpdates.map((update) => {
                     const userAddress = update.userAddress.toLowerCase();
                     const pool = pools.find((pool) => pool.staking?.id === `reliquary-${update.farmId}`);
-                    const farm = farms.find((farm) => farm.pid.toString() === update.farmId);
+                    const farm = filteredFarms.find((farm) => farm.pid.toString() === update.farmId);
 
                     return prisma.prismaUserStakedBalance.upsert({
                         where: { id: `reliquary-${update.farmId}-${userAddress}` },
