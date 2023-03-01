@@ -86,9 +86,14 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
             startBlock,
             endBlock,
         );
-        const userAddresses = _.uniq(amountUpdates.map((update) => update.userAddress.toLowerCase()));
 
-        if (amountUpdates.length === 0) {
+        const filteredAmountUpdates = amountUpdates.filter(
+            (update) => !networkConfig.reliquary!.excludedFarmIds.includes(update.farmId.toString()),
+        );
+
+        const userAddresses = _.uniq(filteredAmountUpdates.map((update) => update.userAddress.toLowerCase()));
+
+        if (filteredAmountUpdates.length === 0) {
             await prisma.prismaUserBalanceSyncStatus.update({
                 where: { type: 'RELIQUARY' },
                 data: { blockNumber: endBlock },
@@ -103,7 +108,7 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
                     data: userAddresses.map((userAddress) => ({ address: userAddress })),
                     skipDuplicates: true,
                 }),
-                ...amountUpdates.map((update) => {
+                ...filteredAmountUpdates.map((update) => {
                     const userAddress = update.userAddress.toLowerCase();
                     const pool = pools.find((pool) => pool.staking?.id === `reliquary-${update.farmId}`);
                     const farm = filteredFarms.find((farm) => farm.pid.toString() === update.farmId);
