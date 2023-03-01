@@ -131,12 +131,18 @@ export class UserSnapshotService {
     public async syncLatestUserRelicSnapshots(numDays = 1) {
         const yesterdayMorning = moment().utc().subtract(numDays, 'days').startOf('day').unix();
         const relicSnapshots = await this.reliquarySubgraphService.getAllRelicSnapshotsSince(yesterdayMorning);
-        await this.upsertRelicSnapshots(relicSnapshots);
+        const filteredSnapshots = relicSnapshots.filter(
+            (snapshot) => !networkConfig.reliquary!.excludedFarmIds.includes(snapshot.poolId.toString()),
+        );
+        await this.upsertRelicSnapshots(filteredSnapshots);
     }
 
     public async loadAllUserRelicSnapshots() {
         const relicSnapshots = await this.reliquarySubgraphService.getAllRelicSnapshotsSince();
-        await this.upsertRelicSnapshots(relicSnapshots);
+        const filteredSnapshots = relicSnapshots.filter(
+            (snapshot) => !networkConfig.reliquary!.excludedFarmIds.includes(snapshot.poolId.toString()),
+        );
+        await this.upsertRelicSnapshots(filteredSnapshots);
     }
 
     private async upsertRelicSnapshots(relicSnapshots: ReliquaryRelicSnapshotFragment[]) {

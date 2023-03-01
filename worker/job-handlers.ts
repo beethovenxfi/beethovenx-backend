@@ -254,13 +254,7 @@ export function configureWorkerRoutes(app: Express) {
                 );
                 break;
             case 'sync-latest-relic-snapshots':
-                await runIfNotAlreadyRunning(
-                    job.name,
-                    () => userService.asyncSyncUserRelicSnapshots(),
-                    0.01,
-                    res,
-                    next,
-                );
+                await runIfNotAlreadyRunning(job.name, () => userService.syncUserRelicSnapshots(), 0.01, res, next);
                 break;
             default:
                 res.sendStatus(400);
