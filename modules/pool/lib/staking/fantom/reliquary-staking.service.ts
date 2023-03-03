@@ -39,7 +39,7 @@ export class ReliquaryStakingService implements PoolStakingService {
 
             const farmId = `${farm.pid}`;
             const farmAllocationPoints = farm.allocPoint;
-            const reliquaryTotalAllocationPoints = 1000;
+            const reliquaryTotalAllocationPoints = reliquary.totalAllocPoint;
 
             const beetsPerSecond = (
                 parseFloat(reliquary.emissionCurve.rewardPerSecond) *
