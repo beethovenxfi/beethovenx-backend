@@ -1,7 +1,7 @@
 extend type Query {
     lges: [GqlLge!]!
     lge(id: ID!): GqlLge!
-    lgeGetChartData(id: ID!, steps: Int!): [GqlLgePriceData]!
+    lgeGetChartData(id: ID!): [GqlLgePriceData]!
 }
 
 extend type Mutation {

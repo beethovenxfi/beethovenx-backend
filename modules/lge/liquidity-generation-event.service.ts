@@ -128,7 +128,7 @@ export class LiquidityGenerationEventService {
         return result;
     }
 
-    public async getLgeChartData(id: string, steps: number): Promise<PriceData[]> {
+    public async getLgeChartData(id: string): Promise<PriceData[]> {
         const lge = await this.getLiquidityGenerationEvent(id);
         const now = moment().unix();
         const startTimestamp = moment(lge.startDate).unix();
@@ -299,7 +299,12 @@ export class LiquidityGenerationEventService {
     }
 
     public async getLgeRealPriceData(lge: LiquidityGenerationEvent): Promise<PriceData[]> {
-        const swaps = await prisma.prismaPoolSwap.findMany({ where: { poolId: lge.id } });
+        const startTimestamp = moment(lge.startDate).unix();
+        const endTimestamp = moment(lge.endDate).unix();
+        const swaps = await prisma.prismaPoolSwap.findMany({
+            where: { poolId: lge.id, timestamp: { gte: startTimestamp, lte: endTimestamp } },
+            orderBy: { timestamp: 'asc' },
+        });
 
         return swaps.map((swap) => {
             const price =
