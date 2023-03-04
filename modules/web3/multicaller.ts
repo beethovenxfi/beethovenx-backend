@@ -13,6 +13,13 @@ export interface MulticallUserBalance {
     balance: BigNumber;
 }
 
+export interface MulticallTokenData {
+    address: string;
+    symbol: string;
+    name: string;
+    decimals: number;
+}
+
 export class Multicaller {
     private multiAddress: string;
     private provider: Provider;
@@ -114,5 +121,34 @@ export class Multicaller {
         }
 
         return data;
+    }
+
+    public static async fetchTokens({
+        multicallAddress,
+        provider,
+        tokenAddresses,
+    }: {
+        multicallAddress: string;
+        provider: Provider;
+        tokenAddresses: string[];
+    }): Promise<MulticallTokenData[]> {
+        const multicall = new Multicaller(multicallAddress, provider, ERC20Abi);
+
+        for (const tokenAddress of tokenAddresses) {
+            multicall.call(`${tokenAddress}.symbol`, tokenAddress, 'symbol', []);
+            multicall.call(`${tokenAddress}.name`, tokenAddress, 'name', []);
+            multicall.call(`${tokenAddress}.decimals`, tokenAddress, 'decimals', []);
+        }
+
+        const response = (await multicall.execute()) as {
+            [tokenAddress: string]: { symbol: string; name: string; decimals: number };
+        };
+
+        console.log(
+            'response',
+            _.map(response, (data, address) => ({ ...data, address })),
+        );
+
+        return _.map(response, (data, address) => ({ ...data, address }));
     }
 }

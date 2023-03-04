@@ -7,6 +7,10 @@ import moment from 'moment-timezone';
 import { tokenService } from '../token/token.service';
 import { prisma } from '../../prisma/prisma-client';
 import { isSameAddress } from '@balancer-labs/sdk';
+import { Multicaller } from '../web3/multicaller';
+import { jsonRpcProvider } from '../web3/contract';
+import { networkConfig } from '../config/network-config';
+import { GqlLbp } from '../../schema';
 
 type LbpCreateInput = {
     id: string;
@@ -111,20 +115,52 @@ export class LbpService {
         });
     }
 
-    public async getLbps(): Promise<Lbp[]> {
-        return sanityClient.fetch(`*[_type == "lbp" && chainId == "${env.CHAIN_ID}"]`);
+    public async getLbps(): Promise<GqlLbp[]> {
+        const lbps: Lbp[] = await sanityClient.fetch(`*[_type == "lbp" && chainId == "${env.CHAIN_ID}"]`);
+
+        //TODO: will need to fix this for multichain
+        const tokens = await Multicaller.fetchTokens({
+            multicallAddress: networkConfig.multicall,
+            provider: jsonRpcProvider,
+            tokenAddresses: lbps.map((lbp) => lbp.tokenContractAddress),
+        });
+
+        return lbps.map((lbp) => {
+            const token = tokens.find((token) => token.address === lbp.tokenContractAddress)!;
+
+            return {
+                ...lbp,
+                token: {
+                    id: token.address,
+                    ...token,
+                },
+            };
+        });
     }
 
-    public async getLbp(id: string): Promise<Lbp> {
-        const result = await sanityClient.fetch(
+    public async getLbp(id: string): Promise<GqlLbp> {
+        const lbp: Lbp = await sanityClient.fetch(
             `*[_type == "lbp" && chainId == "${env.CHAIN_ID}" && id == "${id}"][0]`,
         );
 
-        if (!result) {
+        if (!lbp) {
             throw new Error(`LBP with id ${id} not found`);
         }
 
-        return result;
+        //TODO: will need to fix this for multichain
+        const tokens = await Multicaller.fetchTokens({
+            multicallAddress: networkConfig.multicall,
+            provider: jsonRpcProvider,
+            tokenAddresses: [lbp.tokenContractAddress],
+        });
+
+        return {
+            ...lbp,
+            token: {
+                id: tokens[0].address,
+                ...tokens[0],
+            },
+        };
     }
 
     public async getLbpChartData(id: string): Promise<PriceData[]> {

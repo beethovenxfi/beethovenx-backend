@@ -4,10 +4,10 @@ extend type Query {
     lbpGetChartData(id: ID!): [GqlLbpPriceData]!
 }
 
-extend type Mutation {
-    lbpCreate(lbp: GqlLbpCreateInput!, signature: String!): GqlLbp!
-    #lbpUpdate(lbp: GqlLbpUpdateInput!, signature: String!): GqlLbp!
-}
+#extend type Mutation {
+#lbpCreate(lbp: GqlLbpCreateInput!, signature: String!): GqlLbp!
+#lbpUpdate(lbp: GqlLbpUpdateInput!, signature: String!): GqlLbp!
+#}
 
 input GqlLbpCreateInput {
     id: ID!
@@ -71,6 +71,15 @@ type GqlLbp {
     bannerImageUrl: String!
     adminAddress: String!
     adminIsMultisig: Boolean!
+    token: GqlLbpToken!
+}
+
+type GqlLbpToken {
+    id: String!
+    address: String!
+    symbol: String!
+    name: String!
+    decimals: Int!
 }
 
 type GqlLbpPriceData {

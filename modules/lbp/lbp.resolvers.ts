@@ -13,11 +13,11 @@ const lbpResolvers: Resolvers = {
             return lbpService.getLbpChartData(id);
         },
     },
-    Mutation: {
+    /*Mutation: {
         lbpCreate: async (parent, { lbp }) => {
             return lbpService.createLbp(lbp);
         },
-    },
+    },*/
 };
 
 export default lbpResolvers;
