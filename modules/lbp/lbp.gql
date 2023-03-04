@@ -1,6 +1,6 @@
 extend type Query {
-    lbps: [GqlLbp!]!
-    lbp(id: ID!): GqlLbp!
+    lbpGetLbps: [GqlLbp!]!
+    lbpGetLbp(id: ID!): GqlLbp!
     lbpGetChartData(id: ID!): [GqlLbpPriceData]!
 }
 
@@ -74,6 +74,7 @@ type GqlLbp {
 }
 
 type GqlLbpPriceData {
+    id: String!
     timestamp: Int!
     price: Float!
     type: GqlLbpPriceType!

@@ -61,6 +61,7 @@ type Lbp = {
 };
 
 type PriceData = {
+    id: string;
     price: number;
     timestamp: number;
     type: 'REAL' | 'PREDICTED';
@@ -189,6 +190,7 @@ export class LbpService {
         const priceData: PriceData[] = [];
 
         priceData.push({
+            id: `${lbp.id}-predicted-${firstPredictionTimestamp}`,
             price: this.calculateLbpTokenPrice(
                 tokenWeight,
                 collateralWeight,
@@ -223,6 +225,7 @@ export class LbpService {
             );
 
             priceData.push({
+                id: `${lbp.id}-${timestamp}`,
                 price: tokenPrice,
                 timestamp: timestamp,
                 type: 'PREDICTED',
@@ -230,6 +233,7 @@ export class LbpService {
         }
 
         priceData.push({
+            id: `${lbp.id}-${endTimestamp}`,
             price: this.calculateLbpTokenPrice(
                 lbp.tokenEndWeight,
                 lbp.collateralEndWeight,
@@ -312,6 +316,7 @@ export class LbpService {
                     : parseFloat(swap.tokenAmountOut));
 
             return {
+                id: `${lbp.id}-${swap.timestamp}`,
                 price,
                 timestamp: swap.timestamp,
                 type: 'REAL',

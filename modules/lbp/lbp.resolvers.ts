@@ -3,10 +3,10 @@ import { lbpService } from './lbp.service';
 
 const lbpResolvers: Resolvers = {
     Query: {
-        lbp: async (parent, args) => {
+        lbpGetLbp: async (parent, args) => {
             return lbpService.getLbp(args.id);
         },
-        lbps: () => {
+        lbpGetLbps: () => {
             return lbpService.getLbps();
         },
         lbpGetChartData: async (parent, { id }) => {
