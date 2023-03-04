@@ -1,3 +1,14 @@
+extend type Query {
+    lges: [GqlLge!]!
+    lge(id: ID!): GqlLge!
+    lgeGetChartData(id: ID!, steps: Int!): [GqlLgePriceData]!
+}
+
+extend type Mutation {
+    lgeCreate(lge: GqlLgeCreateInput!, signature: String!): GqlLge!
+    #LgeUpdate(Lge: GqlLgeUpdateInput!, signature: String!): GqlLge!
+}
+
 input GqlLgeCreateInput {
     id: ID!
     address: String!
@@ -62,12 +73,13 @@ type GqlLge {
     adminIsMultisig: Boolean!
 }
 
-extend type Query {
-    lges: [GqlLge!]!
-    lge(id: ID!): GqlLge!
+type GqlLgePriceData {
+    timestamp: Int!
+    price: Float!
+    type: GqlLgePriceType!
 }
 
-extend type Mutation {
-    lgeCreate(lge: GqlLgeCreateInput!, signature: String!): GqlLge!
-    #LgeUpdate(Lge: GqlLgeUpdateInput!, signature: String!): GqlLge!
+enum GqlLgePriceType {
+    PREDICTED
+    REAL
 }
