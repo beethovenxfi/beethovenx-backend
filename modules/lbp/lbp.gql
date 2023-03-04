@@ -1,15 +1,15 @@
 extend type Query {
-    lges: [GqlLge!]!
-    lge(id: ID!): GqlLge!
-    lgeGetChartData(id: ID!): [GqlLgePriceData]!
+    lbps: [GqlLbp!]!
+    lbp(id: ID!): GqlLbp!
+    lbpGetChartData(id: ID!): [GqlLbpPriceData]!
 }
 
 extend type Mutation {
-    lgeCreate(lge: GqlLgeCreateInput!, signature: String!): GqlLge!
-    #LgeUpdate(Lge: GqlLgeUpdateInput!, signature: String!): GqlLge!
+    lbpCreate(lbp: GqlLbpCreateInput!, signature: String!): GqlLbp!
+    #lbpUpdate(lbp: GqlLbpUpdateInput!, signature: String!): GqlLbp!
 }
 
-input GqlLgeCreateInput {
+input GqlLbpCreateInput {
     id: ID!
     address: String!
     name: String!
@@ -34,7 +34,7 @@ input GqlLgeCreateInput {
     endDate: String!
 }
 
-input GqlLgeUpdateInput {
+input GqlLbpUpdateInput {
     id: ID!
     name: String!
     description: String!
@@ -46,7 +46,7 @@ input GqlLgeUpdateInput {
     telegramUrl: String!
 }
 
-type GqlLge {
+type GqlLbp {
     id: ID!
     address: String!
     name: String!
@@ -73,13 +73,13 @@ type GqlLge {
     adminIsMultisig: Boolean!
 }
 
-type GqlLgePriceData {
+type GqlLbpPriceData {
     timestamp: Int!
     price: Float!
-    type: GqlLgePriceType!
+    type: GqlLbpPriceType!
 }
 
-enum GqlLgePriceType {
+enum GqlLbpPriceType {
     PREDICTED
     REAL
 }

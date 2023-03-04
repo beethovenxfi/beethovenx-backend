@@ -8,7 +8,7 @@ import { tokenService } from '../token/token.service';
 import { prisma } from '../../prisma/prisma-client';
 import { isSameAddress } from '@balancer-labs/sdk';
 
-export type LiquidityGenerationCreateInput = {
+type LbpCreateInput = {
     id: string;
     address: string;
     bannerImageUrl: string;
@@ -33,7 +33,7 @@ export type LiquidityGenerationCreateInput = {
     websiteUrl: string;
 };
 
-export type LiquidityGenerationEvent = {
+type Lbp = {
     id: string;
     address: string;
     name: string;
@@ -60,7 +60,7 @@ export type LiquidityGenerationEvent = {
     adminIsMultisig: boolean;
 };
 
-export type PriceData = {
+type PriceData = {
     price: number;
     timestamp: number;
     type: 'REAL' | 'PREDICTED';
@@ -69,15 +69,13 @@ export type PriceData = {
 // predict 24 data points per default
 const PREDICTION_TIME_STEP = 24;
 
-export class LiquidityGenerationEventService {
+export class LbpService {
     constructor(
         private readonly gnosisSafeService: GnosisSafeService,
         private readonly copperProxyService: CopperProxyService,
     ) {}
 
-    public async createLiquidityGenerationEvent(
-        input: LiquidityGenerationCreateInput,
-    ): Promise<LiquidityGenerationEvent> {
+    public async createLbp(input: LbpCreateInput): Promise<Lbp> {
         const poolOwner = await this.copperProxyService.getLbpPoolOwner(getAddress(input.address));
         const adminIsMultisig = await this.gnosisSafeService.isAddressGnosisSafe(getAddress(poolOwner));
 
@@ -112,27 +110,27 @@ export class LiquidityGenerationEventService {
         });
     }
 
-    public async getLges(): Promise<LiquidityGenerationEvent[]> {
+    public async getLbps(): Promise<Lbp[]> {
         return sanityClient.fetch(`*[_type == "lbp" && chainId == "${env.CHAIN_ID}"]`);
     }
 
-    public async getLiquidityGenerationEvent(id: string): Promise<LiquidityGenerationEvent> {
+    public async getLbp(id: string): Promise<Lbp> {
         const result = await sanityClient.fetch(
             `*[_type == "lbp" && chainId == "${env.CHAIN_ID}" && id == "${id}"][0]`,
         );
 
         if (!result) {
-            throw new Error(`Liquidity generation event with id ${id} not found`);
+            throw new Error(`LBP with id ${id} not found`);
         }
 
         return result;
     }
 
-    public async getLgeChartData(id: string): Promise<PriceData[]> {
-        const lge = await this.getLiquidityGenerationEvent(id);
+    public async getLbpChartData(id: string): Promise<PriceData[]> {
+        const lbp = await this.getLbp(id);
         const now = moment().unix();
-        const startTimestamp = moment(lge.startDate).unix();
-        const endTimestamp = moment(lge.endDate).unix();
+        const startTimestamp = moment(lbp.startDate).unix();
+        const endTimestamp = moment(lbp.endDate).unix();
 
         const hasEnded = now > endTimestamp;
         const hasStarted = now >= startTimestamp;
@@ -141,12 +139,12 @@ export class LiquidityGenerationEventService {
         let predictedPriceData: PriceData[] = [];
 
         if (hasStarted) {
-            realPriceData = await this.getLgeRealPriceData(lge);
+            realPriceData = await this.getLbpRealPriceData(lbp);
         }
 
         if (!hasEnded) {
             // always predict the price with a PREDICTION_TIME_STEP step
-            predictedPriceData = await this.getLgeChartPredictedPriceData(lge);
+            predictedPriceData = await this.getLbpChartPredictedPriceData(lbp);
         }
 
         return [...realPriceData, ...predictedPriceData];
@@ -157,10 +155,10 @@ export class LiquidityGenerationEventService {
     The number of data points we predict is static set to PREDICTION_TIME_STEP but enforces a minimum of 1 data point per 12 hours and a maximum of
     1 datapoint per second.
     */
-    private async getLgeChartPredictedPriceData(lge: LiquidityGenerationEvent): Promise<PriceData[]> {
+    private async getLbpChartPredictedPriceData(lbp: Lbp): Promise<PriceData[]> {
         const now = moment().unix();
-        const startTimestamp = moment(lge.startDate).unix();
-        const endTimestamp = moment(lge.endDate).unix();
+        const startTimestamp = moment(lbp.startDate).unix();
+        const endTimestamp = moment(lbp.endDate).unix();
         const hasStarted = now > startTimestamp;
         const firstPredictionTimestamp = hasStarted ? now : startTimestamp;
         const secondsRemaining = endTimestamp - firstPredictionTimestamp;
@@ -174,16 +172,16 @@ export class LiquidityGenerationEventService {
             predictionInterval = TWELVE_HOURS_IN_SECONDS;
         }
         // for the prediction, we use the current token price of the collateral token as well as the current token balances
-        const { collateralBalance, tokenBalance } = await this.getCurrentPoolTokenBalances(lge);
+        const { collateralBalance, tokenBalance } = await this.getCurrentPoolTokenBalances(lbp);
         const tokenPrices = await tokenService.getTokenPrices();
-        const collateralTokenPrice = tokenService.getPriceForToken(tokenPrices, lge.collateralTokenAddress);
+        const collateralTokenPrice = tokenService.getPriceForToken(tokenPrices, lbp.collateralTokenAddress);
 
         let { tokenWeight, collateralWeight } = this.getWeightsAtTime(
             firstPredictionTimestamp,
-            lge.tokenStartWeight,
-            lge.tokenEndWeight,
-            lge.collateralStartWeight,
-            lge.collateralEndWeight,
+            lbp.tokenStartWeight,
+            lbp.tokenEndWeight,
+            lbp.collateralStartWeight,
+            lbp.collateralEndWeight,
             startTimestamp,
             endTimestamp,
         );
@@ -208,10 +206,10 @@ export class LiquidityGenerationEventService {
             timestamp = timestamp + predictionInterval;
             let { tokenWeight, collateralWeight } = this.getWeightsAtTime(
                 timestamp,
-                lge.tokenStartWeight,
-                lge.tokenEndWeight,
-                lge.collateralStartWeight,
-                lge.collateralEndWeight,
+                lbp.tokenStartWeight,
+                lbp.tokenEndWeight,
+                lbp.collateralStartWeight,
+                lbp.collateralEndWeight,
                 startTimestamp,
                 endTimestamp,
             );
@@ -233,8 +231,8 @@ export class LiquidityGenerationEventService {
 
         priceData.push({
             price: this.calculateLbpTokenPrice(
-                lge.tokenEndWeight,
-                lge.collateralEndWeight,
+                lbp.tokenEndWeight,
+                lbp.collateralEndWeight,
                 tokenBalance,
                 collateralBalance,
                 collateralTokenPrice,
@@ -246,21 +244,21 @@ export class LiquidityGenerationEventService {
         return priceData;
     }
 
-    private async getCurrentPoolTokenBalances(lge: LiquidityGenerationEvent) {
+    private async getCurrentPoolTokenBalances(lbp: Lbp) {
         const poolTokens = await prisma.prismaPoolToken.findMany({
-            where: { poolId: lge.id },
+            where: { poolId: lbp.id },
             include: { dynamicData: true },
         });
 
-        let tokenBalance = parseFloat(lge.tokenAmount);
-        let collateralBalance = parseFloat(lge.collateralAmount);
+        let tokenBalance = parseFloat(lbp.tokenAmount);
+        let collateralBalance = parseFloat(lbp.collateralAmount);
         for (const poolToken of poolTokens) {
-            if (isSameAddress(poolToken.address, lge.tokenContractAddress)) {
+            if (isSameAddress(poolToken.address, lbp.tokenContractAddress)) {
                 if (poolToken.dynamicData) {
                     tokenBalance = parseFloat(poolToken.dynamicData.balance);
                 }
             }
-            if (isSameAddress(poolToken.address, lge.collateralTokenAddress)) {
+            if (isSameAddress(poolToken.address, lbp.collateralTokenAddress)) {
                 if (poolToken.dynamicData) {
                     collateralBalance = parseFloat(poolToken.dynamicData.balance);
                 }
@@ -298,18 +296,18 @@ export class LiquidityGenerationEventService {
         return (((tokenWeight / collateralWeight) * collateralBalance) / tokenBalance) * collateralTokenPrice;
     }
 
-    public async getLgeRealPriceData(lge: LiquidityGenerationEvent): Promise<PriceData[]> {
-        const startTimestamp = moment(lge.startDate).unix();
-        const endTimestamp = moment(lge.endDate).unix();
+    public async getLbpRealPriceData(lbp: Lbp): Promise<PriceData[]> {
+        const startTimestamp = moment(lbp.startDate).unix();
+        const endTimestamp = moment(lbp.endDate).unix();
         const swaps = await prisma.prismaPoolSwap.findMany({
-            where: { poolId: lge.id, timestamp: { gte: startTimestamp, lte: endTimestamp } },
+            where: { poolId: lbp.id, timestamp: { gte: startTimestamp, lte: endTimestamp } },
             orderBy: { timestamp: 'asc' },
         });
 
         return swaps.map((swap) => {
             const price =
                 swap.valueUSD /
-                (swap.tokenIn === lge.tokenContractAddress
+                (swap.tokenIn === lbp.tokenContractAddress
                     ? parseFloat(swap.tokenAmountIn)
                     : parseFloat(swap.tokenAmountOut));
 
@@ -322,7 +320,4 @@ export class LiquidityGenerationEventService {
     }
 }
 
-export const liquidityGenerationEventService = new LiquidityGenerationEventService(
-    gnosisSafeService,
-    copperProxyService,
-);
+export const lbpService = new LbpService(gnosisSafeService, copperProxyService);
