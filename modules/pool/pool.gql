@@ -25,6 +25,7 @@ extend type Query {
     poolGetSnapshots(id: String!, range: GqlPoolSnapshotDataRange!): [GqlPoolSnapshot!]!
     poolGetAllPoolsSnapshots(range: GqlPoolSnapshotDataRange!): [GqlPoolSnapshot!]!
     poolGetLinearPools: [GqlPoolLinear!]!
+    poolGetReliquaryFarmSnapshots(id: String!, range: GqlPoolSnapshotDataRange!): [GqlReliquaryFarmSnapshot!]!
 }
 
 extend type Mutation {
@@ -33,6 +34,7 @@ extend type Mutation {
     poolLoadOnChainDataForAllPools: String!
     poolLoadOnChainDataForPoolsWithActiveUpdates: String!
     poolUpdateLiquidityValuesForAllPools: String!
+    poolUpdateLiquidityValuesForAllEmptyPools(maxShares: String!): String!
     poolUpdateVolumeAndFeeValuesForAllPools: String!
     poolSyncSwapsForLast48Hours: String!
     poolSyncSanityPoolData: String!
@@ -44,12 +46,14 @@ extend type Mutation {
     poolSyncStakingForPools: String!
     poolUpdateLiquidity24hAgoForAllPools: String!
     poolLoadSnapshotsForAllPools: String!
+    poolLoadSnapshotsForPools(poolIds: [String!]!): String!
     poolSyncLatestSnapshotsForAllPools(daysToSync: Int): String!
     poolUpdateLifetimeValuesForAllPools: String!
     poolInitializeSnapshotsForPool(poolId: String!): String!
     poolSyncPool(poolId: String!): String!
     poolReloadPoolNestedTokens(poolId: String!): String!
     poolReloadAllTokenNestedPoolIds: String!
+    poolLoadReliquarySnapshotsForAllFarms: String!
 }
 
 type GqlPoolMinimal {
@@ -643,6 +647,8 @@ type GqlPoolStakingMasterChefFarm {
 type GqlPoolStakingReliquaryFarm {
     id: ID!
     beetsPerSecond: String!
+    totalBalance: String!
+    totalWeightedBalance: String!
     levels: [GqlPoolStakingReliquarFarmLevel!]
 }
 type GqlPoolStakingReliquarFarmLevel {
@@ -767,6 +773,35 @@ type GqlPoolSnapshot {
     holdersCount: String!
     sharePrice: String!
     amounts: [String!]!
+}
+
+type GqlReliquaryFarmSnapshot {
+    id: ID!
+    farmId: String!
+    timestamp: Int!
+    relicCount: String!
+    userCount: String!
+    totalBalance: String!
+    dailyDeposited: String!
+    dailyWithdrawn: String!
+    totalLiquidity: String!
+    levelBalances: [GqlReliquaryFarmLevelSnapshot!]!
+    tokenBalances: [GqlReliquaryTokenBalanceSnapshot!]!
+}
+
+type GqlReliquaryFarmLevelSnapshot {
+    id: ID!
+    level: String!
+    balance: String!
+}
+
+type GqlReliquaryTokenBalanceSnapshot {
+    id: ID!
+    address: String!
+    balance: String!
+    symbol: String!
+    name: String!
+    decimals: Int!
 }
 
 type GqlPoolTokenDisplay {

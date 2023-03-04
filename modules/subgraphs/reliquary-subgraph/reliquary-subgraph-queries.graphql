@@ -79,6 +79,70 @@ query ReliquaryPools(
     }
 }
 
+query ReliquaryFarmSnapshots(
+    $skip: Int
+    $first: Int
+    $orderBy: DailyPoolSnapshot_orderBy
+    $orderDirection: OrderDirection
+    $where: DailyPoolSnapshot_filter
+    $block: Block_height
+) {
+    farmSnapshots: dailyPoolSnapshots(
+        skip: $skip
+        first: $first
+        orderBy: $orderBy
+        orderDirection: $orderDirection
+        where: $where
+        block: $block
+    ) {
+        ...ReliquaryFarmSnapshot
+    }
+}
+
+query ReliquaryRelicSnapshots(
+    $skip: Int
+    $first: Int
+    $orderBy: DailyRelicSnapshot_orderBy
+    $orderDirection: OrderDirection
+    $where: DailyRelicSnapshot_filter
+    $block: Block_height
+) {
+    relicSnapshots: dailyRelicSnapshots(
+        skip: $skip
+        first: $first
+        orderBy: $orderBy
+        orderDirection: $orderDirection
+        where: $where
+        block: $block
+    ) {
+        ...ReliquaryRelicSnapshot
+    }
+}
+
+query ReliquaryPoolLevels(
+    $skip: Int
+    $first: Int
+    $orderBy: PoolLevel_orderBy
+    $orderDirection: OrderDirection
+    $where: PoolLevel_filter
+    $block: Block_height
+) {
+    poolLevels(
+        skip: $skip
+        first: $first
+        orderBy: $orderBy
+        orderDirection: $orderDirection
+        where: $where
+        block: $block
+    ) {
+        id
+        level
+        balance
+        requiredMaturity
+        allocationPoints
+    }
+}
+
 fragment ReliquaryUser on User {
     address
     relics {
@@ -127,6 +191,28 @@ fragment ReliquaryFarm on Pool {
         requiredMaturity
     }
 }
+
+fragment ReliquaryRelicSnapshot on DailyRelicSnapshot {
+    id
+    relicId
+    snapshotTimestamp
+    userAddress
+    poolId
+    balance
+    entryTimestamp
+    level
+}
+
+fragment ReliquaryFarmSnapshot on DailyPoolSnapshot {
+    id
+    farmId: poolId
+    snapshotTimestamp
+    totalBalance
+    dailyDeposited
+    dailyWithdrawn
+    relicCount
+}
+
 query ReliquaryGetMeta {
     meta: _meta {
         block {

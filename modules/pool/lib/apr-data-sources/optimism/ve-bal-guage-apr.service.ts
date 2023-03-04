@@ -13,6 +13,11 @@ export class GaugeAprService implements PoolAprService {
         private readonly tokenService: TokenService,
         private readonly primaryTokens: string[],
     ) {}
+
+    public getAprServiceName(): string {
+        return 'GaugeAprService';
+    }
+
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
         const operations: any[] = [];
         const gaugeStreamers = await this.gaugeService.getStreamers();
@@ -35,7 +40,7 @@ export class GaugeAprService implements PoolAprService {
                 const tokenPrice = this.tokenService.getPriceForToken(tokenPrices, rewardToken.address) || 0.1;
                 const rewardTokenPerYear = rewardToken.rewardsPerSecond * secondsPerYear;
                 const rewardTokenValuePerYear = tokenPrice * rewardTokenPerYear;
-                const rewardApr = gaugeTvl > 0 ? rewardTokenValuePerYear / gaugeTvl : 0;
+                let rewardApr = gaugeTvl > 0 ? rewardTokenValuePerYear / gaugeTvl : 0;
 
                 const isThirdPartyApr = !this.primaryTokens.includes(rewardToken.address);
                 if (isThirdPartyApr) {

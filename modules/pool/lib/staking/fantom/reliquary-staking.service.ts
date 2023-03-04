@@ -1,7 +1,9 @@
 import { isSameAddress } from '@balancer-labs/sdk';
 import { PrismaPoolStakingType } from '@prisma/client';
+import _ from 'lodash';
 import { prisma } from '../../../../../prisma/prisma-client';
 import { prismaBulkExecuteOperations } from '../../../../../prisma/prisma-util';
+import { networkConfig } from '../../../../config/network-config';
 import { ReliquarySubgraphService } from '../../../../subgraphs/reliquary-subgraph/reliquary.service';
 import { PoolStakingService } from '../../../pool-types';
 
@@ -17,12 +19,15 @@ export class ReliquaryStakingService implements PoolStakingService {
             throw new Error(`Reliquary with id ${this.reliquaryAddress} not found in subgraph`);
         }
         const farms = await this.reliquarySubgraphService.getAllFarms({});
+        const filteredFarms = farms.filter(
+            (farm) => !networkConfig.reliquary!.excludedFarmIds.includes(farm.pid.toString()),
+        );
         const pools = await prisma.prismaPool.findMany({
             include: { staking: { include: { farm: { include: { rewarders: true } } } } },
         });
         const operations: any[] = [];
 
-        for (const farm of farms) {
+        for (const farm of filteredFarms) {
             const pool = pools.find((pool) => isSameAddress(pool.address, farm.poolTokenAddress));
 
             if (!pool) {
@@ -33,7 +38,13 @@ export class ReliquaryStakingService implements PoolStakingService {
             }
 
             const farmId = `${farm.pid}`;
-            const beetsPerSecond = reliquary.emissionCurve.rewardPerSecond;
+            const farmAllocationPoints = farm.allocPoint;
+            const reliquaryTotalAllocationPoints = reliquary.totalAllocPoint;
+
+            const beetsPerSecond = (
+                parseFloat(reliquary.emissionCurve.rewardPerSecond) *
+                (farmAllocationPoints / reliquaryTotalAllocationPoints)
+            ).toString();
 
             if (!pool.staking) {
                 operations.push(
@@ -48,26 +59,17 @@ export class ReliquaryStakingService implements PoolStakingService {
                 );
             }
 
-            operations.push(
-                prisma.prismaPoolStakingReliquaryFarm.upsert({
-                    where: { id: farmId },
-                    create: {
-                        id: farmId,
-                        stakingId: `reliquary-${farmId}`,
-                        name: farm.name,
-                        beetsPerSecond: beetsPerSecond,
-                    },
-                    update: {
-                        beetsPerSecond: beetsPerSecond,
-                        name: farm.name,
-                    },
-                }),
-            );
+            let totalBalance = `0`;
+            let totalWeightedBalance = `0`;
 
+            const levelOperations = [];
             for (let farmLevel of farm.levels) {
                 const { allocationPoints, balance, level, requiredMaturity } = farmLevel;
 
-                operations.push(
+                totalBalance = `${parseFloat(totalBalance) + parseFloat(balance)}`;
+                totalWeightedBalance = `${parseFloat(totalWeightedBalance) + parseFloat(balance) * allocationPoints}`;
+
+                levelOperations.push(
                     prisma.prismaPoolStakingReliquaryFarmLevel.upsert({
                         where: { id: `${farmId}-${level}` },
                         create: {
@@ -86,6 +88,26 @@ export class ReliquaryStakingService implements PoolStakingService {
                     }),
                 );
             }
+            operations.push(
+                prisma.prismaPoolStakingReliquaryFarm.upsert({
+                    where: { id: farmId },
+                    create: {
+                        id: farmId,
+                        stakingId: `reliquary-${farmId}`,
+                        name: farm.name,
+                        beetsPerSecond: beetsPerSecond,
+                        totalBalance: totalBalance.toString(),
+                        totalWeightedBalance: totalWeightedBalance.toString(),
+                    },
+                    update: {
+                        beetsPerSecond: beetsPerSecond,
+                        totalBalance: totalBalance.toString(),
+                        totalWeightedBalance: totalWeightedBalance.toString(),
+                        name: farm.name,
+                    },
+                }),
+            );
+            operations.push(...levelOperations);
         }
 
         await prismaBulkExecuteOperations(operations, true);

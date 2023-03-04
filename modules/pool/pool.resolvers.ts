@@ -66,6 +66,23 @@ const balancerResolvers: Resolvers = {
         poolGetLinearPools: async () => {
             return poolService.getGqlLinearPools();
         },
+        poolGetReliquaryFarmSnapshots: async (parent, { id, range }, context) => {
+            const snapshots = await poolService.getSnapshotsForReliquaryFarm(parseFloat(id), range);
+
+            return snapshots.map((snapshot) => ({
+                id: snapshot.id,
+                farmId: snapshot.farmId,
+                timestamp: snapshot.timestamp,
+                relicCount: `${snapshot.relicCount}`,
+                userCount: `${snapshot.userCount}`,
+                totalBalance: snapshot.totalBalance,
+                totalLiquidity: snapshot.totalLiquidity,
+                dailyDeposited: snapshot.dailyDeposited,
+                dailyWithdrawn: snapshot.dailyWithdrawn,
+                levelBalances: snapshot.levelBalances,
+                tokenBalances: snapshot.tokenBalances,
+            }));
+        },
     },
     Mutation: {
         poolSyncAllPoolsFromSubgraph: async (parent, {}, context) => {
@@ -89,6 +106,13 @@ const balancerResolvers: Resolvers = {
             isAdminRoute(context);
 
             await poolService.updateLiquidityValuesForPools();
+
+            return 'success';
+        },
+        poolUpdateLiquidityValuesForAllEmptyPools: async (parent, { maxShares }, context) => {
+            isAdminRoute(context);
+
+            await poolService.updateLiquidityValuesForPools(0, parseFloat(maxShares));
 
             return 'success';
         },
@@ -183,6 +207,13 @@ const balancerResolvers: Resolvers = {
 
             return 'success';
         },
+        poolLoadSnapshotsForPools: async (parent, { poolIds }, context) => {
+            isAdminRoute(context);
+
+            await poolService.loadSnapshotsForPools(poolIds);
+
+            return 'success';
+        },
         poolSyncLatestSnapshotsForAllPools: async (parent, { daysToSync }, context) => {
             isAdminRoute(context);
 
@@ -223,6 +254,13 @@ const balancerResolvers: Resolvers = {
             isAdminRoute(context);
 
             await poolService.reloadAllTokenNestedPoolIds();
+
+            return 'success';
+        },
+        poolLoadReliquarySnapshotsForAllFarms: async (parent, args, context) => {
+            isAdminRoute(context);
+
+            await poolService.loadReliquarySnapshotsForAllFarms();
 
             return 'success';
         },

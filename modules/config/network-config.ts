@@ -59,6 +59,7 @@ export interface NetworkConfig {
         vault: string;
         weightedPoolV2Factories: string[];
         composableStablePoolFactories: string[];
+        poolsInRecoveryMode: string[];
         yieldProtocolFeePercentage: number;
         swapProtocolFeePercentage: number;
     };
@@ -69,6 +70,7 @@ export interface NetworkConfig {
     };
     reliquary?: {
         address: string;
+        excludedFarmIds: string[];
     };
     copper?: {
         proxyAddress: string;
@@ -153,9 +155,9 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             farmId: '22',
             reliquaryFarmPid: 1,
             poolId: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019',
-            poolIdV2: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019', // set when pool created
+            poolIdV2: '0x9e4341acef4147196e99d648c5e43b3fc9d026780002000000000000000005ec',
             poolAddress: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837',
-            poolAddressV2: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837', // test fidelio duetto bpt v2
+            poolAddressV2: '0x9e4341acef4147196e99d648c5e43b3fc9d02678',
         },
         bal: {
             address: '',
@@ -166,12 +168,15 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
                 '0x5AdAF6509BCEc3219455348AC45d6D3261b1A990',
                 '0xB384A86F2Fd7788720db42f9daa60fc07EcBeA06',
                 '0x44814E3A603bb7F1198617995c5696C232F6e8Ed',
+                '0x911566c808bF00acB200B418564440A2Af177548',
             ],
             weightedPoolV2Factories: [
                 '0xB2ED595Afc445b47Db7043bEC25e772bf0FA1fbb',
                 '0x8ea1c497c16726E097f62C8C9FBD944143F27090',
                 '0xea87F3dFfc679035653C0FBa70e7bfe46E3FB733',
+                '0xd678b6Acd834Cc969Bb19Ce82727f2a541fb7941',
             ],
+            poolsInRecoveryMode: [''],
             swapProtocolFeePercentage: 0.25,
             yieldProtocolFeePercentage: 0.25,
         },
@@ -182,10 +187,15 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
                 '34', //OHM bonding farm
                 '28', //OHM bonding farm
                 '9', //old fidellio dueto (non fbeets)
+                '98', //reliquary beets streaming farm
             ],
         },
         reliquary: {
-            address: '0xb0FC43069089d0fA02baAa896ac2eFcb596D7D05',
+            address: '0x1ed6411670c709F4e163854654BD52c74E66D7eC',
+            excludedFarmIds: [
+                '0', // test with dummy token
+                '1', // test with fresh beets pool BPT
+            ],
         },
         avgBlockSpeed: 1,
         sor: {
@@ -274,8 +284,43 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         balancer: {
             vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
-            composableStablePoolFactories: ['0xf145caFB67081895EE80eB7c04A30Cf87f07b745'],
-            weightedPoolV2Factories: ['0xad901309d9e9DbC5Df19c84f729f429F0189a633'],
+            composableStablePoolFactories: [
+                '0xf145caFB67081895EE80eB7c04A30Cf87f07b745',
+                '0xe2e901ab09f37884ba31622df3ca7fc19aa443be',
+                '0xe2E901AB09f37884BA31622dF3Ca7FC19AA443Be',
+            ],
+            weightedPoolV2Factories: [
+                '0xad901309d9e9DbC5Df19c84f729f429F0189a633',
+                '0xa0dabebaad1b243bbb243f933013d560819eb66f',
+                '0xA0DAbEBAAd1b243BBb243f933013d560819eB66f',
+            ],
+            poolsInRecoveryMode: [
+                '0x05e7732bf9ae5592e6aa05afe8cd80f7ab0a7bea',
+                '0x359ea8618c405023fc4b98dab1b01f373792a126',
+                '0x3fdb6fb126521a28f06893f9629da12f7b7266eb',
+                '0x435272180a4125f3b47c92826f482fc6cc165958',
+                '0x785f08fb77ec934c01736e30546f87b4daccbe50',
+                '0x899f737750db562b88c1e412ee1902980d3a4844',
+                '0x981fb05b738e981ac532a99e77170ecb4bc27aef',
+                '0xb0de49429fbb80c635432bbad0b3965b28560177',
+                '0xc77e5645dbe48d54afc06655e39d3fe17eb76c1c',
+                '0xe0b50b0635b90f7021d2618f76ab9a31b92d0094',
+                '0xf30db0ca4605e5115df91b56bd299564dca02666',
+                '0x1f131ec1175f023ee1534b16fa8ab237c00e2381',
+                '0x428e1cc3099cf461b87d124957a0d48273f334b1',
+                '0x479a7d1fcdd71ce0c2ed3184bfbe9d23b92e8337',
+                '0x593acbfb1eaf3b6ec86fa60325d816996fdcbc0d',
+                '0x6222ae1d2a9f6894da50aa25cb7b303497f9bebd',
+                '0x62de5ca16a618e22f6dfe5315ebd31acb10c44b6',
+                '0x7d6bff131b359da66d92f215fd4e186003bfaa42',
+                '0x96a78983932b8739d1117b16d30c15607926b0c5',
+                '0x9964b1bd3cc530e5c58ba564e45d45290f677be2',
+                '0xb0f2c34b9cd5c377c5efbba3b31e67114810cbc8',
+                '0xb1c9ac57594e9b1ec0f3787d9f6744ef4cb0a024',
+                '0xde45f101250f2ca1c0f8adfc172576d10c12072d',
+                '0xf572649606db4743d217a2fa6e8b8eb79742c24a',
+                '0x373b347bc87998b151a5e9b6bb6ca692b766648a',
+            ],
             swapProtocolFeePercentage: 0.5,
             yieldProtocolFeePercentage: 0.5,
         },

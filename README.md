@@ -6,7 +6,8 @@
 
 ### Prepare .env file
 
-Rename `env.local` file to `.env`.
+Run
+`cp env.local .env`
 
 For the sanity content to work, you need to set
 the `SANITY_API_TOKEN`.
@@ -69,4 +70,3 @@ We follow the model of [gitflow](https://www.atlassian.com/git/tutorials/compari
 -   hotfix: hf/\*
 
 To contribute, branch from `v2-canary` (which is our development branch) and open a PR against `v2-canary` once the feature is complete. It will be reviewed and eventually merged into v2-canary.
-

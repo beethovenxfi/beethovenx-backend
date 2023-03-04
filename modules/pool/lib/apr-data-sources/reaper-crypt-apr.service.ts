@@ -1,4 +1,5 @@
 import { isSameAddress } from '@balancer-labs/sdk';
+import * as Sentry from '@sentry/node';
 import { prisma } from '../../../../prisma/prisma-client';
 import { PrismaPoolWithExpandedNesting } from '../../../../prisma/prisma-types';
 import { TokenService } from '../../../token/token.service';
@@ -19,6 +20,10 @@ export class ReaperCryptAprService implements PoolAprService {
         private readonly tokenService: TokenService,
     ) {}
 
+    public getAprServiceName(): string {
+        return 'ReaperCryptAprService';
+    }
+
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
         const tokenPrices = await this.tokenService.getTokenPrices();
 
@@ -36,9 +41,21 @@ export class ReaperCryptAprService implements PoolAprService {
             const cryptContract = getContractAt(wrappedToken.address, ReaperCryptAbi);
             const cryptStrategyAddress = await cryptContract.strategy();
             const strategyContract = getContractAt(cryptStrategyAddress, ReaperCryptStrategyAbi);
-            const avgAprAcrossXHarvests =
-                (await strategyContract.averageAPRAcrossLastNHarvests(this.averageAPRAcrossLastNHarvests)) /
-                this.APR_PERCENT_DIVISOR;
+            let avgAprAcrossXHarvests = 0;
+            try {
+                avgAprAcrossXHarvests =
+                    (await strategyContract.averageAPRAcrossLastNHarvests(this.averageAPRAcrossLastNHarvests)) /
+                    this.APR_PERCENT_DIVISOR;
+            } catch (e) {
+                Sentry.captureException(e, {
+                    tags: {
+                        poolId: pool.id,
+                        poolName: pool.name,
+                        strategyContract: cryptStrategyAddress,
+                    },
+                });
+                continue;
+            }
 
             const tokenPrice = this.tokenService.getPriceForToken(tokenPrices, mainToken.address);
             const wrappedTokens = parseFloat(wrappedToken.dynamicData?.balance || '0');

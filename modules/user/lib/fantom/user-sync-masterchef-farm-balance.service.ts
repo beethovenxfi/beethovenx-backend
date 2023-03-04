@@ -29,14 +29,14 @@ export class UserSyncMasterchefFarmBalanceService implements UserStakedBalanceSe
         }
 
         const pools = await prisma.prismaPool.findMany({
-            where: { OR: { staking: { type: 'FRESH_BEETS' } }, staking: { type: 'MASTER_CHEF' } },
+            where: { OR: [{ staking: { type: 'FRESH_BEETS' } }, { staking: { type: 'MASTER_CHEF' } }] },
             include: { staking: true },
         });
         const latestBlock = await jsonRpcProvider.getBlockNumber();
         const farms = await masterchefService.getAllFarms({});
 
         const startBlock = status.blockNumber + 1;
-        const endBlock = latestBlock - startBlock > 10_000 ? startBlock + 10_000 : latestBlock;
+        const endBlock = latestBlock - startBlock > 2_000 ? startBlock + 2_000 : latestBlock;
         const amountUpdates = await this.getAmountsForUsersWithBalanceChangesSinceStartBlock(
             networkConfig.masterchef.address,
             startBlock,

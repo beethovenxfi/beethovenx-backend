@@ -2,9 +2,14 @@ import { PoolAprService } from '../../pool-types';
 import { PrismaPoolWithExpandedNesting } from '../../../../prisma/prisma-types';
 import { prisma } from '../../../../prisma/prisma-client';
 import { prismaBulkExecuteOperations } from '../../../../prisma/prisma-util';
+import { collectsSwapFee } from '../pool-utils';
 
 export class SwapFeeAprService implements PoolAprService {
     constructor(private readonly swapProtocolFeePercentage: number) {}
+
+    public getAprServiceName(): string {
+        return 'SwapFeeAprService';
+    }
 
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
         const operations: any[] = [];
@@ -16,7 +21,16 @@ export class SwapFeeAprService implements PoolAprService {
                         ? (pool.dynamicData.fees24h * 365) / pool.dynamicData.totalLiquidity
                         : 0;
 
-                const userApr = apr * (1 - this.swapProtocolFeePercentage);
+                let userApr = apr * (1 - this.swapProtocolFeePercentage);
+
+                if (!collectsSwapFee(pool)) {
+                    userApr = apr;
+                }
+
+                // max int for DB
+                if (userApr > 9223372036854775807) {
+                    userApr = 0;
+                }
 
                 operations.push(
                     prisma.prismaPoolAprItem.upsert({

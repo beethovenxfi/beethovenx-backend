@@ -1,18 +1,28 @@
 import { GraphQLClient } from 'graphql-request';
-import { Cache, CacheClass } from 'memory-cache';
 import { networkConfig } from '../../config/network-config';
 import { subgraphLoadAll } from '../subgraph-util';
 import {
+    DailyPoolSnapshot_OrderBy,
+    DailyRelicSnapshot_OrderBy,
     getSdk,
+    OrderDirection,
+    Relic_OrderBy,
     ReliquaryFarmFragment,
+    ReliquaryFarmSnapshotFragment,
+    ReliquaryFarmSnapshotsQuery,
+    ReliquaryFarmSnapshotsQueryVariables,
+    ReliquaryPoolLevelsQuery,
+    ReliquaryPoolLevelsQueryVariables,
     ReliquaryPoolsQuery,
     ReliquaryPoolsQueryVariables,
     ReliquaryQuery,
     ReliquaryQueryVariables,
     ReliquaryRelicFragment,
+    ReliquaryRelicSnapshotFragment,
+    ReliquaryRelicSnapshotsQuery,
+    ReliquaryRelicSnapshotsQueryVariables,
     ReliquaryRelicsQuery,
     ReliquaryRelicsQueryVariables,
-    ReliquaryUserFragment,
     ReliquaryUsersQuery,
     ReliquaryUsersQueryVariables,
 } from './generated/reliquary-subgraph-types';
@@ -50,12 +60,100 @@ export class ReliquarySubgraphService {
         return this.sdk.ReliquaryRelics(args);
     }
 
-    public async getAllRelics(args: ReliquaryRelicsQueryVariables): Promise<ReliquaryRelicFragment[]> {
-        return subgraphLoadAll<ReliquaryRelicFragment>(this.sdk.ReliquaryRelics, 'relics', args);
+    public async getPoolLevels(args: ReliquaryPoolLevelsQueryVariables): Promise<ReliquaryPoolLevelsQuery> {
+        return this.sdk.ReliquaryPoolLevels(args);
+    }
+
+    public async getAllRelicsWithPaging({
+        where,
+        block,
+    }: Pick<ReliquaryRelicsQueryVariables, 'where' | 'block'>): Promise<ReliquaryRelicFragment[]> {
+        const limit = 1000;
+        let hasMore = true;
+        let relics: ReliquaryRelicFragment[] = [];
+        let id = 0;
+
+        while (hasMore) {
+            const response = await this.sdk.ReliquaryRelics({
+                where: { ...where, relicId_gt: id },
+                block,
+                orderBy: Relic_OrderBy.id,
+                orderDirection: OrderDirection.asc,
+                first: limit,
+            });
+
+            relics = [...relics, ...response.relics];
+
+            if (response.relics.length < limit) {
+                hasMore = false;
+            } else {
+                id = response.relics[response.relics.length - 1].relicId;
+            }
+        }
+
+        return relics;
     }
 
     public async getAllFarms(args: ReliquaryPoolsQueryVariables): Promise<ReliquaryFarmFragment[]> {
         return subgraphLoadAll<ReliquaryFarmFragment>(this.sdk.ReliquaryPools, 'farms', args);
+    }
+
+    public async getAllRelicSnapshotsSince(timestamp = 0): Promise<ReliquaryRelicSnapshotFragment[]> {
+        let allSnapshots: ReliquaryRelicSnapshotFragment[] = [];
+        let snapshotId = '0';
+        do {
+            const result = await this.sdk.ReliquaryRelicSnapshots({
+                where: { id_gt: snapshotId, snapshotTimestamp_gte: timestamp },
+                first: 1000,
+                orderBy: DailyRelicSnapshot_OrderBy.id,
+                orderDirection: OrderDirection.desc,
+            });
+            if (result.relicSnapshots.length === 0) {
+                break;
+            }
+            allSnapshots.push(...result.relicSnapshots);
+            snapshotId = result.relicSnapshots[result.relicSnapshots.length - 1].id;
+
+            if (result.relicSnapshots.length < 1000) {
+                break;
+            }
+        } while (true);
+
+        return allSnapshots;
+    }
+
+    public async getAllFarmSnapshotsForFarm(farmId: number): Promise<ReliquaryFarmSnapshotFragment[]> {
+        const limit = 1000;
+        let hasMore = true;
+        let snapshots: ReliquaryFarmSnapshotFragment[] = [];
+        let timestamp = 0;
+
+        while (hasMore) {
+            const response = await this.sdk.ReliquaryFarmSnapshots({
+                where: { snapshotTimestamp_gt: timestamp, poolId: farmId },
+                orderBy: DailyPoolSnapshot_OrderBy.snapshotTimestamp,
+                orderDirection: OrderDirection.asc,
+                first: limit,
+            });
+
+            snapshots = [...snapshots, ...response.farmSnapshots];
+
+            if (response.farmSnapshots.length < limit) {
+                hasMore = false;
+            } else {
+                timestamp = response.farmSnapshots[response.farmSnapshots.length - 1].snapshotTimestamp;
+            }
+        }
+
+        return snapshots;
+    }
+
+    public async getFarmSnapshots(args: ReliquaryFarmSnapshotsQueryVariables): Promise<ReliquaryFarmSnapshotsQuery> {
+        return this.sdk.ReliquaryFarmSnapshots(args);
+    }
+
+    public async getRelicSnapshots(args: ReliquaryRelicSnapshotsQueryVariables): Promise<ReliquaryRelicSnapshotsQuery> {
+        return this.sdk.ReliquaryRelicSnapshots(args);
     }
 
     public get sdk() {
@@ -63,4 +161,4 @@ export class ReliquarySubgraphService {
     }
 }
 
-export const reliquaryService = new ReliquarySubgraphService();
+export const reliquarySubgraphService = new ReliquarySubgraphService();

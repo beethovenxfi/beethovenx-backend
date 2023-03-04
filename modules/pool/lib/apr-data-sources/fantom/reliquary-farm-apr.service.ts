@@ -5,19 +5,26 @@ import { PrismaPoolWithExpandedNesting } from '../../../../../prisma/prisma-type
 import { prismaBulkExecuteOperations } from '../../../../../prisma/prisma-util';
 import { secondsPerYear } from '../../../../common/time';
 import { networkConfig } from '../../../../config/network-config';
-import { reliquaryService } from '../../../../subgraphs/reliquary-subgraph/reliquary.service';
+import { reliquarySubgraphService } from '../../../../subgraphs/reliquary-subgraph/reliquary.service';
 import { tokenService } from '../../../../token/token.service';
 import { PoolAprService } from '../../../pool-types';
 
 export class ReliquaryFarmAprService implements PoolAprService {
+    public getAprServiceName(): string {
+        return 'ReliquaryFarmAprService';
+    }
+
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
-        const farms = await reliquaryService.getAllFarms({});
+        const allSubgraphFarms = await reliquarySubgraphService.getAllFarms({});
+        const filteredFarms = allSubgraphFarms.filter(
+            (farm) => !networkConfig.reliquary!.excludedFarmIds.includes(farm.pid.toString()),
+        );
 
         const tokenPrices = await tokenService.getTokenPrices();
         const operations: any[] = [];
 
         for (const pool of pools) {
-            const subgraphFarm = farms.find((farm) => isSameAddress(pool.address, farm.poolTokenAddress));
+            const subgraphFarm = filteredFarms.find((farm) => isSameAddress(pool.address, farm.poolTokenAddress));
             const farm = pool.staking?.reliquary;
 
             if (!subgraphFarm || !pool.dynamicData || !farm || subgraphFarm.totalBalance === '0') {
@@ -96,18 +103,6 @@ export class ReliquaryFarmAprService implements PoolAprService {
                 }),
             );
         }
-
-        const poolsWithNoAllocPoints = farms
-            .filter((farm) => farm.allocPoint === 0)
-            .map((farm) => farm.poolTokenAddress.toLowerCase());
-
-        //TODO: this could be optimized, doesn't need to be run everytime
-        await prisma.prismaPoolAprItem.deleteMany({
-            where: {
-                type: 'NATIVE_REWARD',
-                pool: { address: { in: poolsWithNoAllocPoints } },
-            },
-        });
 
         await prismaBulkExecuteOperations(operations);
     }

@@ -9,8 +9,8 @@ import { googleJwtClient, GoogleJwtClient } from './google-jwt-client';
 import { blocksSubgraphService } from '../subgraphs/blocks-subgraph/blocks-subgraph.service';
 import { tokenService } from '../token/token.service';
 import { beetsService } from '../beets/beets.service';
-import { secondsPerDay } from '../common/time';
-import { isComposableStablePool, isWeightedPoolV2 } from '../pool/lib/pool-utils';
+import { oneDayInSeconds, secondsPerDay } from '../common/time';
+import { collectsSwapFee, isComposableStablePool, isWeightedPoolV2 } from '../pool/lib/pool-utils';
 
 export class DatastudioService {
     constructor(
@@ -74,12 +74,12 @@ export class DatastudioService {
             }
         }
 
-        if (lastRun > moment.tz('GMT').subtract(1, 'day').unix()) {
+        const now = moment.tz('GMT').unix();
+
+        if (lastRun > now - oneDayInSeconds) {
             // 24 hours did not pass since the last run
             return;
         }
-
-        const now = moment.tz('GMT').unix();
 
         const allPoolDataRows: string[][] = [];
         const allPoolCompositionRows: string[][] = [];
@@ -142,6 +142,10 @@ export class DatastudioService {
                 tvlChange = `${pool.dynamicData.totalLiquidity - pool.dynamicData.totalLiquidity24hAgo}`;
                 lpSwapFee = `${pool.dynamicData.fees24h * (1 - this.swapProtocolFeePercentage)}`;
                 protocolSwapFee = `${pool.dynamicData.fees24h * this.swapProtocolFeePercentage}`;
+                if (!collectsSwapFee(pool)) {
+                    lpSwapFee = `${pool.dynamicData.fees24h}`;
+                    protocolSwapFee = `0`;
+                }
 
                 dailySwaps = `${pool.dynamicData.swapsCount - parseFloat(yesterdaySwapsCount)}`;
             }
@@ -163,7 +167,7 @@ export class DatastudioService {
                 `${endOfYesterday.unix()}`,
                 `${now}`,
                 pool.address,
-                pool.name,
+                `'${pool.name}`,
                 poolType,
                 pool.symbol,
                 swapFee,
@@ -202,7 +206,7 @@ export class DatastudioService {
                     `${now}`,
                     pool.address,
                     pool.id,
-                    pool.name,
+                    `'${pool.name}`,
                     token.address,
                     token.name,
                     token.symbol,
@@ -226,7 +230,7 @@ export class DatastudioService {
                             `${endOfYesterday.unix()}`,
                             `${now}`,
                             pool.address,
-                            pool.name,
+                            `'${pool.name}`,
                             'BEETS',
                             networkConfig.beets.address,
                             `${beetsPerDay}`,
@@ -249,7 +253,7 @@ export class DatastudioService {
                                     `${endOfYesterday.unix()}`,
                                     `${now}`,
                                     pool.address,
-                                    pool.name,
+                                    `'${pool.name}`,
                                     rewardToken.symbol,
                                     rewardToken.address,
                                     `${rewardsPerDay}`,
@@ -275,7 +279,7 @@ export class DatastudioService {
                                 `${endOfYesterday.unix()}`,
                                 `${now}`,
                                 pool.address,
-                                pool.name,
+                                `'${pool.name}`,
                                 rewardToken.symbol,
                                 rewardToken.address,
                                 `${rewardsPerDay}`,
