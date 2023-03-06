@@ -5,7 +5,7 @@ import { ContainerImage } from 'aws-cdk-lib/aws-ecs';
 import { ApplicationLoadBalancedFargateService } from 'aws-cdk-lib/aws-ecs-patterns';
 import path = require('path');
 
-export class BeethovenXWorker extends Stack {
+export class Worker extends Stack {
     constructor(scope: App, id: string, props?: StackProps) {
       super(scope, id, props);
 
@@ -21,7 +21,10 @@ export class BeethovenXWorker extends Stack {
       new ApplicationLoadBalancedFargateService(this, 'FargateService', {
           cluster,
           taskImageOptions: {
-              image: ContainerImage.fromAsset(path.resolve(__dirname, 'local-image')),
+              image: ContainerImage.fromAsset(path.resolve(__dirname, '..', '..')),
+              environment: {
+                'WORKER': 'true',
+              }
           },
       });
     }
