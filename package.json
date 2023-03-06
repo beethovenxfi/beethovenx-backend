@@ -11,6 +11,7 @@
         "start:local": "ts-node -r dotenv/config app",
         "watch": "concurrently \"nodemon app\" \"yarn generate --watch\"",
         "build": "tsc",
+        "deploy": "cdk deploy",
         "generate": "graphql-codegen --config codegen.yml -r dotenv/config",
         "prisma-merge": "ts-node prisma/prisma-merge.ts",
         "test": "jest"
@@ -32,8 +33,10 @@
         "@sentry/tracing": "^7.29.0",
         "apollo-server-core": "^3.5.0",
         "apollo-server-express": "^3.5.0",
+        "aws-cdk-lib": "^2.67.0",
         "axios": "^0.24.0",
         "bignumber.js": "^9.0.2",
+        "constructs": "^10.1.269",
         "decimal.js": "^10.3.1",
         "dotenv": "^10.0.0",
         "ethers": "^5.5.1",
