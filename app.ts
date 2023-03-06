@@ -27,39 +27,41 @@ import { AllNetworkConfigs } from './modules/network/network-config';
 async function startServer() {
     const app = createExpressApp();
 
-    Sentry.init({
-        dsn: env.SENTRY_DSN,
-        tracesSampleRate: 0.005,
-        environment: `multichain-${env.DEPLOYMENT_ENV}`,
-        enabled: env.NODE_ENV === 'production',
-        integrations: [
-            new Tracing.Integrations.Apollo(),
-            // new Tracing.Integrations.GraphQL(),
-            new Tracing.Integrations.Prisma({ client: prisma }),
-            // new Tracing.Integrations.Express({ app }),
-            new Sentry.Integrations.Http({ tracing: true }),
-        ],
-        beforeSend(event, hint) {
-            const error = hint.originalException;
-            if (error?.toString().includes('Unknown token:')) {
-                console.log(`The following error occurred but was not sent to Sentry: ${error}`);
-                return null;
-            }
-            if (
-                error?.toString().includes('SOR: invalid swap amount input') &&
-                event.request?.headers &&
-                event.request.headers['user-agent'].includes('Python')
-            ) {
-                console.log(`The following error occurred but was not sent to Sentry: ${error}`);
-                return null;
-            }
-            return event;
-        },
-    });
+    if (env.SENTRY_DSN) {
+        Sentry.init({
+            dsn: env.SENTRY_DSN,
+            tracesSampleRate: 0.005,
+            environment: `multichain-${env.DEPLOYMENT_ENV}`,
+            enabled: env.NODE_ENV === 'production',
+            integrations: [
+                new Tracing.Integrations.Apollo(),
+                // new Tracing.Integrations.GraphQL(),
+                new Tracing.Integrations.Prisma({ client: prisma }),
+                // new Tracing.Integrations.Express({ app }),
+                new Sentry.Integrations.Http({ tracing: true }),
+            ],
+            beforeSend(event, hint) {
+                const error = hint.originalException;
+                if (error?.toString().includes('Unknown token:')) {
+                    console.log(`The following error occurred but was not sent to Sentry: ${error}`);
+                    return null;
+                }
+                if (
+                    error?.toString().includes('SOR: invalid swap amount input') &&
+                    event.request?.headers &&
+                    event.request.headers['user-agent'].includes('Python')
+                ) {
+                    console.log(`The following error occurred but was not sent to Sentry: ${error}`);
+                    return null;
+                }
+                return event;
+            },
+        });
 
-    app.use(Sentry.Handlers.requestHandler());
-    // app.use(Sentry.Handlers.tracingHandler());
-    // app.use(Sentry.Handlers.errorHandler());
+        app.use(Sentry.Handlers.requestHandler());
+        // app.use(Sentry.Handlers.tracingHandler());
+        // app.use(Sentry.Handlers.errorHandler());
+    }
 
     app.use(helmet.dnsPrefetchControl());
     app.use(helmet.expectCt());

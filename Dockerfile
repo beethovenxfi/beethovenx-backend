@@ -14,6 +14,6 @@ RUN yarn
 
 FROM dependencies AS build
 
-COPY ./dist .
+COPY . .
 
 CMD ["yarn","start:local"]
