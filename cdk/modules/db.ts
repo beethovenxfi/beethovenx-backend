@@ -104,6 +104,7 @@ export class PostgresDb extends Stack {
     });
 
     dbsg.addIngressRule(dbsg, allAll, 'all from self');
+    dbsg.addIngressRule(Peer.anyIpv4(), Port.tcp(5432), 'Ingress 5432');
     dbsg.addEgressRule(Peer.ipv4('0.0.0.0/0'), allAll, 'all out');
 
     const connectionPorts = [

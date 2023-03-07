@@ -24,19 +24,21 @@ export class BeethovenXApi extends Stack {
       databaseUrl,
     });
 
-    const dbSecurityGroup = new SecurityGroup(db, 'DatabaseSecurityGroup', {
-      vpc: vpc,
-      description: id + 'Database',
-      securityGroupName: id + 'Database',
-    })
+    worker.addDependency(db);
 
-    const workerSecurityGroup = new SecurityGroup(worker, 'WorkerSecurityGroup', {
-      vpc: vpc,
-      description: id + 'Worker',
-      securityGroupName: id + 'Worker',
-    });
+    // const dbSecurityGroup = new SecurityGroup(db, 'DatabaseSecurityGroup', {
+    //   vpc: vpc,
+    //   description: id + 'Database',
+    //   securityGroupName: id + 'Database',
+    // })
 
-    dbSecurityGroup.connections.allowFrom(workerSecurityGroup, Port.tcp(5432))
+    // const workerSecurityGroup = new SecurityGroup(worker, 'WorkerSecurityGroup', {
+    //   vpc: vpc,
+    //   description: id + 'Worker',
+    //   securityGroupName: id + 'Worker',
+    // });
+
+    // dbSecurityGroup.connections.allowFrom(workerSecurityGroup, Port.tcp(5432))
   }
 }
 
