@@ -9,11 +9,16 @@ RUN apt-get update -y && apt-get install -y openssl
 FROM base AS dependencies
 
 COPY yarn.lock ./
+COPY package.json ./
 
-RUN yarn
+RUN yarn install
 
 FROM dependencies AS build
 
 COPY . .
 
-CMD ["yarn","start:local"]
+RUN yarn generate
+RUN yarn prisma generate
+RUN yarn build
+
+CMD ["yarn", "start"]

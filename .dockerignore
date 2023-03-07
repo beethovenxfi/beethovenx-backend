@@ -1,0 +1,5 @@
+.git
+cdk
+cdk.out
+dist
+node_modules
