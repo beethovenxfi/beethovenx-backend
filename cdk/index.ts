@@ -5,6 +5,7 @@ import { Port, SecurityGroup, Vpc } from 'aws-cdk-lib/aws-ec2';
 import { Worker } from './modules/worker';
 import { PostgresDb } from './modules/db';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
+import { Backend } from './modules/backend';
 
 export class BeethovenXApi extends Stack {
   constructor(scope: App, id: string, props?: StackProps) {
@@ -20,27 +21,32 @@ export class BeethovenXApi extends Stack {
       port: dbPort,
     });
 
- 
+    const dbSecretArn = Fn.importValue('DbPasswordSecretArn')
+    const dbPasswordSecretJson = Secret.fromSecretCompleteArn(this, 'DbPassword', dbSecretArn)
+    const dbPasswordSecret = dbPasswordSecretJson.secretValueFromJson('password');
+
+    const dbUrlTemplate = "postgresql://${DBUSERNAME}:${DBPASSWORD}@${DBHOST}:${DBPORT}/${DBNAME}"
+
+    const dbUrl = Fn.sub(dbUrlTemplate, {
+      'DBUSERNAME': Fn.importValue('DbUsername'),
+      'DBPASSWORD': dbPasswordSecret.toString(),
+      'DBHOST': Fn.importValue('DbHost'),
+      'DBPORT': Fn.importValue('DbPort'),
+      'DBNAME': Fn.importValue('DbName'),
+    })
 
     const worker = new Worker(this, 'Worker', {
       vpc,
+      dbUrl,
+    });
+
+    const backend = new Backend(this, 'Backend', {
+      vpc,
+      dbUrl,
     });
 
     worker.addDependency(db);
-
-    // const dbSecurityGroup = new SecurityGroup(db, 'DatabaseSecurityGroup', {
-    //   vpc: vpc,
-    //   description: id + 'Database',
-    //   securityGroupName: id + 'Database',
-    // })
-
-    // const workerSecurityGroup = new SecurityGroup(worker, 'WorkerSecurityGroup', {
-    //   vpc: vpc,
-    //   description: id + 'Worker',
-    //   securityGroupName: id + 'Worker',
-    // });
-
-    // dbSecurityGroup.connections.allowFrom(workerSecurityGroup, Port.tcp(5432))
+    backend.addDependency(db);
   }
 }
 
