@@ -1,4 +1,4 @@
-import CopperProxyAbi from '../lge/abi/CopperProxy.json';
+import CopperProxyAbi from '../lbp/abi/CopperProxy.json';
 import { getContractAt } from '../web3/contract';
 import { networkConfig } from '../config/network-config';
 import { AddressZero } from '@ethersproject/constants';

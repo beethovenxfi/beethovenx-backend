@@ -1,5 +1,5 @@
-export const createLgeTypes = {
-    CreateLge: [
+export const createLbpTypes = {
+    CreateLbp: [
         { name: 'id', type: 'string' },
         { name: 'address', type: 'string' },
         { name: 'name', type: 'string' },
