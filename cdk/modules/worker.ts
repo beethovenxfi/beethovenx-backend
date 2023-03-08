@@ -1,7 +1,8 @@
-import { App, Stack, StackProps } from 'aws-cdk-lib'
+import { App, CfnOutput, Fn, SecretValue, Stack, StackProps } from 'aws-cdk-lib'
 import { SecurityGroup, Vpc } from 'aws-cdk-lib/aws-ec2';
 import { Cluster } from 'aws-cdk-lib/aws-ecs';
-import { ContainerImage } from 'aws-cdk-lib/aws-ecs';
+import { ContainerImage, Secret as EcsSecret } from 'aws-cdk-lib/aws-ecs';
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { ApplicationLoadBalancedFargateService } from 'aws-cdk-lib/aws-ecs-patterns';
 import { Construct } from 'constructs';
 import path = require('path');
@@ -13,10 +14,10 @@ export interface WorkerProps extends StackProps {
   vpc: Vpc;
 
   /**
-   * URL of the Postgres database. Should be in format:
-   * postgresql://USER:PASSWORD@HOST:POST/DB_NAME
+   * The ARN of the secretsmanager secret that contains
+   * the full url that the worker should connect to
    */
-  databaseUrl: string;
+  // dbUrlSecretArn: string;
 
   /**
    * Pre-created security groups to add to this worker so that
@@ -29,7 +30,19 @@ export class Worker extends Stack {
     constructor(scope: Construct, id: string, props: WorkerProps) {
       super(scope, id, props);
 
-      const securityGroups: SecurityGroup[] = props.securityGroups || [];
+      const dbSecretArn = Fn.importValue('DbPasswordSecretArn')
+      const dbPasswordSecretJson = Secret.fromSecretCompleteArn(this, 'DbPassword', dbSecretArn)
+      const dbPasswordSecret = dbPasswordSecretJson.secretValueFromJson('password');
+  
+      const dbUrlTemplate = "postgresql://${DBUSERNAME}:${DBPASSWORD}@${DBHOST}:${DBPORT}/${DBNAME}"
+
+      const dbUrl = Fn.sub(dbUrlTemplate, {
+        'DBUSERNAME': Fn.importValue('DbUsername'),
+        'DBPASSWORD': dbPasswordSecret.toString(),
+        'DBHOST': Fn.importValue('DbHost'),
+        'DBPORT': Fn.importValue('DbPort'),
+        'DBNAME': Fn.importValue('DbName'),
+      })
 
       // Create Fargate Cluster
       // NOTE: Limit AZs to avoid reaching resource quotas
@@ -48,7 +61,7 @@ export class Worker extends Stack {
                 ...process.env,
                 'WORKER': 'true',
                 'CRONS': 'true',
-                'DATABASE_URL': props.databaseUrl, 
+                'DATABASE_URL': dbUrl
               },
               containerName: 'Worker',
               containerPort: 4000,

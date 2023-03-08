@@ -11,7 +11,7 @@ import {
 import { IPeer, Peer, Port, SecurityGroup, Subnet, SubnetSelection, Vpc } from 'aws-cdk-lib/aws-ec2';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Credentials, DatabaseInstance, DatabaseInstanceEngine, ParameterGroup, PostgresEngineVersion, SubnetGroup } from 'aws-cdk-lib/aws-rds';
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 
 export interface PostgresDbProps extends StackProps {
@@ -127,7 +127,7 @@ export class PostgresDb extends Stack {
       subnetGroupName: id + 'subnet group',
     });
 
-    const dbSecret = new secretsmanager.Secret(this, 'DbPassword', {
+    const dbSecret = new Secret(this, 'DbPassword', {
       secretName: props.dbName + 'DbPassword',
       description: props.dbName + ' Database Password',
       generateSecretString: {
@@ -175,9 +175,14 @@ export class PostgresDb extends Stack {
       priority: 300,
     });
 
-
     new CfnOutput(this, 'DbEndpoint', {
       exportName: 'DbEndpoint',
+      value: dbInstance.dbInstanceEndpointAddress,
+    });
+
+
+    new CfnOutput(this, 'DbHost', {
+      exportName: 'DbHost',
       value: dbInstance.dbInstanceEndpointAddress,
     });
 
@@ -188,7 +193,36 @@ export class PostgresDb extends Stack {
 
     new CfnOutput(this, 'DbName', {
       exportName: 'DbName',
-      value: props.dbName!,
+      value: props.dbName,
     });
+
+    new CfnOutput(this, 'DbPort', {
+      exportName: 'DbPort',
+      value: props.port.toString(),
+    });
+
+    new CfnOutput(this, 'DbPasswordSecretArn', {
+      exportName: 'DbPasswordSecretArn',
+      value: dbSecret.secretArn,
+    });
+
+    // const dbHost = dbInstance.dbInstanceEndpointAddress;
+    // const dbUsername = username;
+    // const dbName = props.dbName;
+    // const dbPort = props.port;
+
+    // const dbPassword = Secret.fromSecretCompleteArn(this, 'DbPassword', dbSecret.secretArn);
+
+    // const dbUrl = `postgresql://${dbUsername}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`
+    // const dbUrlSecret = new Secret(this, 'DbUrlSecret', {
+    //   secretName: props.dbName + 'DbUrl',
+    //   description: props.dbName + ' Database Full URL',
+    //   secret
+    // })
+
+    // new CfnOutput(this, 'DbUrlSecretArn', {
+    //   exportName: 'DbUrlSecretArn',
+    //   value: props.dbName!,
+    // });
   }
 }
