@@ -135,6 +135,39 @@ export class BalancerSorService {
             throw new Error(error);
         }
 
+        // return 0 if no swaps found
+        if (deltas.length === 0) {
+            return {
+                ...swapInfo,
+                tokenIn: replaceZeroAddressWithEth(swapInfo.tokenIn),
+                tokenOut: replaceZeroAddressWithEth(swapInfo.tokenOut),
+                swapType,
+                tokenInAmount: swapType === 'EXACT_IN' ? swapAmount : BigNumber.from('0').toString(),
+                tokenOutAmount: swapType === 'EXACT_IN' ? BigNumber.from('0').toString() : swapAmount,
+                swapAmount: swapType === 'EXACT_IN' ? BigNumber.from('0').toString() : swapAmount,
+                swapAmountScaled: BigNumber.from('0').toString(),
+                swapAmountForSwaps: swapInfo.swapAmountForSwaps
+                    ? BigNumber.from(swapInfo.swapAmountForSwaps).toString()
+                    : undefined,
+                returnAmount: BigNumber.from('0').toString(),
+                returnAmountScaled: BigNumber.from('0').toString(),
+                returnAmountConsideringFees: BigNumber.from(swapInfo.returnAmountConsideringFees).toString(),
+                returnAmountFromSwaps: swapInfo.returnAmountFromSwaps
+                    ? BigNumber.from(swapInfo.returnAmountFromSwaps).toString()
+                    : undefined,
+                routes: swapInfo.routes.map((route) => ({
+                    ...route,
+                    hops: route.hops.map((hop) => ({
+                        ...hop,
+                        pool: pools.find((pool) => pool.id === hop.poolId)!,
+                    })),
+                })),
+                effectivePrice: BigNumber.from('0').toString(),
+                effectivePriceReversed: BigNumber.from('0').toString(),
+                priceImpact: BigNumber.from('0').toString(),
+            };
+        }
+
         const pools = await poolService.getGqlPools({
             where: { idIn: swapInfo.routes.map((route) => route.hops.map((hop) => hop.poolId)).flat() },
         });
