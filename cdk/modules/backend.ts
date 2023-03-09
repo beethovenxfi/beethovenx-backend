@@ -36,9 +36,8 @@ export class Backend extends Stack {
       // uploaded to an S3 staging bucket prior to being uploaded to ECR.
       // A new repository is created in ECR and the Fargate service is created
       // with the image from ECR.
-      new ApplicationLoadBalancedFargateService(this, 'BackendFargateService', {
+      const service = new ApplicationLoadBalancedFargateService(this, 'BackendFargateService', {
           cluster,
-          // securityGroups,
           taskImageOptions: {
               image: ContainerImage.fromAsset(path.resolve(__dirname, '..', '..')),
               environment: {
@@ -48,6 +47,10 @@ export class Backend extends Stack {
               containerName: 'Backend',
               containerPort: 4000,
           },
+      });
+
+      service.targetGroup.configureHealthCheck({
+        path: '/health',
       });
     }
 }

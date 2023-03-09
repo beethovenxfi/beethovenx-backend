@@ -36,9 +36,8 @@ export class Worker extends Stack {
       // uploaded to an S3 staging bucket prior to being uploaded to ECR.
       // A new repository is created in ECR and the Fargate service is created
       // with the image from ECR.
-      new ApplicationLoadBalancedFargateService(this, 'FargateService', {
+      const service = new ApplicationLoadBalancedFargateService(this, 'FargateService', {
           cluster,
-          // securityGroups,
           taskImageOptions: {
               image: ContainerImage.fromAsset(path.resolve(__dirname, '..', '..')),
               environment: {
@@ -50,6 +49,10 @@ export class Worker extends Stack {
               containerName: 'Worker',
               containerPort: 4000,
           },
+      });
+
+      service.targetGroup.configureHealthCheck({
+        path: '/health',
       });
     }
 }
