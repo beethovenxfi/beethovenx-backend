@@ -6,11 +6,16 @@ import {
 } from '@aws-sdk/client-cloudwatch';
 import { env } from '../app/env';
 import { getCronMetricsPublisher } from '../modules/metrics/cron.metric';
+import { AllNetworkConfigs } from '../modules/network/network-config';
 import { DeploymentEnv } from '../modules/network/network-config-types';
 import { networkContext } from '../modules/network/network-context.service';
-import { WorkerJob } from './manual-jobs';
+import { WorkerJob } from './job-handlers';
 
-export async function createAlertsIfNotExist(chainId: string, jobs: WorkerJob[]): Promise<void> {
+export async function createAlerts(chainId: string): Promise<void> {
+    await createAlertsIfNotExist(chainId, AllNetworkConfigs[chainId].workerJobs);
+}
+
+async function createAlertsIfNotExist(chainId: string, jobs: WorkerJob[]): Promise<void> {
     const cronsMetricPublisher = getCronMetricsPublisher(chainId);
     const cloudWatchClient = new CloudWatchClient({
         region: env.AWS_REGION,
