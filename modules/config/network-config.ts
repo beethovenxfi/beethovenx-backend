@@ -176,7 +176,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
                 '0xea87F3dFfc679035653C0FBa70e7bfe46E3FB733',
                 '0xd678b6Acd834Cc969Bb19Ce82727f2a541fb7941',
             ],
-            poolsInRecoveryMode: [''],
+            poolsInRecoveryMode: ['0x9e4341acef4147196e99d648c5e43b3fc9d02678'],
             swapProtocolFeePercentage: 0.25,
             yieldProtocolFeePercentage: 0.25,
         },
