@@ -159,6 +159,10 @@ export class PoolService {
         await Promise.all(
             this.poolStakingServices.map((stakingService) => stakingService.reloadStakingForAllPools(stakingTypes)),
         );
+        // if we reload staking for reliquary, we also need to reload the snapshots because they are deleted while reloading
+        if (stakingTypes.includes('RELIQUARY')) {
+            this.loadReliquarySnapshotsForAllFarms();
+        }
     }
 
     public async syncPoolAllTokensRelationship(): Promise<void> {
@@ -317,6 +321,10 @@ export class PoolService {
 
     public async reloadAllTokenNestedPoolIds() {
         await this.poolCreatorService.reloadAllTokenNestedPoolIds();
+    }
+
+    public async reloadPoolTokenIndexes(poolId: string) {
+        await this.poolCreatorService.reloadPoolTokenIndexes(poolId);
     }
 }
 

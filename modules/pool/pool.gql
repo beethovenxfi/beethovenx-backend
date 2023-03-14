@@ -54,6 +54,7 @@ extend type Mutation {
     poolReloadPoolNestedTokens(poolId: String!): String!
     poolReloadAllTokenNestedPoolIds: String!
     poolLoadReliquarySnapshotsForAllFarms: String!
+    poolReloadPoolTokenIndexes(poolId: String!): String!
 }
 
 type GqlPoolMinimal {

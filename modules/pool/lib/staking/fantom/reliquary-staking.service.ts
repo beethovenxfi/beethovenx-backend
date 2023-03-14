@@ -116,6 +116,13 @@ export class ReliquaryStakingService implements PoolStakingService {
     public async reloadStakingForAllPools(reloadStakingTypes: PrismaPoolStakingType[]) {
         if (reloadStakingTypes.includes('RELIQUARY')) {
             await prisma.prismaUserStakedBalance.deleteMany({ where: { staking: { type: 'RELIQUARY' } } });
+            // need to remove snapshots as well as they have a FK in reliquary staking
+            await prisma.prismaReliquaryTokenBalanceSnapshot.deleteMany({});
+            await prisma.prismaReliquaryLevelSnapshot.deleteMany({});
+            await prisma.prismaReliquaryLevelSnapshot.deleteMany({});
+            await prisma.prismaReliquaryFarmSnapshot.deleteMany({});
+            await prisma.prismaUserRelicSnapshot.deleteMany({});
+
             await prisma.prismaPoolStakingReliquaryFarmLevel.deleteMany({});
             await prisma.prismaPoolStakingReliquaryFarm.deleteMany({});
             await prisma.prismaPoolStaking.deleteMany({ where: { type: 'RELIQUARY' } });
