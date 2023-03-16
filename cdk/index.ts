@@ -6,6 +6,7 @@ import { Worker } from './modules/worker';
 import { PostgresDb } from './modules/db';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Backend } from './modules/backend';
+import { CI } from './modules/ci';
 
 export class BeethovenXApi extends Stack {
   constructor(scope: App, id: string, props?: StackProps) {
@@ -35,18 +36,12 @@ export class BeethovenXApi extends Stack {
       'DBNAME': Fn.importValue('DbName'),
     })
 
-    const worker = new Worker(this, 'Worker', {
-      vpc,
-      dbUrl,
-    });
+    const ci = new CI(this, 'BeetsBuildPipeline');
 
-    const backend = new Backend(this, 'Backend', {
+    const backend = new Backend(this, 'BeetsELBBackend', {
       vpc,
-      dbUrl,
-    });
-
-    worker.addDependency(db);
-    backend.addDependency(db);
+      dbUrl
+    })
   }
 }
 

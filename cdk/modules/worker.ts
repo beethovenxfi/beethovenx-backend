@@ -5,7 +5,9 @@ import { ContainerImage, Secret as EcsSecret } from 'aws-cdk-lib/aws-ecs';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { ApplicationLoadBalancedFargateService } from 'aws-cdk-lib/aws-ecs-patterns';
 import { Construct } from 'constructs';
-import path = require('path');
+import { CfnApplication, CfnEnvironment } from 'aws-cdk-lib/aws-elasticbeanstalk';
+import path from 'path';
+import { Queue } from 'aws-cdk-lib/aws-sqs';
 
 export interface WorkerProps extends StackProps {
   /**
@@ -26,33 +28,88 @@ export interface WorkerProps extends StackProps {
 }
 
 export class Worker extends Stack {
-    constructor(scope: Construct, id: string, props: WorkerProps) {
-      super(scope, id, props);
-      
-      // Create Fargate Cluster
-      const cluster = new Cluster(this, 'WorkerCluster', { vpc: props.vpc });
+  constructor(scope: Construct, id: string, props: WorkerProps) {
+    super(scope, id, props);
 
-      // Instantiate Fargate Service with a cluster and a local image that gets
-      // uploaded to an S3 staging bucket prior to being uploaded to ECR.
-      // A new repository is created in ECR and the Fargate service is created
-      // with the image from ECR.
-      const service = new ApplicationLoadBalancedFargateService(this, 'FargateService', {
-          cluster,
-          taskImageOptions: {
-              image: ContainerImage.fromAsset(path.resolve(__dirname, '..', '..')),
-              environment: {
-                ...process.env,
-                'WORKER': 'true',
-                'CRONS': 'true',
-                'DATABASE_URL': props.dbUrl
-              },
-              containerName: 'Worker',
-              containerPort: 4000,
-          },
-      });
+    const sqsQueue = new Queue(this, 'WorkerQueue');
 
-      service.targetGroup.configureHealthCheck({
-        path: '/health',
-      });
+    // Create the Elastic Beanstalk application
+    const ebApplication = new CfnApplication(this, 'EBWorker', {
+      applicationName: 'backend-crons'
+    });
+
+    const defaultOptionSettings = [
+      {
+        namespace: 'aws:autoscaling:launchconfiguration',
+        optionName: 'InstanceType',
+        value: 't4g.large'
+      },
+      {
+        namespace: 'aws:elasticbeanstalk:environment',
+        optionName: 'EnvironmentType',
+        value: 'SingleInstance'
+      },
+      {
+        namespace: 'aws:elasticbeanstalk:container:nodejs',
+        optionName: 'NodeCommand',
+        value: 'yarn start'
+      },
+      {
+        namespace: 'aws:elasticbeanstalk:sqsd',
+        optionName: 'WorkerQueueURL',
+        value: sqsQueue.queueUrl
+      },
+      {
+        namespace: 'aws:elasticbeanstalk:application',
+        optionName: 'Application Healthcheck URL',
+        value: '/health'
+      },
+      {
+        namespace: 'aws:ec2:vpc',
+        optionName: 'VPCId',
+        value: props.vpc.vpcId
+      }
+    ];
+
+    const environmentVariables: Record<string, string | undefined> = {
+      'ADMIN_API_KEY': process.env.ADMIN_API_KEY,
+      'APOLLO_SCHEMA_REPORTING': 'false',
+      'AWS_REGION': process.env.AWS_REGION,
+      'DATABASE_URL': props.dbUrl,
+      'DEFAULT_CHAIN_ID': '1',
+      'DEPLOYMENT_ENV': 'canary',
+      'NODE_ENV': 'production',
+      'PROTOCOL': 'balancer',
+      'SANITY_API_TOKEN': process.env.SANITY_API_TOKEN,
+      'SENTRY_DSN': process.env.SENTRY_DSN,
+      'SUPPORTED_NETWORKS': '1,42161,137,10,250',
+      'WORKER': 'true',
+      'WORKER_QUEUE_URL': sqsQueue.queueUrl
     }
+
+    const environmentVariableOptions: CfnEnvironment.OptionSettingProperty[] = Object.entries(environmentVariables).map(([name, value]) => {
+      return {
+        namespace: 'aws:elasticbeanstalk:application:environment',
+        optionName: name,
+        value
+      }
+    })
+
+
+    // Create the 'Backend-env-beets' environment
+    const ebEnvironmentBeets = new CfnEnvironment(this, 'EBEnvironmentBeets', {
+      environmentName: 'Backend-crons-v3',
+      applicationName: ebApplication.ref,
+      solutionStackName: 'Node.js 16 running on 64bit Amazon Linux 2/5.6.4',
+      optionSettings: [
+        ...defaultOptionSettings,
+        ...environmentVariableOptions,
+        {
+          namespace: 'aws:autoscaling:launchconfiguration',
+          optionName: 'ImageId',
+          value: 'ami-0a21bbfa035eb861a'
+        },
+      ]
+    });
+  }
 }

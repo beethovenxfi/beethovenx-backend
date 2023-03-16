@@ -113,6 +113,18 @@ https://backend-optimism-v2.beets-ftm-node.com/graphql
 
 https://backend-optimism-v2-canary.beets-ftm-node.com/graphql
 
+
+## CDK
+
+This repository contains CDK scripts to setup a full backend system on AWS. 
+
+### Configure
+
+The following need to be set in your AWS account:
+
+`githubToken` secret - In secrets manager create a new secret called GITHUB_TOKEN Which contains a Github oAuth token. See [this document](https://docs.aws.amazon.com/codepipeline/latest/userguide/appendix-github-oauth.html#GitHub-create-personal-token-CLI) to create this token, then add it to secrets manager as `githubToken`
+
+
 ## Contributing
 
 We follow the model of [gitflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) using the following naming for branches:
