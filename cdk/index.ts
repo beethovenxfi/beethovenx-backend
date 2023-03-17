@@ -38,7 +38,7 @@ export class BeethovenXApi extends Stack {
       'DBNAME': Fn.importValue('DbName'),
     })
 
-    const ci = new CI(this, 'BeetsBuildPipeline');
+    const ci = new CI(this, 'BuildPipeline');
 
     const myRole = new Role(this, `aws-elasticbeanstalk-ec2-role`, {
       assumedBy: new ServicePrincipal('ec2.amazonaws.com'),
@@ -56,13 +56,13 @@ export class BeethovenXApi extends Stack {
         ]
     });
 
-    const backend = new Backend(this, 'BeetsEBSBackend', {
+    const backend = new Backend(this, 'EBSBackend', {
       vpc,
       dbUrl,
       ebsInstanceProfileName
     })
 
-    const worker = new Worker(this, 'BeetsEBSWorker', {
+    const worker = new Worker(this, 'EBSWorker', {
       vpc,
       dbUrl,
       ebsInstanceProfileName
