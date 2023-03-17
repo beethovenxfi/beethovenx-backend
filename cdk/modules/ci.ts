@@ -88,6 +88,7 @@ export class CI extends Stack {
               AWS_ACCOUNT_ID: { value: process.env.AWS_ACCOUNT_ID },
               DATABASE_URL: { value: props.dbUrl }
             },
+            vpc: props.vpc,
             securityGroups: [cbsg]
           }),
           outputs: [buildOutput]
