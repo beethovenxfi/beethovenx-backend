@@ -7,8 +7,14 @@ import { Stack, StackProps, SecretValue, Stage } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { CodeBuildStep } from 'aws-cdk-lib/pipelines';
 import path from 'path';
+import { Peer, Port, SecurityGroup, Vpc } from 'aws-cdk-lib/aws-ec2';
 
 export interface CIProps extends StackProps {
+  /**
+   * VPC 
+   */
+  vpc: Vpc;
+  
   /**
    * Full URL of database
    */
@@ -51,6 +57,18 @@ export class CI extends Stack {
       ]
     })
 
+    const allAll = Port.allTraffic();
+
+    const cbsg = new SecurityGroup(this, 'CodeBuildSG', {
+      vpc: props.vpc,
+      allowAllOutbound: true,
+      description: id + 'CodeBuildSG',
+      securityGroupName: id + 'CodeBuildSG',
+    });
+
+    cbsg.addIngressRule(cbsg, allAll, 'all from self');
+    cbsg.addEgressRule(Peer.ipv4('0.0.0.0/0'), allAll, 'all out');
+
     const buildOutput = new Artifact('BuildArtifact');
 
     // Create a build stage with a CodeBuild project
@@ -69,7 +87,8 @@ export class CI extends Stack {
               AWS_DEFAULT_REGION: { value:  process.env.AWS_REGION },
               AWS_ACCOUNT_ID: { value: process.env.AWS_ACCOUNT_ID },
               DATABASE_URL: { value: props.dbUrl }
-            }
+            },
+            securityGroups: [cbsg]
           }),
           outputs: [buildOutput]
         })

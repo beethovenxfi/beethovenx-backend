@@ -11,7 +11,7 @@ import { Queue } from 'aws-cdk-lib/aws-sqs';
 
 export interface WorkerProps extends StackProps {
   /**
-   * VPC Id
+   * VPC 
    */
   vpc: Vpc;
 
