@@ -8,8 +8,15 @@ import { Construct } from 'constructs';
 import { CodeBuildStep } from 'aws-cdk-lib/pipelines';
 import path from 'path';
 
+export interface CIProps extends StackProps {
+  /**
+   * Full URL of database
+   */
+  dbUrl: string;
+}
+
 export class CI extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  constructor(scope: Construct, id: string, props: CIProps) {
     super(scope, id, props);
 
     // Create an S3 bucket to store the source code artifact
@@ -55,13 +62,13 @@ export class CI extends Stack {
           input: sourceOutput,
           project: new PipelineProject(this, 'CodeBuildProject', {
             role: codeBuildRole,
-            buildSpec: BuildSpec.fromSourceFilename(path.resolve(__dirname, '..', '..', 'buildspec.yml')),
             environment: {
               buildImage: LinuxBuildImage.STANDARD_6_0,
             },
             environmentVariables: {
               AWS_DEFAULT_REGION: { value:  process.env.AWS_REGION },
               AWS_ACCOUNT_ID: { value: process.env.AWS_ACCOUNT_ID },
+              DATABASE_URL: { value: props.dbUrl }
             }
           }),
           outputs: [buildOutput]

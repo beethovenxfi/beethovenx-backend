@@ -38,7 +38,7 @@ export class BeethovenXApi extends Stack {
       'DBNAME': Fn.importValue('DbName'),
     })
 
-    const ci = new CI(this, 'BuildPipeline');
+    const ci = new CI(this, 'BuildPipeline', { dbUrl });
 
     const myRole = new Role(this, `aws-elasticbeanstalk-ec2-role`, {
       assumedBy: new ServicePrincipal('ec2.amazonaws.com'),
