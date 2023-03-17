@@ -7,6 +7,7 @@ import { PostgresDb } from './modules/db';
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { Backend } from './modules/backend';
 import { CI } from './modules/ci';
+import { CfnInstanceProfile, ManagedPolicy, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 
 export class BeethovenXApi extends Stack {
   constructor(scope: App, id: string, props?: StackProps) {
@@ -15,6 +16,7 @@ export class BeethovenXApi extends Stack {
     const dbPort = 5432;
 
     const vpc = new Vpc(this, 'Vpc', { maxAzs: 2 });
+    
 
     const db = new PostgresDb(this, 'Database', {
       vpc,
@@ -38,9 +40,32 @@ export class BeethovenXApi extends Stack {
 
     const ci = new CI(this, 'BeetsBuildPipeline');
 
-    const backend = new Backend(this, 'BeetsELBBackend', {
+    const myRole = new Role(this, `aws-elasticbeanstalk-ec2-role`, {
+      assumedBy: new ServicePrincipal('ec2.amazonaws.com'),
+    });
+    
+    const managedPolicy = ManagedPolicy.fromAwsManagedPolicyName('AWSElasticBeanstalkWebTier')
+    myRole.addManagedPolicy(managedPolicy);
+    
+    const ebsInstanceProfileName = `BeetsEBSInstanceProfile`
+    
+    const instanceProfile = new CfnInstanceProfile(this, ebsInstanceProfileName, {
+        instanceProfileName: ebsInstanceProfileName,
+        roles: [
+            myRole.roleName
+        ]
+    });
+
+    const backend = new Backend(this, 'BeetsEBSBackend', {
       vpc,
-      dbUrl
+      dbUrl,
+      ebsInstanceProfileName
+    })
+
+    const worker = new Worker(this, 'BeetsEBSWorker', {
+      vpc,
+      dbUrl,
+      ebsInstanceProfileName
     })
   }
 }

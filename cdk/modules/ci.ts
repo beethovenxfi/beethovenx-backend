@@ -35,7 +35,7 @@ export class CI extends Stack {
       actions: [
         new GitHubSourceAction({
           actionName: 'Source',
-          owner: 'beethovenxfi',
+          owner: 'timjrobinson',
           repo: 'beethovenx-backend',
           branch: 'v3-canary',
           oauthToken: SecretValue.secretsManager('githubToken'),

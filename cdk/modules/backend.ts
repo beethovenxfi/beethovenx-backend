@@ -20,6 +20,12 @@ export interface BackendProps extends StackProps {
   dbUrl: string;
 
   /**
+   * Name of the instance profile to give to EBS which has
+   * a role that allows it to access EC2
+  */
+  ebsInstanceProfileName: string;
+
+  /**
    * Pre-created security groups to add to this worker so that
    * it can access other resources
    */
@@ -40,6 +46,11 @@ export class Backend extends Stack {
         namespace: 'aws:autoscaling:launchconfiguration',
         optionName: 'InstanceType',
         value: 't4g.medium'
+      },
+      {
+        namespace: 'aws:autoscaling:launchconfiguration',
+        optionName: 'IamInstanceProfile',
+        value: props.ebsInstanceProfileName
       },
       {
         namespace: 'aws:elasticbeanstalk:environment',
@@ -77,11 +88,6 @@ export class Backend extends Stack {
         value: '300'
       },
       {
-        namespace: 'aws:elasticbeanstalk:container:nodejs',
-        optionName: 'NodeCommand',
-        value: 'yarn start'
-      },
-      {
         namespace: 'aws:elasticbeanstalk:application',
         optionName: 'Application Healthcheck URL',
         value: '/health'
@@ -90,6 +96,16 @@ export class Backend extends Stack {
         namespace: 'aws:ec2:vpc',
         optionName: 'VPCId',
         value: props.vpc.vpcId
+      },
+      {
+        namespace: 'aws:ec2:vpc',
+        optionName: 'Subnets',
+        value: props.vpc.privateSubnets.map(s => s.subnetId).join(',')
+      },
+      {
+        namespace: 'aws:ec2:vpc',
+        optionName: 'ELBSubnets',
+        value: props.vpc.publicSubnets.map(s => s.subnetId).join(',')
       }
     ];
 
@@ -119,15 +135,10 @@ export class Backend extends Stack {
     const ebEnvironmentBeets = new CfnEnvironment(this, 'EBEnvironmentBeets', {
       environmentName: 'Backend-env-beets',
       applicationName: ebApplication.ref,
-      solutionStackName: 'Node.js 16 running on 64bit Amazon Linux 2',
+      solutionStackName: '64bit Amazon Linux 2 v5.7.0 running Node.js 16',
       optionSettings: [
         ...defaultOptionSettings,
         ...environmentVariableOptions,
-        {
-          namespace: 'aws:autoscaling:launchconfiguration',
-          optionName: 'ImageId',
-          value: 'ami-0eed9861470deed81'
-        },
       ]
     });
 
@@ -135,15 +146,10 @@ export class Backend extends Stack {
     const ebEnvironmentV3 = new CfnEnvironment(this, 'EBEnvironmentV3', {
       environmentName: 'Backend-v3',
       applicationName: ebApplication.ref,
-      solutionStackName: 'Node.js 16 running on 64bit Amazon Linux 2',
+      solutionStackName: '64bit Amazon Linux 2 v5.7.0 running Node.js 16',
       optionSettings: [
         ...defaultOptionSettings,
         ...environmentVariableOptions,
-        {
-          namespace: 'aws:autoscaling:launchconfiguration',
-          optionName: 'ImageId',
-          value: 'ami-0a21bbfa035eb861a'
-        },
       ]
     });
   }
