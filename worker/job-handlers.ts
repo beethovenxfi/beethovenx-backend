@@ -39,7 +39,7 @@ async function runIfNotAlreadyRunning(id: string, chainId: string, fn: () => any
         const transaction = Sentry.startTransaction({ name: jobId }, { samplingRate: samplingRate.toString() });
         Sentry.configureScope((scope) => {
             scope.setSpan(transaction);
-            scope.setTransactionName(`POST /${jobId}`);
+            scope.setTransactionName(`${jobId}`);
         });
         transaction.sampled = true;
 
@@ -48,7 +48,10 @@ async function runIfNotAlreadyRunning(id: string, chainId: string, fn: () => any
 
         await fn();
 
-        await cronsMetricPublisher.publish(`${jobId}-done`);
+        if (process.env.AWS_ALERTS === 'true') {
+            await cronsMetricPublisher.publish(`${jobId}-done`);
+        }
+
         if (Math.random() > samplingRate) {
             transaction.sampled = false;
         }
