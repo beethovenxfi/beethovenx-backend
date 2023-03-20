@@ -205,24 +205,5 @@ export class PostgresDb extends Stack {
       exportName: 'DbPasswordSecretArn',
       value: dbSecret.secretArn,
     });
-
-    // const dbHost = dbInstance.dbInstanceEndpointAddress;
-    // const dbUsername = username;
-    // const dbName = props.dbName;
-    // const dbPort = props.port;
-
-    // const dbPassword = Secret.fromSecretCompleteArn(this, 'DbPassword', dbSecret.secretArn);
-
-    // const dbUrl = `postgresql://${dbUsername}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`
-    // const dbUrlSecret = new Secret(this, 'DbUrlSecret', {
-    //   secretName: props.dbName + 'DbUrl',
-    //   description: props.dbName + ' Database Full URL',
-    //   secret
-    // })
-
-    // new CfnOutput(this, 'DbUrlSecretArn', {
-    //   exportName: 'DbUrlSecretArn',
-    //   value: props.dbName!,
-    // });
   }
 }

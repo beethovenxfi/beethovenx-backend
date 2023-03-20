@@ -1,7 +1,7 @@
 import { Artifact, Pipeline, StageProps } from 'aws-cdk-lib/aws-codepipeline';
 import { CodeBuildAction, GitHubSourceAction, ElasticBeanstalkDeployAction } from 'aws-cdk-lib/aws-codepipeline-actions';
 import { Project, BuildSpec, LinuxBuildImage, PipelineProject } from 'aws-cdk-lib/aws-codebuild';
-import { Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import { Effect, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Stack, StackProps, SecretValue, Stage } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
@@ -32,6 +32,17 @@ export class CI extends Stack {
     const codeBuildRole = new Role(this, 'CodeBuildRole', {
       assumedBy: new ServicePrincipal('codebuild.amazonaws.com')
     });
+
+    codeBuildRole.addToPolicy(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        resources: ['*'],
+        actions: [            
+          'codebuild:*'
+        ]
+      })
+    );
+    
 
     // Grant the CodeBuild role permissions to access the S3 artifact bucket
     artifactBucket.grantRead(codeBuildRole);
