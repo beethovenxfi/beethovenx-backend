@@ -7,6 +7,7 @@ import _ from 'lodash';
 import { prismaPoolWithExpandedNesting } from '../../../prisma/prisma-types';
 import { UserService } from '../../user/user.service';
 import { prismaBulkExecuteOperations } from '../../../prisma/prisma-util';
+import { Prisma } from '@sentry/tracing/types/integrations';
 
 export class PoolCreatorService {
     constructor(private readonly userService: UserService) {}
@@ -25,7 +26,7 @@ export class PoolCreatorService {
             const existsInDb = !!existingPools.find((pool) => pool.id === subgraphPool.id);
 
             if (!existsInDb) {
-                await this.createPoolRecord(subgraphPool, sortedSubgraphPools, blockNumber);
+                await this.createPoolRecord(subgraphPool, blockNumber);
 
                 poolIds.push(subgraphPool.id);
             }
@@ -47,6 +48,7 @@ export class PoolCreatorService {
             },
             false,
         );
+
         const sortedSubgraphPools = this.sortSubgraphPools(subgraphPools);
         const poolIds = new Set<string>();
 
@@ -54,7 +56,7 @@ export class PoolCreatorService {
             const existsInDb = !!existingPools.find((pool) => pool.id === subgraphPool.id);
 
             if (!existsInDb) {
-                await this.createPoolRecord(subgraphPool, sortedSubgraphPools, blockNumber);
+                await this.createPoolRecord(subgraphPool, blockNumber);
 
                 poolIds.add(subgraphPool.id);
             }
@@ -139,9 +141,14 @@ export class PoolCreatorService {
         await prismaBulkExecuteOperations(operations);
     }
 
-    private async createPoolRecord(pool: BalancerPoolFragment, allPools: BalancerPoolFragment[], blockNumber: number) {
+    private async createPoolRecord(pool: BalancerPoolFragment, blockNumber: number) {
         const poolType = this.mapSubgraphPoolTypeToPoolType(pool.poolType || '');
         const poolTokens = pool.tokens || [];
+
+        const allNestedTypePools = await prisma.prismaPool.findMany({
+            where: { type: { in: [PrismaPoolType.LINEAR, PrismaPoolType.PHANTOM_STABLE] } },
+            select: { id: true, address: true },
+        });
 
         await prisma.prismaToken.createMany({
             skipDuplicates: true,
@@ -175,13 +182,8 @@ export class PoolCreatorService {
                 tokens: {
                     createMany: {
                         data: poolTokens.map((token) => {
-                            const nestedPool = allPools.find((nestedPool) => {
-                                const poolType = this.mapSubgraphPoolTypeToPoolType(nestedPool.poolType || '');
-
-                                return (
-                                    nestedPool.address === token.address &&
-                                    (poolType === 'LINEAR' || poolType === 'PHANTOM_STABLE')
-                                );
+                            const nestedPool = allNestedTypePools.find((nestedPool) => {
+                                return nestedPool.address === token.address;
                             });
 
                             return {
