@@ -26,11 +26,11 @@ async function createAlertsIfNotExist(chainId: string, jobs: WorkerJob[]): Promi
     for (const cronJob of jobs) {
         const alarmName = `AUTO CRON ALARM MULTICHAIN: ${cronJob.name} - ${chainId} - ${env.DEPLOYMENT_ENV}`;
 
-        // alert if cron has not run once in the double interval (or once in a minute for short intervals)
+        // alert if cron has not run once in the tripple interval (or once in two minutes for short intervals)
         const threshold = 1;
-        let periodInSeconds = (cronJob.interval / 1000) * 2;
-        if (periodInSeconds < 60) {
-            periodInSeconds = 60;
+        let periodInSeconds = (cronJob.interval / 1000) * 3;
+        if (periodInSeconds < 120) {
+            periodInSeconds = 120;
         }
 
         // AWS: Metrics cannot be checked across more than a day (EvaluationPeriods * Period must be <= 86400)
