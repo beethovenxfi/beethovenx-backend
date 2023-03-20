@@ -35,32 +35,40 @@ async function runIfNotAlreadyRunning(id: string, chainId: string, fn: () => any
     try {
         const cronsMetricPublisher = getCronMetricsPublisher(chainId);
         runningJobs.add(jobId);
+
         const transaction = Sentry.startTransaction({ name: jobId }, { samplingRate: samplingRate.toString() });
         Sentry.configureScope((scope) => {
             scope.setSpan(transaction);
             scope.setTransactionName(`POST /${jobId}`);
         });
         transaction.sampled = true;
+
         console.time(jobId);
         console.log(`Start job ${jobId}`);
+
         await fn();
+
         await cronsMetricPublisher.publish(`${jobId}-done`);
         if (Math.random() > samplingRate) {
             transaction.sampled = false;
         }
+
         console.log(`Finished job ${jobId}`);
     } catch (error) {
         const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
         if (transaction) {
             transaction.sampled = true;
         }
+
         Sentry.configureScope((scope) => {
             scope.setTag('error', jobId);
         });
+
         console.log(`Error job ${jobId}`);
     } finally {
         runningJobs.delete(jobId);
         console.timeEnd(jobId);
+
         const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
         if (transaction) {
             transaction.finish();
