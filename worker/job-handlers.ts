@@ -33,7 +33,6 @@ async function runIfNotAlreadyRunning(id: string, chainId: string, fn: () => any
         return;
     }
     try {
-        const cronsMetricPublisher = getCronMetricsPublisher(chainId);
         runningJobs.add(jobId);
 
         const transaction = Sentry.startTransaction({ name: jobId }, { samplingRate: samplingRate.toString() });
@@ -49,6 +48,7 @@ async function runIfNotAlreadyRunning(id: string, chainId: string, fn: () => any
         await fn();
 
         if (process.env.AWS_ALERTS === 'true') {
+            const cronsMetricPublisher = getCronMetricsPublisher(chainId);
             await cronsMetricPublisher.publish(`${jobId}-done`);
         }
 
