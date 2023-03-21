@@ -17,16 +17,12 @@ export class AnkrStakedFtmAprService implements PoolAprService {
         const tokenPrices = await this.tokenService.getTokenPrices();
         const ankrFtmPrice = this.tokenService.getPriceForToken(tokenPrices, this.ankrFTM_ADDRESS);
 
-        //{"serviceName":"ftm","totalStaked":"278077.20562913176","stakers":"423","apy":"2.987985146","totalStakedUsd":"136146.5999","apyBasis":"DAY"},
-        const { data } = await axios.get<{ serviceName: string; apy: string }[]>(
+        const { data } = await axios.get<{ services: { serviceName: string; apy: string }[] }>(
             'https://api.staking.ankr.com/v1alpha/metrics',
             {},
         );
 
-        const ankrFtmApy = data.find((service) => {
-            service.serviceName === 'ftm';
-        });
-
+        const ankrFtmApy = data.services.find((service) => service.serviceName === 'ftm');
         const totalAnkrFTMApr = parseFloat(ankrFtmApy?.apy || '0') / 100;
 
         let operations: any[] = [];
