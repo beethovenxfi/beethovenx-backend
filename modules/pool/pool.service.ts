@@ -30,6 +30,7 @@ import { tokenService } from '../token/token.service';
 import { userService } from '../user/user.service';
 import { jsonRpcProvider } from '../web3/contract';
 import { BoostedPoolAprService } from './lib/apr-data-sources/boosted-pool-apr.service';
+import { AnkrStakedFtmAprService } from './lib/apr-data-sources/fantom/ankr-staked-ftm-apr.service';
 import { MasterchefFarmAprService } from './lib/apr-data-sources/fantom/masterchef-farm-apr.service';
 import { ReliquaryFarmAprService } from './lib/apr-data-sources/fantom/reliquary-farm-apr.service';
 import { SpookySwapAprService } from './lib/apr-data-sources/fantom/spooky-swap-apr.service';
@@ -342,6 +343,7 @@ export const poolService = new PoolService(
                   new SpookySwapAprService(tokenService),
                   new YearnVaultAprService(tokenService),
                   new StaderStakedFtmAprService(tokenService),
+                  new AnkrStakedFtmAprService(tokenService),
               ]
             : [
                   new RocketPoolStakedEthAprService(tokenService, networkConfig.balancer.yieldProtocolFeePercentage),
