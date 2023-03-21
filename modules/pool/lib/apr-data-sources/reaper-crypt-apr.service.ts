@@ -76,26 +76,6 @@ export class ReaperCryptAprService implements PoolAprService {
                 },
                 update: { title: `${wrappedToken.token.symbol} APR`, apr: apr },
             });
-
-            // if we have sftmx as the main token in this linear pool, we want to take the linear APR top level and
-            // we also need to adapt the APR since the vault APR is denominated in sFTMx, so we need to apply the growth rate
-            // and add the sftmx base apr to the unwrapped portion
-            if (isSameAddress(mainToken.address, this.SFTMX_ADDRESS)) {
-                const vaultApr =
-                    totalLiquidity > 0
-                        ? ((1 + avgAprAcrossXHarvests) * (1 + this.SFTMX_APR) - 1) *
-                          (poolWrappedLiquidity / totalLiquidity)
-                        : 0;
-                const sFtmXApr =
-                    totalLiquidity > 0
-                        ? (this.SFTMX_APR * (totalLiquidity - poolWrappedLiquidity)) / totalLiquidity
-                        : 0;
-                apr = vaultApr + sFtmXApr;
-                await prisma.prismaPoolAprItem.update({
-                    where: { id: itemId },
-                    data: { group: null, apr: apr, title: 'Boosted sFTMx APR' },
-                });
-            }
         }
     }
 }
