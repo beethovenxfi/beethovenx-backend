@@ -4,7 +4,7 @@ import { PrismaPoolWithExpandedNesting } from '../../../../../prisma/prisma-type
 import { TokenService } from '../../../../token/token.service';
 import { PoolAprService } from '../../../pool-types';
 
-export class StaderStakedFtmAprService implements PoolAprService {
+export class AnkrStakedFtmAprService implements PoolAprService {
     private readonly ankrFTM_ADDRESS = '0xcfc785741dc0e98ad4c9f6394bb9d43cd1ef5179';
 
     constructor(private readonly tokenService: TokenService) {}
