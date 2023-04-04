@@ -233,9 +233,9 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
         startBlock: number,
         endBlock: number,
     ): Promise<{ farmId: string; userAddress: string; amount: AmountHumanReadable }[]> {
-        const contract: Reliquary = getContractAt(reliquaryAddress, ReliquaryAbi);
+        const reliquaryContract: Reliquary = getContractAt(reliquaryAddress, ReliquaryAbi);
 
-        const events = await contract.queryFilter({ address: reliquaryAddress }, startBlock, endBlock);
+        const events = await reliquaryContract.queryFilter({ address: reliquaryAddress }, startBlock, endBlock);
         const balanceChangedEvents = events.filter(
             (event) =>
                 event.topics.length > 0 &&
@@ -252,12 +252,12 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
             (event) =>
                 event.topics.length > 0 &&
                 [
-                    //split topic
-                    '0xcf0974dfd867840133a0d4b02f1672f24017796fb8892d1e0d587692e4da90ab',
-                    //shift topic
+                    //split topic is not needed, we find the affected user in the transfer events
+                    // '0xcf0974dfd867840133a0d4b02f1672f24017796fb8892d1e0d587692e4da90ab',
+                    //merge topic is not needed, we find the affected user in the transfer events
+                    // '0x285dbc28e663286c77e3cd79d1cf1525744b4dfe015f41295fe5ae2858880bdf',
+                    //shift topic needs to be inspected since we only now sender and the two relic ids, could be different receiving user
                     '0xda2a03409498a5fe8db3da030754afa618bc2228c0517ec5fa8c9b052979e9ea',
-                    //merge topic
-                    '0x285dbc28e663286c77e3cd79d1cf1525744b4dfe015f41295fe5ae2858880bdf',
                 ].includes(event.event!),
         ) as RelicManagementEvent[];
         const transferEvents = events.filter((event) => event.event === 'Transfer') as TransferEvent[];
@@ -266,17 +266,29 @@ export class UserSyncReliquaryFarmBalanceService implements UserStakedBalanceSer
 
         // for the transfer events, we know which users are affected
         let affectedUsers = transferEvents.flatMap((event) => [event.args.from, event.args.to]);
+
         // for the other events, we need to find the owners of the affected relicIds
         const affectedRelicIds = [
             ...balanceChangedEvents.map((event) => parseInt(event.topics[3], 16)),
-            ...relicManagementEvents.flatMap((event) => [parseInt(event.topics[1], 16), parseInt(event.topics[2], 16)]),
+            ...relicManagementEvents.flatMap((event) => [parseInt(event.topics[1], 16), parseInt(event.topics[2], 16)]), //from relicId and to relicId
         ];
+        //can already filter out relics we know that got burned
+        const burnedRelics = transferEvents
+            .filter((event) => event.args.to === ZERO_ADDRESS)
+            .map((event) => event.args.tokenId.toString());
+        const filteredAffectedRelicIds = affectedRelicIds.filter((relicId) => !burnedRelics.includes(`${relicId}`));
 
-        affectedRelicIds.forEach((relicId, index) => {
-            multicall.call(`users[${index}]`, reliquaryAddress, 'ownerOf', [relicId]);
-        });
-        let ownerResult: { users: string[] } = await multicall.execute();
-        affectedUsers = _.uniq([...affectedUsers, ...(ownerResult.users ?? [])]).filter(
+        // can't use multicall since relics could be burned in the meantime and ownerOf call reverts for burned relics
+        const relicOwners: string[] = [];
+        for (const relicId of filteredAffectedRelicIds) {
+            try {
+                const owner = await reliquaryContract.ownerOf(relicId);
+                relicOwners.push(owner);
+            } catch (e) {
+                console.log(`Could not get owner of relic. Skipping.`);
+            }
+        }
+        affectedUsers = _.uniq([...affectedUsers, ...relicOwners]).filter(
             (address) => !isSameAddress(ZERO_ADDRESS, address),
         );
 
