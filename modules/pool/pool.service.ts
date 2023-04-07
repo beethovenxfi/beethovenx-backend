@@ -332,7 +332,7 @@ export class PoolService {
 export const poolService = new PoolService(
     jsonRpcProvider,
     new PoolCreatorService(userService),
-    new PoolOnChainDataService(networkConfig.multicall, networkConfig.balancer.vault, tokenService),
+    new PoolOnChainDataService(tokenService),
     new PoolUsdDataService(tokenService, blocksSubgraphService, balancerSubgraphService),
     new PoolGqlLoaderService(configService),
     new PoolSanityDataLoaderService(),
