@@ -1,13 +1,6 @@
 import { Provider } from '@ethersproject/providers';
-import VaultAbi from '../abi/Vault.json';
-import aTokenRateProvider from '../abi/StaticATokenRateProvider.json';
-import WeightedPoolAbi from '../abi/WeightedPool.json';
-import StablePoolAbi from '../abi/StablePool.json';
-import MetaStablePool from '../abi/MetaStablePool.json';
 import ElementPoolAbi from '../abi/ConvergentCurvePool.json';
 import LinearPoolAbi from '../abi/LinearPool.json';
-import StablePhantomPoolAbi from '../abi/StablePhantomPool.json';
-import ComposableStablePoolAbi from '../abi/ComposableStablePool.json';
 import LiquidityBootstrappingPoolAbi from '../abi/LiquidityBootstrappingPool.json';
 import { Multicaller } from '../../web3/multicaller';
 import { BigNumber, Contract } from 'ethers';
@@ -17,7 +10,6 @@ import { isSameAddress } from '@balancer-labs/sdk';
 import { prisma } from '../../../prisma/prisma-client';
 import { isComposableStablePool, isStablePool, isWeightedPoolV2 } from './pool-utils';
 import { TokenService } from '../../token/token.service';
-import { WeiPerEther } from '@ethersproject/constants';
 import BalancerPoolDataQueryAbi from '../abi/BalancerPoolDataQueries.json';
 import { networkConfig } from '../../config/network-config';
 import { jsonRpcProvider } from '../../web3/contract';
@@ -95,8 +87,6 @@ export class PoolOnChainDataService {
 
     public async updateOnChainData(poolIds: string[], provider: Provider, blockNumber: number): Promise<void> {
         if (poolIds.length === 0) return;
-
-        console.log(poolIds[0]);
 
         const pools = await prisma.prismaPool.findMany({
             where: { id: { in: poolIds } },
@@ -325,7 +315,6 @@ export class PoolOnChainDataService {
                 }
 
                 for (const poolToken of pool.tokens) {
-                    console.log(poolToken.address);
                     const balance = formatFixed(poolData.balances[poolToken.index], poolToken.token.decimals);
                     const weight = poolData.weights ? formatFixed(poolData.weights[poolToken.index], 18) : null;
 
@@ -335,7 +324,7 @@ export class PoolOnChainDataService {
                     if (poolData.scalingFactors && poolData.scalingFactors[poolToken.index]) {
                         priceRate = formatFixed(
                             poolData.scalingFactors[poolToken.index]
-                                .mul(10 ^ poolToken.token.decimals)
+                                .mul(BigNumber.from('10').pow(poolToken.token.decimals))
                                 .div(`1000000000000000000`),
                             18,
                         );
@@ -418,10 +407,6 @@ export class PoolOnChainDataService {
             ...defaultPoolDataQueryConfig,
             ...config,
         });
-        if (response[8].length > 0) {
-            console.log('error');
-        }
-
         return {
             balances: response[0],
             totalSupplies: response[1],
