@@ -5,7 +5,7 @@ import { prisma } from '../../prisma/prisma-client';
 import { networkContext } from '../network/network-context.service';
 import { ContentService, HomeScreenFeaturedPoolGroup, HomeScreenNewsItem } from './content-types';
 
-const TOKEN_LIST_URL = 'https://raw.githubusercontent.com/balancer/tokenlists/main/generated/balancer.tokenlist.json';
+const TOKEN_LIST_URL = 'https://raw.githubusercontent.com/balancer/tokenlists/main/generated/listed-old.tokenlist.json';
 
 interface WhitelistedTokenList {
     name: string;
