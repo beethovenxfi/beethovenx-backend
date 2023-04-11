@@ -200,7 +200,7 @@ export class PoolService {
         const poolIds = result.map((item) => item.id);
         const blockNumber = await this.provider.getBlockNumber();
 
-        const chunks = _.chunk(poolIds, 100);
+        const chunks = _.chunk(poolIds, 1);
 
         for (const chunk of chunks) {
             await this.poolOnChainDataService.updateOnChainData(chunk, this.provider, blockNumber);
@@ -208,7 +208,12 @@ export class PoolService {
     }
 
     public async updateOnChainDataForPools(poolIds: string[], blockNumber: number) {
-        await this.poolOnChainDataService.updateOnChainData(poolIds, this.provider, blockNumber);
+        const chunks = _.chunk(poolIds, 1);
+
+        for (const chunk of chunks) {
+            await this.poolOnChainDataService.updateOnChainData(chunk, this.provider, blockNumber);
+        }
+        // await this.poolOnChainDataService.updateOnChainData(poolIds, this.provider, blockNumber);
     }
 
     public async loadOnChainDataForPoolsWithActiveUpdates() {
