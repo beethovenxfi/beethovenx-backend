@@ -241,6 +241,10 @@ export class PoolService {
         return poolIds;
     }
 
+    public async updateYieldCaptureForAllPools() {
+        await this.poolUsdDataService.updateYieldCaptureForAllPools();
+    }
+
     public async syncSanityPoolData() {
         await this.poolSanityDataLoaderService.syncPoolSanityData();
     }

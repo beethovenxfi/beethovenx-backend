@@ -77,4 +77,8 @@ export const optimismJobs = [
         name: 'sync-user-snapshots',
         interval: every(1, 'hours'),
     },
+    {
+        name: 'update-yield-capture',
+        interval: every(1, 'hours'),
+    },
 ];

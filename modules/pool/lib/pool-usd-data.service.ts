@@ -5,6 +5,8 @@ import { prismaBulkExecuteOperations } from '../../../prisma/prisma-util';
 import { TokenService } from '../../token/token.service';
 import { BlocksSubgraphService } from '../../subgraphs/blocks-subgraph/blocks-subgraph.service';
 import { BalancerSubgraphService } from '../../subgraphs/balancer-subgraph/balancer-subgraph.service';
+import { collectsYieldFee } from './pool-utils';
+import { networkConfig } from '../../config/network-config';
 
 export class PoolUsdDataService {
     constructor(
@@ -151,6 +153,52 @@ export class PoolUsdDataService {
                     prisma.prismaPoolDynamicData.update({
                         where: { id: pool.id },
                         data: { volume24h, fees24h, volume48h, fees48h },
+                    }),
+                );
+            }
+        }
+
+        await prismaBulkExecuteOperations(operations);
+    }
+
+    /*
+        We approximate the yield fee capture of the last 24h by taking the current total yield APR and apply it to the average totalLiquidity from now and 24 hours ago.
+        We approximate the yield fee capture of the last 48h by taking the current total yield APR and apply it to the totalLiquidity from 24 hours ago.
+    */
+    public async updateYieldCaptureForAllPools() {
+        const pools = await prisma.prismaPool.findMany({
+            include: {
+                dynamicData: true,
+                aprItems: true,
+            },
+        });
+        const operations: any[] = [];
+
+        for (const pool of pools) {
+            if (pool.dynamicData?.totalLiquidity && collectsYieldFee(pool)) {
+                const totalLiquidity = pool.dynamicData.totalLiquidity;
+                const totalLiquidity24hAgo = pool.dynamicData.totalLiquidity24hAgo;
+                let userYieldApr = 0;
+                pool.aprItems.forEach((aprItem) => {
+                    if (aprItem.type === 'IB_YIELD' || aprItem.type === 'PHANTOM_STABLE_BOOSTED') {
+                        userYieldApr += aprItem.apr;
+                    }
+                });
+                const liquidityAverage24h = (totalLiquidity + totalLiquidity24hAgo) / 2;
+                const yieldForUser48h = ((totalLiquidity24hAgo * userYieldApr) / 365) * 2;
+                const yieldForUser24h = (liquidityAverage24h * userYieldApr) / 365;
+                const yieldCapture24h =
+                    pool.type === 'META_STABLE'
+                        ? yieldForUser24h / (1 - networkConfig.balancer.swapProtocolFeePercentage)
+                        : yieldForUser24h / (1 - networkConfig.balancer.yieldProtocolFeePercentage);
+                const yieldCapture48h =
+                    pool.type === 'META_STABLE'
+                        ? yieldForUser48h / (1 - networkConfig.balancer.swapProtocolFeePercentage)
+                        : yieldForUser48h / (1 - networkConfig.balancer.yieldProtocolFeePercentage);
+                operations.push(
+                    prisma.prismaPoolDynamicData.update({
+                        where: { id: pool.id },
+                        data: { yieldCapture24h, yieldCapture48h },
                     }),
                 );
             }

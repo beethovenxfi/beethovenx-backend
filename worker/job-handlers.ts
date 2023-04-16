@@ -256,6 +256,15 @@ export function configureWorkerRoutes(app: Express) {
             case 'sync-latest-relic-snapshots':
                 await runIfNotAlreadyRunning(job.name, () => userService.syncUserRelicSnapshots(), 0.01, res, next);
                 break;
+            case 'update-yield-capture':
+                await runIfNotAlreadyRunning(
+                    job.name,
+                    () => poolService.updateYieldCaptureForAllPools(),
+                    0.01,
+                    res,
+                    next,
+                );
+                break;
             default:
                 res.sendStatus(400);
                 throw new Error(`Unhandled job type ${job.name}`);
