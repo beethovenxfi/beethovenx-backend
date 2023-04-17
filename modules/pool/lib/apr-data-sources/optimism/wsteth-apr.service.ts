@@ -4,13 +4,13 @@ import { PrismaPoolWithExpandedNesting } from '../../../../../prisma/prisma-type
 import { TokenService } from '../../../../token/token.service';
 import { PoolAprService } from '../../../pool-types';
 import { collectsYieldFee } from '../../pool-utils';
+import { networkConfig } from '../../../../config/network-config';
 
 export class WstethAprService implements PoolAprService {
     constructor(
         private readonly tokenService: TokenService,
         private readonly wstethAprEndpoint: string,
         private readonly wstethContractAddress: string,
-        private readonly yieldProtocolFeePercentage: number,
     ) {}
 
     public getAprServiceName(): string {
@@ -37,7 +37,10 @@ export class WstethAprService implements PoolAprService {
                 const wstethPercentage =
                     (parseFloat(wstethTokenBalance) * wstethPrice) / pool.dynamicData.totalLiquidity;
                 const wstethApr = pool.dynamicData.totalLiquidity > 0 ? wstethBaseApr * wstethPercentage : 0;
-                const userApr = wstethApr * (1 - this.yieldProtocolFeePercentage);
+                const userApr =
+                    pool.type === 'META_STABLE'
+                        ? wstethApr * (1 - networkConfig.balancer.swapProtocolFeePercentage)
+                        : wstethApr * (1 - networkConfig.balancer.yieldProtocolFeePercentage);
 
                 await prisma.prismaPoolAprItem.upsert({
                     where: { id: itemId },
