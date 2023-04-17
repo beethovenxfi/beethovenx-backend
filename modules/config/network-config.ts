@@ -272,7 +272,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             nativeAssetId: 'ethereum',
             platformId: 'optimistic-ethereum',
         },
-        rpcUrl: 'https://mainnet.optimism.io',
+        rpcUrl: 'https://opt-mainnet.g.alchemy.com/v2/demo',
         beetsPriceProviderRpcUrl: 'https://rpc.ftm.tools',
         sanity: {
             projectId: '1g2ag2hb',
