@@ -3,7 +3,7 @@ import { prisma } from '../../../../../prisma/prisma-client';
 import { PrismaPoolWithExpandedNesting } from '../../../../../prisma/prisma-types';
 import { TokenService } from '../../../../token/token.service';
 import { PoolAprService } from '../../../pool-types';
-import { collectsYieldFee } from '../../pool-utils';
+import { protocolTakesFeeOnYield } from '../../pool-utils';
 
 export class WstethAprService implements PoolAprService {
     constructor(
@@ -45,10 +45,10 @@ export class WstethAprService implements PoolAprService {
                         id: itemId,
                         poolId: pool.id,
                         title: `stETH APR`,
-                        apr: collectsYieldFee(pool) ? userApr : wstethApr,
+                        apr: protocolTakesFeeOnYield(pool) ? userApr : wstethApr,
                         type: 'IB_YIELD',
                     },
-                    update: { apr: collectsYieldFee(pool) ? userApr : wstethApr, title: `stETH APR` },
+                    update: { apr: protocolTakesFeeOnYield(pool) ? userApr : wstethApr, title: `stETH APR` },
                 });
             }
         }

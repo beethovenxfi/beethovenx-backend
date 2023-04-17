@@ -1,7 +1,7 @@
 import { PoolAprService } from '../../pool-types';
 import { PrismaPoolWithExpandedNesting } from '../../../../prisma/prisma-types';
 import { prisma } from '../../../../prisma/prisma-client';
-import { collectsYieldFee, isComposableStablePool, isWeightedPoolV2 } from '../pool-utils';
+import { protocolTakesFeeOnYield, isComposableStablePool, isWeightedPoolV2 } from '../pool-utils';
 
 export class BoostedPoolAprService implements PoolAprService {
     constructor(private readonly yieldProtocolFeePercentage: number) {}
@@ -59,7 +59,7 @@ export class BoostedPoolAprService implements PoolAprService {
                     let userApr = apr;
 
                     if (
-                        collectsYieldFee(pool) &&
+                        protocolTakesFeeOnYield(pool) &&
                         //nested phantom stables already have the yield fee removed
                         token.nestedPool.type !== 'PHANTOM_STABLE'
                     ) {

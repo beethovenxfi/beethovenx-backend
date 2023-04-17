@@ -5,7 +5,7 @@ import { prismaBulkExecuteOperations } from '../../../prisma/prisma-util';
 import { TokenService } from '../../token/token.service';
 import { BlocksSubgraphService } from '../../subgraphs/blocks-subgraph/blocks-subgraph.service';
 import { BalancerSubgraphService } from '../../subgraphs/balancer-subgraph/balancer-subgraph.service';
-import { collectsYieldFee } from './pool-utils';
+import { poolCapturesYield, protocolTakesFeeOnYield } from './pool-utils';
 import { networkConfig } from '../../config/network-config';
 
 export class PoolUsdDataService {
@@ -175,7 +175,7 @@ export class PoolUsdDataService {
         const operations: any[] = [];
 
         for (const pool of pools) {
-            if (pool.dynamicData?.totalLiquidity && collectsYieldFee(pool)) {
+            if (pool.dynamicData?.totalLiquidity && poolCapturesYield(pool)) {
                 const totalLiquidity = pool.dynamicData.totalLiquidity;
                 const totalLiquidity24hAgo = pool.dynamicData.totalLiquidity24hAgo;
                 let userYieldApr = 0;
@@ -187,14 +187,23 @@ export class PoolUsdDataService {
                 const liquidityAverage24h = (totalLiquidity + totalLiquidity24hAgo) / 2;
                 const yieldForUser48h = ((totalLiquidity24hAgo * userYieldApr) / 365) * 2;
                 const yieldForUser24h = (liquidityAverage24h * userYieldApr) / 365;
-                const yieldCapture24h =
+
+                let yieldCapture24h =
                     pool.type === 'META_STABLE'
                         ? yieldForUser24h / (1 - networkConfig.balancer.swapProtocolFeePercentage)
                         : yieldForUser24h / (1 - networkConfig.balancer.yieldProtocolFeePercentage);
-                const yieldCapture48h =
+
+                let yieldCapture48h =
                     pool.type === 'META_STABLE'
                         ? yieldForUser48h / (1 - networkConfig.balancer.swapProtocolFeePercentage)
                         : yieldForUser48h / (1 - networkConfig.balancer.yieldProtocolFeePercentage);
+
+                // if the pool is in recovery mode, the protocol does not take any fee and therefore the user takes all yield captured
+                if (networkConfig.balancer.poolsInRecoveryMode.includes(pool.id)) {
+                    yieldCapture24h = yieldForUser24h;
+                    yieldCapture48h = yieldForUser48h;
+                }
+
                 operations.push(
                     prisma.prismaPoolDynamicData.update({
                         where: { id: pool.id },

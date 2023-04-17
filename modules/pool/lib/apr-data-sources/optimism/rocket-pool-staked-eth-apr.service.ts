@@ -2,7 +2,7 @@ import { prisma } from '../../../../../prisma/prisma-client';
 import { PrismaPoolWithExpandedNesting } from '../../../../../prisma/prisma-types';
 import { TokenService } from '../../../../token/token.service';
 import { PoolAprService } from '../../../pool-types';
-import { collectsYieldFee, isComposableStablePool, isWeightedPoolV2 } from '../../pool-utils';
+import { protocolTakesFeeOnYield, isComposableStablePool, isWeightedPoolV2 } from '../../pool-utils';
 
 export class RocketPoolStakedEthAprService implements PoolAprService {
     private readonly RETH_ADDRESS = '0x9bcef72be871e61ed4fbbc7630889bee758eb81d';
@@ -29,11 +29,11 @@ export class RocketPoolStakedEthAprService implements PoolAprService {
                 operations.push(
                     prisma.prismaPoolAprItem.upsert({
                         where: { id: `${pool.id}-reth-apr` },
-                        update: { apr: collectsYieldFee(pool) ? userApr : rethApr },
+                        update: { apr: protocolTakesFeeOnYield(pool) ? userApr : rethApr },
                         create: {
                             id: `${pool.id}-reth-apr`,
                             poolId: pool.id,
-                            apr: collectsYieldFee(pool) ? userApr : rethApr,
+                            apr: protocolTakesFeeOnYield(pool) ? userApr : rethApr,
                             title: 'rETH APR',
                             type: 'IB_YIELD',
                         },
