@@ -102,7 +102,7 @@ export class UserSyncWalletBalanceService {
         }
 
         const fromBlock = syncStatus.blockNumber + 1;
-        const toBlock = latestBlock - fromBlock > 500 ? fromBlock + 500 : latestBlock;
+        const toBlock = latestBlock - fromBlock > 200 ? fromBlock + 200 : latestBlock;
 
         //fetch all transfer events for the block range
         const events = await jsonRpcProvider.getLogs({
