@@ -179,11 +179,14 @@ export class PoolUsdDataService {
                 const totalLiquidity = pool.dynamicData.totalLiquidity;
                 const totalLiquidity24hAgo = pool.dynamicData.totalLiquidity24hAgo;
                 let userYieldApr = 0;
+
+                // we approximate total APR by summing it up, as APRs are usually small, this is good enough
                 pool.aprItems.forEach((aprItem) => {
                     if (aprItem.type === 'IB_YIELD' || aprItem.type === 'PHANTOM_STABLE_BOOSTED') {
                         userYieldApr += aprItem.apr;
                     }
                 });
+
                 const liquidityAverage24h = (totalLiquidity + totalLiquidity24hAgo) / 2;
                 const yieldForUser48h = ((totalLiquidity24hAgo * userYieldApr) / 365) * 2;
                 const yieldForUser24h = (liquidityAverage24h * userYieldApr) / 365;
@@ -199,6 +202,7 @@ export class PoolUsdDataService {
                         : yieldForUser48h / (1 - networkConfig.balancer.yieldProtocolFeePercentage);
 
                 // if the pool is in recovery mode, the protocol does not take any fee and therefore the user takes all yield captured
+                // since this is already reflected in the aprItems of the pool, we need to set that as the totalYieldCapture
                 if (networkConfig.balancer.poolsInRecoveryMode.includes(pool.id)) {
                     yieldCapture24h = yieldForUser24h;
                     yieldCapture48h = yieldForUser48h;
