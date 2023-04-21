@@ -181,8 +181,14 @@ export class PoolUsdDataService {
                 let userYieldApr = 0;
 
                 // we approximate total APR by summing it up, as APRs are usually small, this is good enough
+                // we need IB yield APR (such as sFTMx) as well as phantom stable APR, which is set for phantom stable pools
+                // we need any phantom stable pool or weighted pool that has either a phantom stable or a linear nested, which has no apr type set (done by boosted-pool-apr.service.ts)
                 pool.aprItems.forEach((aprItem) => {
-                    if (aprItem.type === 'IB_YIELD' || aprItem.type === 'PHANTOM_STABLE_BOOSTED') {
+                    if (
+                        aprItem.type === 'IB_YIELD' ||
+                        aprItem.type === 'PHANTOM_STABLE_BOOSTED' ||
+                        aprItem.type === null
+                    ) {
                         userYieldApr += aprItem.apr;
                     }
                 });
@@ -203,7 +209,7 @@ export class PoolUsdDataService {
 
                 // if the pool is in recovery mode, the protocol does not take any fee and therefore the user takes all yield captured
                 // since this is already reflected in the aprItems of the pool, we need to set that as the totalYieldCapture
-                if (networkConfig.balancer.poolsInRecoveryMode.includes(pool.id)) {
+                if (networkConfig.balancer.poolsInRecoveryMode.includes(pool.address)) {
                     yieldCapture24h = yieldForUser24h;
                     yieldCapture48h = yieldForUser48h;
                 }
