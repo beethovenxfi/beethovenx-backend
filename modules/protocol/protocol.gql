@@ -14,6 +14,7 @@ type GqlProtocolMetrics {
     poolCount: BigInt!
     swapFee24h: BigDecimal!
     swapVolume24h: BigDecimal!
+    yieldCapture24h: BigDecimal!
 }
 
 type GqlLatestSyncedBlocks {
