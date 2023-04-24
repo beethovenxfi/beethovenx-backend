@@ -5,7 +5,7 @@ import { prismaBulkExecuteOperations } from '../../../prisma/prisma-util';
 import { TokenService } from '../../token/token.service';
 import { BlocksSubgraphService } from '../../subgraphs/blocks-subgraph/blocks-subgraph.service';
 import { BalancerSubgraphService } from '../../subgraphs/balancer-subgraph/balancer-subgraph.service';
-import { poolCapturesYield, protocolTakesFeeOnYield } from './pool-utils';
+import { poolCapturesYield } from './pool-utils';
 import { networkConfig } from '../../config/network-config';
 
 export class PoolUsdDataService {

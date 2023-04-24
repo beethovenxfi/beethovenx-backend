@@ -10,7 +10,7 @@ import { blocksSubgraphService } from '../subgraphs/blocks-subgraph/blocks-subgr
 import { tokenService } from '../token/token.service';
 import { beetsService } from '../beets/beets.service';
 import { oneDayInSeconds, secondsPerDay } from '../common/time';
-import { collectsFee, isComposableStablePool, isWeightedPoolV2, poolCapturesYield } from '../pool/lib/pool-utils';
+import { collectsFee, isComposableStablePool, isWeightedPoolV2 } from '../pool/lib/pool-utils';
 
 export class DatastudioService {
     constructor(
