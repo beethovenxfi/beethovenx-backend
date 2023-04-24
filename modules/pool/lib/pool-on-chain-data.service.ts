@@ -1,62 +1,70 @@
 import { Provider } from '@ethersproject/providers';
-import VaultAbi from '../abi/Vault.json';
-import aTokenRateProvider from '../abi/StaticATokenRateProvider.json';
-import WeightedPoolAbi from '../abi/WeightedPool.json';
-import StablePoolAbi from '../abi/StablePool.json';
-import MetaStablePool from '../abi/MetaStablePool.json';
 import ElementPoolAbi from '../abi/ConvergentCurvePool.json';
 import LinearPoolAbi from '../abi/LinearPool.json';
-import StablePhantomPoolAbi from '../abi/StablePhantomPool.json';
-import ComposableStablePoolAbi from '../abi/ComposableStablePool.json';
-import WeightedPoolV2Abi from '../abi/WeightedPoolV2.json';
 import LiquidityBootstrappingPoolAbi from '../abi/LiquidityBootstrappingPool.json';
 import { Multicaller } from '../../web3/multicaller';
-import { BigNumber } from 'ethers';
+import { BigNumber, Contract } from 'ethers';
 import { formatFixed } from '@ethersproject/bignumber';
 import { PrismaPoolType } from '@prisma/client';
 import { isSameAddress } from '@balancer-labs/sdk';
 import { prisma } from '../../../prisma/prisma-client';
-import { isComposableStablePool, isWeightedPoolV2, isStablePool } from './pool-utils';
+import { isComposableStablePool, isStablePool, isWeightedPoolV2 } from './pool-utils';
 import { TokenService } from '../../token/token.service';
-import { WeiPerEther } from '@ethersproject/constants';
+import BalancerPoolDataQueryAbi from '../abi/BalancerPoolDataQueries.json';
+import { networkConfig } from '../../config/network-config';
+import { jsonRpcProvider } from '../../web3/contract';
 
+enum PoolQueriesTotalSupplyType {
+    TOTAL_SUPPLY = 0,
+    VIRTUAL_SUPPLY,
+    ACTUAL_SUPPLY,
+}
+
+enum PoolQuerySwapFeeType {
+    SWAP_FEE_PERCENTAGE = 0,
+    PERCENT_FEE,
+}
+
+interface PoolDataQueryConfig {
+    loadTokenBalanceUpdatesAfterBlock: boolean;
+    loadTotalSupply: boolean;
+    loadSwapFees: boolean;
+    loadLinearWrappedTokenRates: boolean;
+    loadNormalizedWeights: boolean;
+    loadScalingFactors: boolean;
+    loadAmps: boolean;
+    loadRates: boolean;
+    blockNumber: number;
+    totalSupplyTypes: PoolQueriesTotalSupplyType[];
+    swapFeeTypes: PoolQuerySwapFeeType[];
+    linearPoolIdxs: number[];
+    weightedPoolIdxs: number[];
+    scalingFactorPoolIdxs: number[];
+    ampPoolIdxs: number[];
+    ratePoolIdxs: number[];
+}
+
+const defaultPoolDataQueryConfig: PoolDataQueryConfig = {
+    loadTokenBalanceUpdatesAfterBlock: false,
+    loadTotalSupply: false,
+    loadSwapFees: false,
+    loadLinearWrappedTokenRates: false,
+    loadNormalizedWeights: false,
+    loadScalingFactors: false,
+    loadAmps: false,
+    loadRates: false,
+    blockNumber: 0,
+    totalSupplyTypes: [],
+    swapFeeTypes: [],
+    linearPoolIdxs: [],
+    weightedPoolIdxs: [],
+    scalingFactorPoolIdxs: [],
+    ampPoolIdxs: [],
+    ratePoolIdxs: [],
+};
 interface MulticallExecuteResult {
-    amp?: string[];
-    swapFee: string;
-    totalSupply: string;
-    weights?: string[];
     targets?: string[];
-    poolTokens: {
-        tokens: string[];
-        balances: string[];
-    };
-    wrappedTokenRate?: BigNumber;
-    rate?: BigNumber;
     swapEnabled?: boolean;
-    tokenRates?: BigNumber[];
-    metaPriceRateCache?: [BigNumber, BigNumber, BigNumber][];
-    linearPools?: Record<
-        string,
-        {
-            id: string;
-            priceRate: string;
-            totalSupply: string;
-            mainToken: { address: string; index: BigNumber };
-            wrappedToken: { address: string; index: BigNumber; rate: string };
-        }
-    >;
-    stablePhantomPools?: Record<
-        string,
-        {
-            id: string;
-            totalSupply: string;
-            tokenRates: BigNumber[];
-            poolTokens: {
-                tokens: string[];
-                balances: string[];
-            };
-        }
-    >;
 }
 
 const SUPPORTED_POOL_TYPES: PrismaPoolType[] = [
@@ -69,22 +77,24 @@ const SUPPORTED_POOL_TYPES: PrismaPoolType[] = [
     'ELEMENT',
 ];
 
+export interface poolIdWithType {
+    id: string;
+    type: PrismaPoolType;
+}
+
 export class PoolOnChainDataService {
-    constructor(
-        private readonly multiAddress: string,
-        private readonly vaultAddress: string,
-        private readonly tokenService: TokenService,
-    ) {}
+    constructor(private readonly tokenService: TokenService) {}
 
     public async updateOnChainData(poolIds: string[], provider: Provider, blockNumber: number): Promise<void> {
         if (poolIds.length === 0) return;
 
-        const tokenPrices = await this.tokenService.getTokenPrices();
-
         const pools = await prisma.prismaPool.findMany({
             where: { id: { in: poolIds } },
             include: {
-                tokens: { orderBy: { index: 'asc' }, include: { dynamicData: true, token: true } },
+                tokens: {
+                    orderBy: { index: 'asc' },
+                    include: { dynamicData: true, token: true },
+                },
                 stableDynamicData: true,
                 dynamicData: true,
                 linearDynamicData: true,
@@ -92,92 +102,116 @@ export class PoolOnChainDataService {
             },
         });
 
+        const retrievedPoolIds = pools.map((pool) => pool.id);
+
+        const weightedPoolIndexes: number[] = [];
+        const linearPoolIdexes: number[] = [];
+        const stablePoolIdexes: number[] = [];
+        const ratePoolIdexes: number[] = [];
+        const scalingFactorPoolIndexes: number[] = [];
+        for (const pool of pools) {
+            if (pool.type === 'WEIGHTED' || pool.type === 'LIQUIDITY_BOOTSTRAPPING' || pool.type === 'INVESTMENT') {
+                weightedPoolIndexes.push(retrievedPoolIds.findIndex((orderedPoolId) => orderedPoolId === pool.id));
+            }
+            if (pool.type === 'LINEAR') {
+                linearPoolIdexes.push(retrievedPoolIds.findIndex((orderedPoolId) => orderedPoolId === pool.id));
+            }
+            if (isStablePool(pool.type)) {
+                stablePoolIdexes.push(retrievedPoolIds.findIndex((orderedPoolId) => orderedPoolId === pool.id));
+            }
+            if (pool.type === 'LINEAR' || isComposableStablePool(pool)) {
+                ratePoolIdexes.push(retrievedPoolIds.findIndex((orderedPoolId) => orderedPoolId === pool.id));
+            }
+            if (pool.type === 'LINEAR' || isComposableStablePool(pool) || pool.type === 'META_STABLE') {
+                scalingFactorPoolIndexes.push(retrievedPoolIds.findIndex((orderedPoolId) => orderedPoolId === pool.id));
+            }
+        }
+
+        const poolDataQueryResult = await this.getPoolData({
+            poolIds: retrievedPoolIds,
+            config: {
+                loadTokenBalanceUpdatesAfterBlock: true,
+                blockNumber: 0, // always get balances from all pools
+                loadAmps: stablePoolIdexes.length > 0,
+                ampPoolIdxs: stablePoolIdexes,
+                loadSwapFees: true,
+                swapFeeTypes: pools.map((pool) => {
+                    if (
+                        pool.type === 'WEIGHTED' ||
+                        pool.type === 'LIQUIDITY_BOOTSTRAPPING' ||
+                        pool.type === 'INVESTMENT' ||
+                        pool.type === 'LINEAR' ||
+                        isStablePool(pool.type)
+                        // MetaStable & StablePhantom is the same as Stable for swapfee purposes
+                    ) {
+                        return PoolQuerySwapFeeType.SWAP_FEE_PERCENTAGE;
+                    } else {
+                        return PoolQuerySwapFeeType.PERCENT_FEE;
+                    }
+                }),
+                loadTotalSupply: true,
+                totalSupplyTypes: pools.map((pool) => {
+                    if (isComposableStablePool(pool) || isWeightedPoolV2(pool) || pool.type === 'PHANTOM_STABLE') {
+                        return PoolQueriesTotalSupplyType.ACTUAL_SUPPLY;
+                    } else if (pool.type === 'LINEAR') {
+                        return PoolQueriesTotalSupplyType.VIRTUAL_SUPPLY;
+                    } else {
+                        return PoolQueriesTotalSupplyType.TOTAL_SUPPLY;
+                    }
+                }),
+                loadNormalizedWeights: weightedPoolIndexes.length > 0,
+                weightedPoolIdxs: weightedPoolIndexes,
+                loadLinearWrappedTokenRates: linearPoolIdexes.length > 0,
+                linearPoolIdxs: linearPoolIdexes,
+                loadRates: ratePoolIdexes.length > 0,
+                ratePoolIdxs: ratePoolIdexes,
+                loadScalingFactors: scalingFactorPoolIndexes.length > 0,
+                scalingFactorPoolIdxs: scalingFactorPoolIndexes,
+            },
+        });
+
+        const poolDataResultPerPool = retrievedPoolIds.map((poolId, i) => ({
+            id: retrievedPoolIds[i],
+            balances: poolDataQueryResult.balances[i],
+            totalSupply: poolDataQueryResult.totalSupplies[i],
+            weights: weightedPoolIndexes.includes(i)
+                ? poolDataQueryResult.weights[weightedPoolIndexes.indexOf(i)]
+                : undefined,
+            amp: stablePoolIdexes.includes(i) ? poolDataQueryResult.amps[stablePoolIdexes.indexOf(i)] : undefined,
+            wrappedTokenRate: linearPoolIdexes.includes(i)
+                ? poolDataQueryResult.linearWrappedTokenRates[linearPoolIdexes.indexOf(i)]
+                : undefined,
+            swapFee: poolDataQueryResult.swapFees[i],
+            rate: linearPoolIdexes.includes(i) ? poolDataQueryResult.rates[linearPoolIdexes.indexOf(i)] : undefined,
+            scalingFactors: scalingFactorPoolIndexes.includes(i)
+                ? poolDataQueryResult.scalingFactors[scalingFactorPoolIndexes.indexOf(i)]
+                : undefined,
+            ignored: poolDataQueryResult.ignoreIdxs.some((index) => index.eq(i)),
+        }));
+
+        const tokenPrices = await this.tokenService.getTokenPrices();
+
         const abis: any = Object.values(
             // Remove duplicate entries using their names
             Object.fromEntries(
-                [
-                    ...VaultAbi,
-                    ...aTokenRateProvider,
-                    ...WeightedPoolAbi,
-                    ...StablePoolAbi,
-                    ...ElementPoolAbi,
-                    ...LinearPoolAbi,
-                    ...LiquidityBootstrappingPoolAbi,
-                    ...StablePhantomPoolAbi,
-                    ...MetaStablePool,
-                    ...ComposableStablePoolAbi,
-                    //...WeightedPoolV2Abi,
-                ].map((row) => [row.name, row]),
+                [...ElementPoolAbi, ...LinearPoolAbi, ...LiquidityBootstrappingPoolAbi].map((row) => [row.name, row]),
             ),
         );
 
-        const multiPool = new Multicaller(this.multiAddress, provider, abis);
+        const multiPool = new Multicaller(networkConfig.multicall, provider, abis);
 
         pools.forEach((pool) => {
             if (!SUPPORTED_POOL_TYPES.includes(pool.type || '')) {
                 console.error(`Unknown pool type: ${pool.type} ${pool.id}`);
                 return;
             }
-            multiPool.call(`${pool.id}.poolTokens`, this.vaultAddress, 'getPoolTokens', [pool.id]);
 
-            // TO DO - Make this part of class to make more flexible?
-            if (pool.type === 'WEIGHTED' || pool.type === 'LIQUIDITY_BOOTSTRAPPING' || pool.type === 'INVESTMENT') {
-                multiPool.call(`${pool.id}.weights`, pool.address, 'getNormalizedWeights');
-                multiPool.call(`${pool.id}.swapFee`, pool.address, 'getSwapFeePercentage');
-            } else if (isStablePool(pool.type)) {
-                // MetaStable & StablePhantom is the same as Stable for multicall purposes
-                multiPool.call(`${pool.id}.amp`, pool.address, 'getAmplificationParameter');
-                multiPool.call(`${pool.id}.swapFee`, pool.address, 'getSwapFeePercentage');
-            } else if (pool.type === 'ELEMENT') {
-                multiPool.call(`${pool.id}.swapFee`, pool.address, 'percentFee');
-            } else if (pool.type === 'LINEAR') {
-                multiPool.call(`${pool.id}.swapFee`, pool.address, 'getSwapFeePercentage');
-
+            if (pool.type === 'LINEAR') {
                 multiPool.call(`${pool.id}.targets`, pool.address, 'getTargets');
-                // this fails if a pool has not yet been initialized
-                // TODO what happens if a pool is drained? totalShares become 0?
-                if (pool.dynamicData && pool.dynamicData?.totalSharesNum > 0) {
-                    multiPool.call(`${pool.id}.rate`, pool.address, 'getRate');
-                }
-                multiPool.call(`${pool.id}.wrappedTokenRate`, pool.address, 'getWrappedTokenRate');
             }
 
             if (pool.type === 'LIQUIDITY_BOOTSTRAPPING' || pool.type === 'INVESTMENT') {
                 multiPool.call(`${pool.id}.swapEnabled`, pool.address, 'getSwapEnabled');
-            }
-
-            if (pool.type === 'META_STABLE') {
-                const tokenAddresses = pool.tokens.map((token) => token.address);
-
-                tokenAddresses.forEach((token, i) => {
-                    multiPool.call(`${pool.id}.metaPriceRateCache[${i}]`, pool.address, 'getPriceRateCache', [token]);
-                });
-            }
-
-            if (isComposableStablePool(pool) || isWeightedPoolV2(pool)) {
-                // the new ComposableStablePool and WeightedPool mint bpts for protocol fees which are included in the getActualSupply call
-                // getActualSupply fails for not initialized pools (pools where totalSupply = 0)
-                // until it is initialized, we'll use the totalSupply since it is also also updated but not 100% accurate it should be good enough
-                if (pool.dynamicData && pool.dynamicData?.totalSharesNum === 0) {
-                    multiPool.call(`${pool.id}.totalSupply`, pool.address, 'totalSupply');
-                } else {
-                    multiPool.call(`${pool.id}.totalSupply`, pool.address, 'getActualSupply');
-                }
-            } else if (pool.type === 'LINEAR' || pool.type === 'PHANTOM_STABLE') {
-                // the old phantom stable and linear pool does not have this and expose the actual supply as virtualSupply
-                multiPool.call(`${pool.id}.totalSupply`, pool.address, 'getVirtualSupply');
-            } else {
-                //default to totalSupply for any other pool type
-                multiPool.call(`${pool.id}.totalSupply`, pool.address, 'totalSupply');
-            }
-
-            if (pool.type === 'PHANTOM_STABLE') {
-                //we retrieve token rates for phantom stable and composable stable pools
-                const tokenAddresses = pool.tokens.map((token) => token.address);
-
-                tokenAddresses.forEach((token, i) => {
-                    multiPool.call(`${pool.id}.tokenRates[${i}]`, pool.address, 'getTokenRate', [token]);
-                });
             }
         });
 
@@ -192,22 +226,30 @@ export class PoolOnChainDataService {
 
         const poolsOnChainDataArray = Object.entries(poolsOnChainData);
 
-        for (let index = 0; index < poolsOnChainDataArray.length; index++) {
-            const [poolId, onchainData] = poolsOnChainDataArray[index];
+        for (const poolData of poolDataResultPerPool) {
+            if (poolData.ignored) {
+                console.log(`Pool query return with error, skipping: ${poolData.id}`);
+                continue;
+            }
+            const poolId = poolData.id;
             const pool = pools.find((pool) => pool.id === poolId)!;
-            const { poolTokens } = onchainData;
+            let multicallResult;
+            for (const [id, data] of poolsOnChainDataArray) {
+                if (id === poolId) {
+                    multicallResult = data;
+                }
+            }
 
             try {
                 if (isStablePool(pool.type)) {
-                    if (!onchainData.amp) {
-                        console.log('onchain data', onchainData);
+                    if (!poolData.amp) {
                         console.error(`Stable Pool Missing Amp: ${poolId}`);
                         continue;
                     }
 
                     // Need to scale amp by precision to match expected Subgraph scale
                     // amp is stored with 3 decimals of precision
-                    const amp = formatFixed(onchainData.amp[0], 3);
+                    const amp = formatFixed(poolData.amp, 3);
 
                     //only update if amp has changed
                     if (!pool.stableDynamicData || pool.stableDynamicData.amp !== amp) {
@@ -220,12 +262,12 @@ export class PoolOnChainDataService {
                 }
 
                 if (pool.type === 'LINEAR') {
-                    if (!onchainData.targets) {
+                    if (!multicallResult?.targets) {
                         console.error(`Linear Pool Missing Targets: ${poolId}`);
                         continue;
                     } else {
-                        const lowerTarget = formatFixed(onchainData.targets[0], 18);
-                        const upperTarget = formatFixed(onchainData.targets[1], 18);
+                        const lowerTarget = formatFixed(multicallResult.targets[0], 18);
+                        const upperTarget = formatFixed(multicallResult.targets[1], 18);
 
                         if (
                             !pool.linearDynamicData ||
@@ -234,41 +276,24 @@ export class PoolOnChainDataService {
                         ) {
                             await prisma.prismaPoolLinearDynamicData.upsert({
                                 where: { id: pool.id },
-                                create: { id: pool.id, poolId: pool.id, upperTarget, lowerTarget, blockNumber },
+                                create: {
+                                    id: pool.id,
+                                    poolId: pool.id,
+                                    upperTarget,
+                                    lowerTarget,
+                                    blockNumber,
+                                },
                                 update: { upperTarget, lowerTarget, blockNumber },
                             });
                         }
                     }
-
-                    const wrappedIndex = pool.linearData?.wrappedIndex;
-                    if (typeof wrappedIndex !== 'number' || onchainData.wrappedTokenRate === undefined) {
-                        console.error(`Linear Pool Missing WrappedIndex or PriceRate: ${poolId}`);
-                        continue;
-                    }
-
-                    //TODO: need to make sure its safe to index the tokens like this.
-
-                    onchainData.tokenRates = [];
-                    //main rate is always 1
-                    onchainData.tokenRates[pool.linearData?.mainIndex || 0] = WeiPerEther;
-
-                    // Update priceRate of wrappedToken
-                    if (pool.tokens[wrappedIndex]) {
-                        onchainData.tokenRates[wrappedIndex] = onchainData.wrappedTokenRate;
-                    }
-
-                    const phantomIdx = pool.tokens.findIndex((token) => token.address === pool.address);
-
-                    if (phantomIdx !== -1 && onchainData.rate) {
-                        onchainData.tokenRates[phantomIdx] = onchainData.rate;
-                    }
                 }
 
-                const swapFee = formatFixed(onchainData.swapFee, 18);
-                const totalShares = formatFixed(onchainData.totalSupply, 18);
+                const swapFee = formatFixed(poolData.swapFee, 18);
+                const totalShares = formatFixed(poolData.totalSupply, 18);
                 const swapEnabled =
-                    typeof onchainData.swapEnabled !== 'undefined'
-                        ? onchainData.swapEnabled
+                    typeof multicallResult?.swapEnabled !== 'undefined'
+                        ? multicallResult.swapEnabled
                         : pool.dynamicData?.swapEnabled;
 
                 if (
@@ -289,21 +314,30 @@ export class PoolOnChainDataService {
                     });
                 }
 
-                for (let i = 0; i < poolTokens.tokens.length; i++) {
-                    const tokenAddress = poolTokens.tokens[i];
-                    const poolToken = pool.tokens.find((token) => isSameAddress(token.address, tokenAddress));
+                for (const poolToken of pool.tokens) {
+                    const balance = formatFixed(poolData.balances[poolToken.index], poolToken.token.decimals);
+                    const weight = poolData.weights ? formatFixed(poolData.weights[poolToken.index], 18) : null;
 
-                    if (!poolToken) {
-                        throw `Pool Missing Expected Token: ${poolId} ${tokenAddress}`;
+                    let priceRate = '1.0';
+
+                    // set token rate from scaling factors
+                    if (poolData.scalingFactors && poolData.scalingFactors[poolToken.index]) {
+                        priceRate = formatFixed(
+                            poolData.scalingFactors[poolToken.index]
+                                .mul(BigNumber.from('10').pow(poolToken.token.decimals))
+                                .div(`1000000000000000000`),
+                            18,
+                        );
                     }
 
-                    const balance = formatFixed(poolTokens.balances[i], poolToken.token.decimals);
-                    const weight = onchainData.weights ? formatFixed(onchainData.weights[i], 18) : null;
+                    // override the rate of the phantom bpt with pool.getRate if present
+                    if (poolData.rate && isSameAddress(poolToken.address, pool.address)) {
+                        priceRate = formatFixed(poolData.rate, 18);
+                    }
 
-                    let priceRate = onchainData.tokenRates ? formatFixed(onchainData.tokenRates[i], 18) : '1.0';
-
-                    if (onchainData.metaPriceRateCache && onchainData.metaPriceRateCache[i][0].gt('0')) {
-                        priceRate = formatFixed(onchainData.metaPriceRateCache[i][0], 18);
+                    // override the rate of the wrapped token with pool.getWrappedTokenRate if present
+                    if (poolData.wrappedTokenRate && pool.linearData?.wrappedIndex === poolToken.index) {
+                        priceRate = formatFixed(poolData.wrappedTokenRate, 18);
                     }
 
                     if (
@@ -345,5 +379,44 @@ export class PoolOnChainDataService {
                 console.log('error syncing on chain data', e);
             }
         }
+    }
+    public async getPoolData({
+        poolIds,
+        config,
+    }: {
+        poolIds: string[];
+        config: Partial<PoolDataQueryConfig>;
+    }): Promise<{
+        balances: BigNumber[][];
+        totalSupplies: BigNumber[];
+        swapFees: BigNumber[];
+        linearWrappedTokenRates: BigNumber[];
+        weights: BigNumber[][];
+        scalingFactors: BigNumber[][];
+        amps: BigNumber[];
+        rates: BigNumber[];
+        ignoreIdxs: BigNumber[];
+    }> {
+        const contract = new Contract(
+            networkConfig.balancer.poolDataQueryContract,
+            BalancerPoolDataQueryAbi,
+            jsonRpcProvider,
+        );
+
+        const response = await contract.getPoolData(poolIds, {
+            ...defaultPoolDataQueryConfig,
+            ...config,
+        });
+        return {
+            balances: response[0],
+            totalSupplies: response[1],
+            swapFees: response[2],
+            linearWrappedTokenRates: response[3],
+            weights: response[4],
+            scalingFactors: response[5],
+            amps: response[6],
+            rates: response[7],
+            ignoreIdxs: response[8],
+        };
     }
 }
