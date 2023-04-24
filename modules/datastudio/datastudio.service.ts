@@ -33,7 +33,7 @@ export class DatastudioService {
         const timestampRange = `${this.databaseTabName}!B:B`;
         const poolAddressRange = `${this.databaseTabName}!D:D`;
         const totalSwapRange = `${this.databaseTabName}!J:J`;
-        const chainRange = `${this.databaseTabName}!V:V`;
+        const chainRange = `${this.databaseTabName}!Y:Y`;
         let currentSheetValues;
         currentSheetValues = await sheets.spreadsheets.values.batchGet({
             auth: jwtClient,
@@ -201,9 +201,9 @@ export class DatastudioService {
                 sharesChange,
                 pool.dynamicData?.volume24h ? `${pool.dynamicData.volume24h}` : `0`,
                 pool.dynamicData?.fees24h ? `${pool.dynamicData.fees24h}` : `0`,
-                pool.dynamicData?.yieldCapture24h ? `${pool.dynamicData.yieldCapture24h}` : `0`,
                 lpSwapFee,
                 protocolSwapFee,
+                pool.dynamicData?.yieldCapture24h ? `${pool.dynamicData.yieldCapture24h}` : `0`,
                 lpYieldCapture,
                 protocolYieldCapture,
                 blacklisted ? 'yes' : 'no',
@@ -317,7 +317,7 @@ export class DatastudioService {
 
         console.log(`Appending ${allPoolDataRows.length} rows to ${this.databaseTabName}.`);
 
-        this.appendDataInSheet(this.databaseTabName, 'A1:Y1', allPoolDataRows, jwtClient);
+        this.appendDataInSheet(this.databaseTabName, 'A1:Z1', allPoolDataRows, jwtClient);
 
         console.log(`Appending ${allPoolCompositionRows.length} rows to ${this.compositionTabName}.`);
 
