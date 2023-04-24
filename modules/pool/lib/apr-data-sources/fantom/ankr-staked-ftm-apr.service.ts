@@ -4,7 +4,7 @@ import { PrismaPoolWithExpandedNesting } from '../../../../../prisma/prisma-type
 import { TokenService } from '../../../../token/token.service';
 import { PoolAprService } from '../../../pool-types';
 import { networkConfig } from '../../../../config/network-config';
-import { collectsYieldFee } from '../../pool-utils';
+import { protocolTakesFeeOnYield } from '../../pool-utils';
 
 export class AnkrStakedFtmAprService implements PoolAprService {
     private readonly ankrFTM_ADDRESS = '0xcfc785741dc0e98ad4c9f6394bb9d43cd1ef5179';
@@ -42,11 +42,11 @@ export class AnkrStakedFtmAprService implements PoolAprService {
                 operations.push(
                     prisma.prismaPoolAprItem.upsert({
                         where: { id: `${pool.id}-ankrftm-apr` },
-                        update: { apr: poolAnkrFtmApr },
+                        update: { apr: protocolTakesFeeOnYield(pool) ? userApr : poolAnkrFtmApr },
                         create: {
                             id: `${pool.id}-ankrftm-apr`,
                             poolId: pool.id,
-                            apr: collectsYieldFee(pool) ? userApr : poolAnkrFtmApr,
+                            apr: protocolTakesFeeOnYield(pool) ? userApr : poolAnkrFtmApr,
                             title: 'ankrFTM APR',
                             type: 'IB_YIELD',
                         },

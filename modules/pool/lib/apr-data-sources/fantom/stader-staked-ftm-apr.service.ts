@@ -1,7 +1,9 @@
 import { prisma } from '../../../../../prisma/prisma-client';
 import { PrismaPoolWithExpandedNesting } from '../../../../../prisma/prisma-types';
+import { networkConfig } from '../../../../config/network-config';
 import { TokenService } from '../../../../token/token.service';
 import { PoolAprService } from '../../../pool-types';
+import { protocolTakesFeeOnYield } from '../../pool-utils';
 
 export class StaderStakedFtmAprService implements PoolAprService {
     private readonly SFTMX_ADDRESS = '0xd7028092c830b5c8fce061af2e593413ebbc1fc1';
@@ -23,14 +25,18 @@ export class StaderStakedFtmAprService implements PoolAprService {
             if (sftmxTokenBalance && pool.dynamicData) {
                 const sftmxPercentage = (parseFloat(sftmxTokenBalance) * sftmxPrice) / pool.dynamicData.totalLiquidity;
                 const sftmxApr = pool.dynamicData.totalLiquidity > 0 ? this.SFTMX_APR * sftmxPercentage : 0;
+                const userApr =
+                    pool.type === 'META_STABLE'
+                        ? sftmxApr * (1 - networkConfig.balancer.swapProtocolFeePercentage)
+                        : sftmxApr * (1 - networkConfig.balancer.yieldProtocolFeePercentage);
                 operations.push(
                     prisma.prismaPoolAprItem.upsert({
                         where: { id: `${pool.id}-sftmx-apr` },
-                        update: { apr: sftmxApr },
+                        update: { apr: protocolTakesFeeOnYield(pool) ? userApr : sftmxApr },
                         create: {
                             id: `${pool.id}-sftmx-apr`,
                             poolId: pool.id,
-                            apr: sftmxApr,
+                            apr: protocolTakesFeeOnYield(pool) ? userApr : sftmxApr,
                             title: 'sFTMx APR',
                             type: 'IB_YIELD',
                         },

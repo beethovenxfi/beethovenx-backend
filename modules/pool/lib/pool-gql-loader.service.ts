@@ -18,6 +18,8 @@ import {
     GqlPoolMinimal,
     GqlPoolNestingType,
     GqlPoolPhantomStableNested,
+    GqlPoolStaking,
+    GqlPoolStakingReliquaryFarm,
     GqlPoolToken,
     GqlPoolTokenDisplay,
     GqlPoolTokenExpanded,
@@ -303,6 +305,7 @@ export class PoolGqlLoaderService {
         const mappedData = {
             ...pool,
             decimals: 18,
+            staking: this.getStakingData(pool),
             dynamicData: this.getPoolDynamicData(pool),
             investConfig: this.getPoolInvestConfig(pool),
             withdrawConfig: this.getPoolWithdrawConfig(pool),
@@ -368,6 +371,36 @@ export class PoolGqlLoaderService {
             __typename: 'GqlPoolWeighted',
             ...mappedData,
         };
+    }
+
+    // This is needed to cast type APR type of the reliquary level from prisma (float) to the type of GQL (bigdecimal/string)
+    private getStakingData(pool: PrismaPoolWithExpandedNesting): GqlPoolStaking | null {
+        if (pool.staking) {
+            let staking: GqlPoolStaking | null = null;
+            if (pool.staking.reliquary) {
+                const levelsStringApr = pool.staking.reliquary.levels.map((level) => {
+                    return {
+                        ...level,
+                        apr: `${level.apr}`,
+                    };
+                });
+                staking = {
+                    ...pool.staking,
+                    reliquary: {
+                        ...pool.staking.reliquary,
+                        levels: levelsStringApr,
+                    },
+                };
+            } else {
+                staking = {
+                    ...pool.staking,
+                    reliquary: null,
+                };
+            }
+            return staking;
+        }
+
+        return null;
     }
 
     private mapAllTokens(pool: PrismaPoolMinimal): GqlPoolTokenExpanded[] {
@@ -452,6 +485,8 @@ export class PoolGqlLoaderService {
             volume24h,
             fees48h,
             volume48h,
+            yieldCapture24h,
+            yieldCapture48h,
             totalLiquidity24hAgo,
             totalShares24hAgo,
             lifetimeVolume,
@@ -557,6 +592,8 @@ export class PoolGqlLoaderService {
             totalShares24hAgo,
             fees24h: `${fees24h}`,
             volume24h: `${volume24h}`,
+            yieldCapture24h: `${yieldCapture24h}`,
+            yieldCapture48h: `${yieldCapture48h}`,
             fees48h: `${fees48h}`,
             volume48h: `${volume48h}`,
             lifetimeVolume: `${lifetimeVolume}`,

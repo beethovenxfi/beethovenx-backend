@@ -1,7 +1,7 @@
 import { PoolAprService } from '../../pool-types';
 import { PrismaPoolWithExpandedNesting } from '../../../../prisma/prisma-types';
 import { prisma } from '../../../../prisma/prisma-client';
-import { collectsYieldFee } from '../pool-utils';
+import { protocolTakesFeeOnYield } from '../pool-utils';
 
 export class PhantomStableAprService implements PoolAprService {
     constructor(private readonly yieldProtocolFeePercentage: number) {}
@@ -26,7 +26,7 @@ export class PhantomStableAprService implements PoolAprService {
                 if (aprItem && token.dynamicData && pool.dynamicData && token.dynamicData.balanceUSD > 0) {
                     const itemId = `${pool.id}-${token.token.address}-${token.index}`;
                     const apr = aprItem.apr * (token.dynamicData.balanceUSD / pool.dynamicData.totalLiquidity);
-                    const userApr = collectsYieldFee(pool) ? apr * (1 - this.yieldProtocolFeePercentage) : apr;
+                    const userApr = protocolTakesFeeOnYield(pool) ? apr * (1 - this.yieldProtocolFeePercentage) : apr;
 
                     await prisma.prismaPoolAprItem.upsert({
                         where: { id: itemId },
