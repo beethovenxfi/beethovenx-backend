@@ -350,12 +350,11 @@ export const poolService = new PoolService(
                   new AnkrStakedFtmAprService(tokenService),
               ]
             : [
-                  new RocketPoolStakedEthAprService(tokenService, networkConfig.balancer.yieldProtocolFeePercentage),
+                  new RocketPoolStakedEthAprService(tokenService),
                   new WstethAprService(
                       tokenService,
                       networkConfig.lido!.wstEthAprEndpoint,
                       networkConfig.lido!.wstEthContract,
-                      networkConfig.balancer.yieldProtocolFeePercentage,
                   ),
                   new OvernightAprService(networkConfig.overnight!.aprEndpoint, tokenService),
               ]),
