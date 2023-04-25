@@ -208,7 +208,11 @@ export class PoolService {
     }
 
     public async updateOnChainDataForPools(poolIds: string[], blockNumber: number) {
-        await this.poolOnChainDataService.updateOnChainData(poolIds, this.provider, blockNumber);
+        const chunks = _.chunk(poolIds, 100);
+
+        for (const chunk of chunks) {
+            await this.poolOnChainDataService.updateOnChainData(chunk, this.provider, blockNumber);
+        }
     }
 
     public async loadOnChainDataForPoolsWithActiveUpdates() {
@@ -239,6 +243,10 @@ export class PoolService {
         console.timeEnd('syncSwapsForLast48Hours');
 
         return poolIds;
+    }
+
+    public async updateYieldCaptureForAllPools() {
+        await this.poolUsdDataService.updateYieldCaptureForAllPools();
     }
 
     public async syncSanityPoolData() {
@@ -332,7 +340,7 @@ export class PoolService {
 export const poolService = new PoolService(
     jsonRpcProvider,
     new PoolCreatorService(userService),
-    new PoolOnChainDataService(networkConfig.multicall, networkConfig.balancer.vault, tokenService),
+    new PoolOnChainDataService(tokenService),
     new PoolUsdDataService(tokenService, blocksSubgraphService, balancerSubgraphService),
     new PoolGqlLoaderService(configService),
     new PoolSanityDataLoaderService(),

@@ -3,13 +3,13 @@ import { prisma } from '../../prisma/prisma-client';
 import { BalancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer-subgraph.service';
 import { Cache } from 'memory-cache';
 import { PrismaUserBalanceType, PrismaLastBlockSyncedCategory } from '@prisma/client';
-import { GqlLatestSyncedBlocks } from '../../schema';
 import _ from 'lodash';
 
 export type ProtocolMetrics = {
     poolCount: string;
     swapFee24h: string;
     swapVolume24h: string;
+    yieldCapture24h: string;
     totalLiquidity: string;
     totalSwapFee: string;
     totalSwapVolume: string;
@@ -66,6 +66,8 @@ export class ProtocolService {
             return parseFloat(pool?.dynamicData?.swapFee || '0') * swap.valueUSD;
         });
 
+        const yieldCapture24h = _.sumBy(pools, (pool) => (!pool.dynamicData ? 0 : pool.dynamicData.yieldCapture24h));
+
         const protocolData: ProtocolMetrics = {
             totalLiquidity: `${totalLiquidity}`,
             totalSwapFee,
@@ -73,6 +75,7 @@ export class ProtocolService {
             poolCount: `${poolCount}`,
             swapVolume24h: `${swapVolume24h}`,
             swapFee24h: `${swapFee24h}`,
+            yieldCapture24h: `${yieldCapture24h}`,
         };
 
         this.cache.put(PROTOCOL_METRICS_CACHE_KEY, protocolData, 60 * 30 * 1000);

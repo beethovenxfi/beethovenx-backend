@@ -29,14 +29,18 @@ export function isComposableStablePool(pool: PoolWithTypeAndFactory) {
     );
 }
 
-export function collectsYieldFee(pool: PoolWithTypeAndFactory) {
+export function protocolTakesFeeOnYield(pool: PoolWithTypeAndFactory) {
     return (
         !networkConfig.balancer.poolsInRecoveryMode.includes(pool.address) &&
         (isWeightedPoolV2(pool) || isComposableStablePool(pool) || pool.type === 'META_STABLE')
     );
 }
 
-export function collectsSwapFee(pool: PoolWithTypeAndFactory) {
+export function poolCapturesYield(pool: PoolWithTypeAndFactory) {
+    return isWeightedPoolV2(pool) || isComposableStablePool(pool) || pool.type === 'META_STABLE';
+}
+
+export function collectsFee(pool: PoolWithTypeAndFactory) {
     return (
         !networkConfig.balancer.poolsInRecoveryMode.includes(pool.address) && pool.type !== 'LIQUIDITY_BOOTSTRAPPING'
     );
