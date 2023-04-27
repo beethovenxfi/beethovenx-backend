@@ -8,7 +8,6 @@ import { PoolAprService } from '../../pool-types';
 import ReaperCryptAbi from './abi/ReaperCrypt.json';
 import ReaperCryptStrategyAbi from './abi/ReaperCryptStrategy.json';
 import { protocolTakesFeeOnYield } from '../pool-utils';
-import { WstethAprService } from './optimism/wsteth-apr.service';
 import { liquidStakedBaseAprService } from './liquid-staked-base-apr.service';
 import { networkConfig } from '../../../config/network-config';
 
@@ -24,8 +23,8 @@ export class ReaperCryptAprService implements PoolAprService {
         private readonly linearPoolFactories: string[],
         private readonly averageAPRAcrossLastNHarvests: number,
         private readonly tokenService: TokenService,
-        private readonly sFtmXAddress: string,
-        private readonly wstEthAddress: string,
+        private readonly sFtmXAddress: string | undefined,
+        private readonly wstEthAddress: string | undefined,
     ) {}
 
     public getAprServiceName(): string {
@@ -88,7 +87,7 @@ export class ReaperCryptAprService implements PoolAprService {
             // if we have sftmx as the main token in this linear pool, we want to take the linear APR top level and
             // we also need to adapt the APR since the vault APR is denominated in sFTMx, so we need to apply the growth rate
             // and add the sftmx base apr to the unwrapped portion
-            if (isSameAddress(mainToken.address, this.sFtmXAddress)) {
+            if (this.sFtmXAddress && isSameAddress(mainToken.address, this.sFtmXAddress)) {
                 const baseApr = await liquidStakedBaseAprService.getSftmxBaseApr();
                 if (baseApr > 0) {
                     const totalApr = this.getBoostedIbApr(
@@ -111,7 +110,7 @@ export class ReaperCryptAprService implements PoolAprService {
                 }
             }
 
-            if (isSameAddress(mainToken.address, this.wstEthAddress)) {
+            if (this.wstEthAddress && isSameAddress(mainToken.address, this.wstEthAddress)) {
                 const baseApr = await liquidStakedBaseAprService.getWstEthBaseApr();
                 if (baseApr > 0) {
                     const totalApr = this.getBoostedIbApr(
