@@ -1,6 +1,5 @@
 import { BigNumber } from 'ethers';
 import { env } from '../../app/env';
-import { StringNullableChain } from 'lodash';
 
 export type DeploymentEnv = 'canary' | 'main';
 
