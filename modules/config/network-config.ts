@@ -1,5 +1,6 @@
 import { BigNumber } from 'ethers';
 import { env } from '../../app/env';
+import { StringNullableChain } from 'lodash';
 
 export type DeploymentEnv = 'canary' | 'main';
 
@@ -85,7 +86,18 @@ export interface NetworkConfig {
     };
     lido?: {
         wstEthContract: string;
-        wstEthAprEndpoint: string;
+    };
+    stader?: {
+        sFtmxContract: string;
+    };
+    ankr?: {
+        ankrFtmContract: string;
+    };
+    spooky?: {
+        xBooContract: string;
+    };
+    rocket?: {
+        rEthContract: string;
     };
     overnight?: {
         aprEndpoint: string;
@@ -228,6 +240,15 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             linearPoolFactories: ['0xd448c4156b8de31e56fdfc071c8d96459bb28119'],
             averageAPRAcrossLastNHarvests: 5,
         },
+        stader: {
+            sFtmxContract: '0xd7028092c830b5c8fce061af2e593413ebbc1fc1',
+        },
+        spooky: {
+            xBooContract: '0x841fad6eae12c286d1fd18d1d525dffa75c7effe',
+        },
+        ankr: {
+            ankrFtmContract: '0xcfc785741dc0e98ad4c9f6394bb9d43cd1ef5179',
+        },
         datastudio: {
             main: {
                 user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
@@ -362,11 +383,13 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             averageAPRAcrossLastNHarvests: 2,
         },
         lido: {
-            wstEthAprEndpoint: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
             wstEthContract: '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
         },
         overnight: {
             aprEndpoint: 'https://api.overnight.fi/optimism',
+        },
+        rocket: {
+            rEthContract: '0x9bcef72be871e61ed4fbbc7630889bee758eb81d',
         },
         datastudio: {
             main: {

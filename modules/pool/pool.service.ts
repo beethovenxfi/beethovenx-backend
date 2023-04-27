@@ -58,6 +58,7 @@ import { ReliquaryStakingService } from './lib/staking/fantom/reliquary-staking.
 import { gaugeSerivce } from './lib/staking/optimism/gauge-service';
 import { GaugeStakingService } from './lib/staking/optimism/gauge-staking.service';
 import { PoolStakingService } from './pool-types';
+import { ZERO_ADDRESS } from '@gnosis.pm/safe-core-sdk/dist/src/utils/constants';
 
 const FEATURED_POOL_GROUPS_CACHE_KEY = 'pool:featuredPoolGroups';
 
@@ -348,24 +349,22 @@ export const poolService = new PoolService(
         //order matters for the boosted pool aprs: linear, phantom stable, then boosted
         ...(isFantomNetwork()
             ? [
-                  new SpookySwapAprService(tokenService),
+                  new SpookySwapAprService(tokenService, networkConfig.spooky!.xBooContract),
                   new YearnVaultAprService(tokenService),
-                  new StaderStakedFtmAprService(tokenService),
-                  new AnkrStakedFtmAprService(tokenService),
+                  new StaderStakedFtmAprService(tokenService, networkConfig.stader!.sFtmxContract),
+                  new AnkrStakedFtmAprService(tokenService, networkConfig.ankr!.ankrFtmContract),
               ]
             : [
-                  new RocketPoolStakedEthAprService(tokenService),
-                  new WstethAprService(
-                      tokenService,
-                      networkConfig.lido!.wstEthAprEndpoint,
-                      networkConfig.lido!.wstEthContract,
-                  ),
+                  new RocketPoolStakedEthAprService(tokenService, networkConfig.rocket!.rEthContract),
+                  new WstethAprService(tokenService, networkConfig.lido!.wstEthContract),
                   new OvernightAprService(networkConfig.overnight!.aprEndpoint, tokenService),
               ]),
         new ReaperCryptAprService(
             networkConfig.reaper.linearPoolFactories,
             networkConfig.reaper.averageAPRAcrossLastNHarvests,
             tokenService,
+            isFantomNetwork() ? networkConfig.stader!.sFtmxContract : ZERO_ADDRESS,
+            isFantomNetwork() ? ZERO_ADDRESS : networkConfig.lido!.wstEthContract,
         ),
         new PhantomStableAprService(networkConfig.balancer.yieldProtocolFeePercentage),
         new BoostedPoolAprService(networkConfig.balancer.yieldProtocolFeePercentage),
