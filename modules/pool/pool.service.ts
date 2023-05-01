@@ -58,7 +58,7 @@ import { ReliquaryStakingService } from './lib/staking/fantom/reliquary-staking.
 import { gaugeSerivce } from './lib/staking/optimism/gauge-service';
 import { GaugeStakingService } from './lib/staking/optimism/gauge-staking.service';
 import { PoolStakingService } from './pool-types';
-import { ZERO_ADDRESS } from '@gnosis.pm/safe-core-sdk/dist/src/utils/constants';
+import { BeefyVaultAprService } from './lib/apr-data-sources/beefy-vault-apr.service copy';
 
 const FEATURED_POOL_GROUPS_CACHE_KEY = 'pool:featuredPoolGroups';
 
@@ -366,6 +366,7 @@ export const poolService = new PoolService(
             isFantomNetwork() ? networkConfig.stader!.sFtmxContract : undefined,
             isFantomNetwork() ? undefined : networkConfig.lido!.wstEthContract,
         ),
+        new BeefyVaultAprService(networkConfig.beefy.linearPools, tokenService),
         new PhantomStableAprService(networkConfig.balancer.yieldProtocolFeePercentage),
         new BoostedPoolAprService(networkConfig.balancer.yieldProtocolFeePercentage),
         new SwapFeeAprService(networkConfig.balancer.swapProtocolFeePercentage),

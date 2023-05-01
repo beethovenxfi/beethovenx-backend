@@ -80,6 +80,9 @@ export interface NetworkConfig {
         linearPoolFactories: string[];
         averageAPRAcrossLastNHarvests: number;
     };
+    beefy: {
+        linearPools: string[];
+    };
     yearn: {
         vaultsEndpoint: string;
     };
@@ -239,6 +242,9 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             linearPoolFactories: ['0xd448c4156b8de31e56fdfc071c8d96459bb28119'],
             averageAPRAcrossLastNHarvests: 5,
         },
+        beefy: {
+            linearPools: [],
+        },
         stader: {
             sFtmxContract: '0xd7028092c830b5c8fce061af2e593413ebbc1fc1',
         },
@@ -294,7 +300,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             nativeAssetId: 'ethereum',
             platformId: 'optimistic-ethereum',
         },
-        rpcUrl: 'https://opt-mainnet.g.alchemy.com/v2/demo',
+        rpcUrl: 'https://rpc.ankr.com/optimism',
         beetsPriceProviderRpcUrl: 'https://rpc.ftm.tools',
         sanity: {
             projectId: '1g2ag2hb',
@@ -380,6 +386,12 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
                 '0xe4b88e745dce9084b9fc2439f85a9a4c5cd6f361',
             ],
             averageAPRAcrossLastNHarvests: 2,
+        },
+        beefy: {
+            linearPools: [
+                '0x5bdd8c19b44c3e4a15305601a2c9841bde9366f00000000000000000000000ca',
+                '0x72d6df381cac8c2283c0b13fe5262a1f5e8e8d1b0000000000000000000000cb',
+            ],
         },
         lido: {
             wstEthContract: '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
