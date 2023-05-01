@@ -11,7 +11,7 @@ import {
 import moment from 'moment-timezone';
 import { tokenService } from '../token/token.service';
 import { TokenDefinition } from '../token/token-types';
-import { getAddress, isAddress } from 'ethers/lib/utils';
+import { isAddress } from 'ethers/lib/utils';
 import { networkConfig } from '../config/network-config';
 import { RateLimiter } from 'limiter';
 
