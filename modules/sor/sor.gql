@@ -1,0 +1,19 @@
+extend type Query {
+    sorGetSwapsNew(
+        tokenIn: String!
+        tokenOut: String!
+        swapType: GqlSorSwapType!
+        swapAmount: BigDecimal! #expected in raw amount
+    ): GqlSorGetSwapsResponseNew!
+}
+
+enum GqlSorSwapType {
+    EXACT_IN
+    EXACT_OUT
+}
+
+type GqlSorGetSwapsResponseNew {
+    tokenIn: String!
+    tokenOut: String!
+    result: String!
+}
