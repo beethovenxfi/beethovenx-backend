@@ -35,8 +35,8 @@ const polygonNetworkData: NetworkData = {
         userBalances: 'https://',
     },
     eth: {
-        address: '0x0000000000000000000000000000000000001010',
-        addressFormatted: '0x0000000000000000000000000000000000001010',
+        address: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        addressFormatted: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
         symbol: 'MATIC',
         name: 'Matic',
     },
