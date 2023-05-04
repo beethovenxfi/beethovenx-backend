@@ -239,7 +239,10 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             proxyAddress: '0xbC8a71C75ffbd2807c021F4F81a8832392dEF93c',
         },
         reaper: {
-            linearPoolFactories: ['0xd448c4156b8de31e56fdfc071c8d96459bb28119'],
+            linearPoolFactories: [
+                '0xd448c4156b8de31e56fdfc071c8d96459bb28119',
+                '0x89857161e0ad36f8c5a537733c1fcf7145220aae',
+            ],
             averageAPRAcrossLastNHarvests: 5,
         },
         beefy: {
