@@ -137,15 +137,15 @@ export class ReaperCryptAprService implements PoolAprService {
 
     private getBoostedIbApr(
         totalLiquidity: number,
-        vaultHarvestApr: number,
-        IbBaseApr: number,
+        avgAprAcrossXHarvests: number,
+        baseApr: number,
         poolWrappedLiquidity: number,
     ) {
         const vaultApr =
             totalLiquidity > 0
-                ? ((1 + vaultHarvestApr) * (1 + IbBaseApr) - 1) * (poolWrappedLiquidity / totalLiquidity)
+                ? ((1 + avgAprAcrossXHarvests) * (1 + baseApr) - 1) * (poolWrappedLiquidity / totalLiquidity)
                 : 0;
-        const ibApr = totalLiquidity > 0 ? (IbBaseApr * (totalLiquidity - poolWrappedLiquidity)) / totalLiquidity : 0;
+        const ibApr = totalLiquidity > 0 ? (baseApr * (totalLiquidity - poolWrappedLiquidity)) / totalLiquidity : 0;
         return vaultApr + ibApr;
     }
 }
