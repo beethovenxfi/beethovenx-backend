@@ -1,17 +1,13 @@
-import axios from 'axios';
 import { prisma } from '../../../../../prisma/prisma-client';
 import { PrismaPoolWithExpandedNesting } from '../../../../../prisma/prisma-types';
 import { TokenService } from '../../../../token/token.service';
 import { PoolAprService } from '../../../pool-types';
 import { protocolTakesFeeOnYield } from '../../pool-utils';
 import { networkConfig } from '../../../../config/network-config';
+import { liquidStakedBaseAprService } from '../liquid-staked-base-apr.service';
 
 export class WstethAprService implements PoolAprService {
-    constructor(
-        private readonly tokenService: TokenService,
-        private readonly wstethAprEndpoint: string,
-        private readonly wstethContractAddress: string,
-    ) {}
+    constructor(private readonly tokenService: TokenService, private readonly wstethContractAddress: string) {}
 
     public getAprServiceName(): string {
         return 'WstethAprService';
@@ -29,10 +25,7 @@ export class WstethAprService implements PoolAprService {
             const wstethTokenBalance = wstethToken?.dynamicData?.balance;
             if (wstethTokenBalance && pool.dynamicData) {
                 if (!wstethBaseApr) {
-                    const { data } = await axios.get<{
-                        data: { aprs: [{ timeUnix: number; apr: number }]; smaApr: number };
-                    }>(this.wstethAprEndpoint);
-                    wstethBaseApr = data.data.smaApr / 100;
+                    wstethBaseApr = await liquidStakedBaseAprService.getWstEthBaseApr();
                 }
                 const wstethPercentage =
                     (parseFloat(wstethTokenBalance) * wstethPrice) / pool.dynamicData.totalLiquidity;
