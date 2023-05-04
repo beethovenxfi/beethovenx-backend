@@ -59,6 +59,7 @@ import { gaugeSerivce } from './lib/staking/optimism/gauge-service';
 import { GaugeStakingService } from './lib/staking/optimism/gauge-staking.service';
 import { PoolStakingService } from './pool-types';
 import { BeefyVaultAprService } from './lib/apr-data-sources/beefy-vault-apr.service';
+import { ReaperMultistratAprService } from './lib/apr-data-sources/reaper-multistrat-apr.service';
 
 const FEATURED_POOL_GROUPS_CACHE_KEY = 'pool:featuredPoolGroups';
 
@@ -366,6 +367,7 @@ export const poolService = new PoolService(
             isFantomNetwork() ? networkConfig.stader!.sFtmxContract : undefined,
             isFantomNetwork() ? undefined : networkConfig.lido!.wstEthContract,
         ),
+        new ReaperMultistratAprService(networkConfig.reaper.multiStratLinearPoolIds, tokenService),
         new BeefyVaultAprService(networkConfig.beefy.linearPools, tokenService),
         new PhantomStableAprService(networkConfig.balancer.yieldProtocolFeePercentage),
         new BoostedPoolAprService(networkConfig.balancer.yieldProtocolFeePercentage),

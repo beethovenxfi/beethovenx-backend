@@ -78,6 +78,7 @@ export interface NetworkConfig {
     };
     reaper: {
         linearPoolFactories: string[];
+        multiStratLinearPoolIds: string[];
         averageAPRAcrossLastNHarvests: number;
     };
     beefy: {
@@ -240,6 +241,14 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         reaper: {
             linearPoolFactories: ['0xd448c4156b8de31e56fdfc071c8d96459bb28119'],
+            multiStratLinearPoolIds: [
+                '0xa0051ab2c3eb7f17758428b02a07cf72eb0ef1a300000000000000000000071c',
+                '0x3c1420df122ac809b9d1ba77906f833764d6450100000000000000000000071b',
+                '0x685056d3a4e574b163d0fa05a78f1b0b3aa04a8000000000000000000000071a',
+                '0x442988091cdc18acb8912cd3fe062cda9233f9dc00000000000000000000071d',
+                '0xc385e76e575b2d71eb877c27dcc1608f77fada99000000000000000000000719',
+                '0x92502cd8e00f5b8e737b2ba203fdd7cd27b23c8f000000000000000000000718',
+            ],
             averageAPRAcrossLastNHarvests: 5,
         },
         beefy: {
@@ -385,6 +394,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
                 '0x19968d4b7126904fd665ed25417599df9604df83',
                 '0xe4b88e745dce9084b9fc2439f85a9a4c5cd6f361',
             ],
+            multiStratLinearPoolIds: [],
             averageAPRAcrossLastNHarvests: 2,
         },
         beefy: {
