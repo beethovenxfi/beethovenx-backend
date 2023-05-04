@@ -14,6 +14,7 @@ export class PoolAprUpdaterService {
         const failedAprServices = [];
         for (const aprService of this.aprServices) {
             try {
+                console.log(`Running APR update using ${aprService.constructor.name}`);
                 await aprService.updateAprForPools(pools);
             } catch (e) {
                 console.log(`Error during APR update of aprService:`, e);
