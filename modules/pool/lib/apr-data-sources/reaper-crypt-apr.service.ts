@@ -103,7 +103,7 @@ export class ReaperCryptAprService implements PoolAprService {
                         where: { id: itemId },
                         data: {
                             group: null,
-                            apr: protocolTakesFeeOnYield(pool) ? userApr : totalApr,
+                            apr: userApr,
                             title: 'Boosted sFTMx APR',
                         },
                     });
@@ -126,7 +126,7 @@ export class ReaperCryptAprService implements PoolAprService {
                         where: { id: itemId },
                         data: {
                             group: null,
-                            apr: protocolTakesFeeOnYield(pool) ? userApr : totalApr,
+                            apr: userApr,
                             title: 'Boosted stETH APR',
                         },
                     });
