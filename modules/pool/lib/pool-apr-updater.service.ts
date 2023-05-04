@@ -47,6 +47,7 @@ export class PoolAprUpdaterService {
     }
 
     public async realodAllPoolAprs() {
+        await prisma.prismaPoolAprRange.deleteMany({});
         await prisma.prismaPoolAprItem.deleteMany({});
         await this.updatePoolAprs();
     }

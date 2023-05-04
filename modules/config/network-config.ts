@@ -88,7 +88,18 @@ export interface NetworkConfig {
     };
     lido?: {
         wstEthContract: string;
-        wstEthAprEndpoint: string;
+    };
+    stader?: {
+        sFtmxContract: string;
+    };
+    ankr?: {
+        ankrFtmContract: string;
+    };
+    spooky?: {
+        xBooContract: string;
+    };
+    rocket?: {
+        rEthContract: string;
     };
     overnight?: {
         aprEndpoint: string;
@@ -234,6 +245,15 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         beefy: {
             linearPools: [],
         },
+        stader: {
+            sFtmxContract: '0xd7028092c830b5c8fce061af2e593413ebbc1fc1',
+        },
+        spooky: {
+            xBooContract: '0x841fad6eae12c286d1fd18d1d525dffa75c7effe',
+        },
+        ankr: {
+            ankrFtmContract: '0xcfc785741dc0e98ad4c9f6394bb9d43cd1ef5179',
+        },
         datastudio: {
             main: {
                 user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
@@ -280,7 +300,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             nativeAssetId: 'ethereum',
             platformId: 'optimistic-ethereum',
         },
-        rpcUrl: 'https://opt-mainnet.g.alchemy.com/v2/demo',
+        rpcUrl: 'https://rpc.ankr.com/optimism',
         beetsPriceProviderRpcUrl: 'https://rpc.ftm.tools',
         sanity: {
             projectId: '1g2ag2hb',
@@ -374,11 +394,13 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             ],
         },
         lido: {
-            wstEthAprEndpoint: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
             wstEthContract: '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
         },
         overnight: {
             aprEndpoint: 'https://api.overnight.fi/optimism',
+        },
+        rocket: {
+            rEthContract: '0x9bcef72be871e61ed4fbbc7630889bee758eb81d',
         },
         datastudio: {
             main: {
