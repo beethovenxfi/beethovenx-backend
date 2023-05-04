@@ -59,7 +59,7 @@ export class BeefyVaultAprService implements PoolAprService {
         const tokenPrices = await this.tokenService.getTokenPrices();
 
         for (const pool of pools) {
-            if (!this.beefyLinearPools.includes(pool.id || '') || !pool.linearData || !pool.dynamicData) {
+            if (!this.beefyLinearPools.includes(pool.id) || !pool.linearData || !pool.dynamicData) {
                 continue;
             }
 
