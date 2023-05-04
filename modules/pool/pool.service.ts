@@ -58,7 +58,7 @@ import { ReliquaryStakingService } from './lib/staking/fantom/reliquary-staking.
 import { gaugeSerivce } from './lib/staking/optimism/gauge-service';
 import { GaugeStakingService } from './lib/staking/optimism/gauge-staking.service';
 import { PoolStakingService } from './pool-types';
-import { BeefyVaultAprService } from './lib/apr-data-sources/beefy-vault-apr.service copy';
+import { BeefyVaultAprService } from './lib/apr-data-sources/beefy-vault-apr.service';
 
 const FEATURED_POOL_GROUPS_CACHE_KEY = 'pool:featuredPoolGroups';
 
