@@ -1,22 +1,5 @@
-import { GqlSorGetSwapsResponse, GqlSorGetSwapsResponseNew, GqlSorSwapOptionsInput, GqlSorSwapType } from '../../schema';
-import { formatFixed, parseFixed } from '@ethersproject/bignumber';
-import { PrismaToken } from '@prisma/client';
-import { poolService } from '../pool/pool.service';
-import { oldBnum } from '../big-number/old-big-number';
-import axios from 'axios';
-import { FundManagement, SwapInfo, SwapTypes, SwapV2 } from '@balancer-labs/sdk';
-import { replaceEthWithZeroAddress, replaceZeroAddressWithEth } from '../web3/addresses';
-import { BigNumber } from 'ethers';
-import { TokenAmountHumanReadable } from '../common/global-types';
-import { AddressZero } from '@ethersproject/constants';
-import { Contract } from '@ethersproject/contracts';
-import VaultAbi from '../pool/abi/Vault.json';
-import { env } from '../../app/env';
+import { GqlSorGetSwapsResponseNew, GqlSorSwapType } from '../../schema';
 import { networkContext } from '../network/network-context.service';
-import { DeploymentEnv } from '../network/network-config-types';
-import * as Sentry from '@sentry/node';
-import _ from 'lodash';
-import { Logger } from '@ethersproject/logger';
 import { sorV2Service } from './sorV2/sorV2.service';
 import { prisma } from '../../prisma/prisma-client';
 
@@ -34,8 +17,12 @@ export class SorService {
         swapType,
         swapAmount,
     }: GetSwapsInput): Promise<GqlSorGetSwapsResponseNew> {
-        console.log(`!!!!!!! getSwaps`);
-        const result = await sorV2Service.getSwaps({
+        const timestamp = Math.floor(Date.now() / 1000);
+
+        // TODO - SORV1 result - via API call to current API or using SORV1/pools directly?
+        const sorV1Result = 'TODO';
+
+        const sorV2Result = await sorV2Service.getSwaps({
             tokenIn,
             tokenOut,
             swapType,
@@ -43,9 +30,9 @@ export class SorService {
         });
 
         let isSorV1 = false;
+        // TODO - Compare V1 vs V2 result and return/log best
 
-        const timestamp = Math.floor(Date.now() / 1000);
-
+        // Update db with best result so we can track performace
         await prisma.prismaTradeResult.create({
             data: {
                 id: `${timestamp}-${tokenIn}-${tokenOut}`,
@@ -55,17 +42,18 @@ export class SorService {
                 tokenOut,
                 swapAmount,
                 swapType,
-                sorV1Result: 'TODO',
-                sorV2Result: result.result,
+                sorV1Result,
+                sorV2Result: sorV2Result.result,
                 isSorV1
             }
-        })
+        });
+
+        // TODO - Return in current CowSwap format so its plug and play
         return {
             tokenIn,
             tokenOut,
-            result: result.result
+            result: isSorV1 ? sorV1Result : sorV2Service.mapResultToCowSwap(sorV2Result.result)
         }
-        
     }
 }
 

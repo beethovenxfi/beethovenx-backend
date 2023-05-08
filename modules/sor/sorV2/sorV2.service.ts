@@ -10,7 +10,8 @@ import {
     RawLinearPool, 
     RawWeightedPool, 
     RawComposableStablePool, 
-    RawMetaStablePool 
+    RawMetaStablePool,
+    Swap
 } from '@balancer/sdk';
 import { GqlSorGetSwapsResponseNew, GqlSorSwapType } from '../../../schema';
 import { PrismaPoolType, PrismaToken } from '@prisma/client';
@@ -60,16 +61,17 @@ export class SorV2Service {
         // Just using to compare results against onchain pool calls
         // await getSwapCompare(tIn, tOut, swapAmount);
 
-        // TODO 
-        // - Query SORV1 (via API call or using SOR/pools directly?)
-        // - Compare and choose best result
-        // - Log best result in Prisma
-        // - Return best result matching existing CowSwap SOR API format so its plug and play 
+        // TODO - Update with proper required result data
         return {
             tokenIn,
             tokenOut,
             result: swap.outputAmount.amount.toString()
         }  
+    }
+
+    public mapResultToCowSwap(swap: string): string {
+        // TODO - match existing CowSwap SOR API format so its plug and play
+        return swap;
     }
 
     /**
