@@ -20,6 +20,7 @@ export class SorService {
         const timestamp = Math.floor(Date.now() / 1000);
 
         // TODO - SORV1 result - via API call to current API or using SORV1/pools directly?
+        // const sorV1Result = await sorV1Service.getSwaps(...);
         const sorV1Result = 'TODO';
 
         const sorV2Result = await sorV2Service.getSwaps({
