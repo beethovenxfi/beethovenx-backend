@@ -559,6 +559,21 @@ model PrismaReliquaryTokenBalanceSnapshot {
 }
 
 
+model PrismaTradeResult {
+    @@id([id, chain])
+
+    id                  String
+    timestamp           Int
+    chain               Chain
+    tokenIn             String
+    tokenOut            String
+    swapAmount          String
+    swapType            String
+    sorV1Result         String
+    sorV2Result         String
+    isSorV1             Boolean
+}
+
 model PrismaToken {
     @@id([address, chain])
 

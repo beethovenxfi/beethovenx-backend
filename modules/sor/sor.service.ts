@@ -18,6 +18,7 @@ import * as Sentry from '@sentry/node';
 import _ from 'lodash';
 import { Logger } from '@ethersproject/logger';
 import { sorV2Service } from './sorV2/sorV2.service';
+import { prisma } from '../../prisma/prisma-client';
 
 export interface GetSwapsInput {
     tokenIn: string;
@@ -40,6 +41,25 @@ export class SorService {
             swapType,
             swapAmount,
         });
+
+        let isSorV1 = false;
+
+        const timestamp = Math.floor(Date.now() / 1000);
+
+        await prisma.prismaTradeResult.create({
+            data: {
+                id: `${timestamp}-${tokenIn}-${tokenOut}`,
+                timestamp,
+                chain: networkContext.chain,
+                tokenIn,
+                tokenOut,
+                swapAmount,
+                swapType,
+                sorV1Result: 'TODO',
+                sorV2Result: result.result,
+                isSorV1
+            }
+        })
         return {
             tokenIn,
             tokenOut,
