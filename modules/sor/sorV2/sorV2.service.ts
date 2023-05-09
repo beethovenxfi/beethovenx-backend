@@ -22,6 +22,8 @@ import { prisma } from '../../../prisma/prisma-client';
 import { PrismaPoolWithDynamic, prismaPoolWithDynamic } from '../../../prisma/prisma-types';
 import { RawPool } from '@balancer/sdk';
 import { HumanAmount, SupportedRawPoolTypes } from '@balancer/sdk';
+import { env } from '../../../app/env';
+import { DeploymentEnv } from '../../network/network-config-types';
 
 import { getSwapCompare } from './temp';
 
@@ -116,23 +118,16 @@ export class SorV2Service {
                     },
                     swapEnabled: true,
                 },
+                NOT: {
+                    id: {
+                        in: networkContext.data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].poolIdsToExclude,
+                    }
+                }
             },
             include: prismaPoolWithDynamic.include
         });
         const rawPools = this.mapToRawPools(pools);
-        // TODO - The pools below cause issue with b-sdk maths. Both have a token with balance = 0 so maybe that's issue?
-        const linearPoolsToIgnore = [
-            "0xbfa413a2ff0f20456d57b643746133f54bfe0cd20000000000000000000004c3", 
-            "0xdc063deafce952160ec112fa382ac206305657e60000000000000000000004c4", 
-        ]
-
-        const basePools = this.mapToBasePools(rawPools.filter(p => {
-            if (p.poolType == 'Linear') {
-                return !linearPoolsToIgnore.includes(p.id);
-            } else return true;
-        }));
-        // const basePools = this.mapToBasePools(rawPools);
-        return basePools;
+        return this.mapToBasePools(rawPools);
     }
 
     /**
