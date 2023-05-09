@@ -25,9 +25,6 @@ import { HumanAmount, SupportedRawPoolTypes } from '@balancer/sdk';
 
 import { getSwapCompare } from './temp';
 
-// TODO - Check if this has been deployed to same address across networks?
-export const SOR_QUERIES = '0x1814a3b3e4362caf4eb54cd85b82d39bd7b34e41';
-
 export class SorV2Service {
     public async getSwaps({
         tokenIn,

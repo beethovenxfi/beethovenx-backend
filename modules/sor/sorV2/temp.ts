@@ -10,7 +10,9 @@ import {
 } from '@balancer/sdk';
 import { networkContext } from '../../network/network-context.service';
 
-import { SOR_QUERIES } from './sorV2.service';
+// TODO - Check if this has been deployed to same address across networks?
+// - If we keep then can use: poolDataQueryContract: https://github.com/beethovenxfi/beethovenx-backend/blob/sor-v2/modules/network/network-config-types.ts#L87
+const SOR_QUERIES = '0x1814a3b3e4362caf4eb54cd85b82d39bd7b34e41';
 
 // Just using to compare results
 // Fetches pools using Subgraph/Onchain queries.
