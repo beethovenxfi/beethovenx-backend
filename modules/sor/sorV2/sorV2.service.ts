@@ -224,11 +224,12 @@ export class SorV2Service {
             case PrismaPoolType.LIQUIDITY_BOOTSTRAPPING:
                 return 'LiquidityBootstrapping';
             case PrismaPoolType.STABLE:
-                return 'Stable'; // TODO - Is there a ComposableStable/Stable differentiation in Prisma?
+                return 'Stable';
             case PrismaPoolType.META_STABLE:
                 return 'MetaStable';
             case PrismaPoolType.PHANTOM_STABLE:
-                return 'ComposableStable'; // b-sdk just treats these as ComposableStable
+                // Composablestables are PHANTOM_STABLE in Prisma. b-sdk treats Phantoms as ComposableStable.
+                return 'ComposableStable';
             case PrismaPoolType.LINEAR:
                 return 'Linear';
             default:
