@@ -1,5 +1,6 @@
 import { GqlSorGetSwapsResponseNew, GqlSorSwapType } from '../../schema';
 import { networkContext } from '../network/network-context.service';
+import { sorV1Service } from './sorV1/sorV1.service';
 import { sorV2Service } from './sorV2/sorV2.service';
 import { prisma } from '../../prisma/prisma-client';
 
@@ -19,9 +20,12 @@ export class SorService {
     }: GetSwapsInput): Promise<GqlSorGetSwapsResponseNew> {
         const timestamp = Math.floor(Date.now() / 1000);
 
-        // TODO - SORV1 result - via API call to current API or using SORV1/pools directly?
-        // const sorV1Result = await sorV1Service.getSwaps(...);
-        const sorV1Result = 'TODO';
+        const sorV1Result = await sorV1Service.getSwaps({
+            tokenIn,
+            tokenOut,
+            swapType,
+            swapAmount,
+        });
 
         const sorV2Result = await sorV2Service.getSwaps({
             tokenIn,
@@ -43,7 +47,7 @@ export class SorService {
                 tokenOut,
                 swapAmount,
                 swapType,
-                sorV1Result,
+                sorV1Result: sorV1Result.result,
                 sorV2Result: sorV2Result.result,
                 isSorV1
             }
@@ -53,7 +57,7 @@ export class SorService {
         return {
             tokenIn,
             tokenOut,
-            result: isSorV1 ? sorV1Result : sorV2Service.mapResultToCowSwap(sorV2Result.result)
+            result: isSorV1 ? sorV1Result.result : sorV2Service.mapResultToCowSwap(sorV2Result.result)
         }
     }
 }
