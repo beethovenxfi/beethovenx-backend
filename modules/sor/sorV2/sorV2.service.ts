@@ -24,10 +24,18 @@ import { RawPool } from '@balancer/sdk';
 import { HumanAmount, SupportedRawPoolTypes } from '@balancer/sdk';
 import { env } from '../../../app/env';
 import { DeploymentEnv } from '../../network/network-config-types';
+import { Cache, CacheClass } from 'memory-cache';
 
 import { getSwapCompare } from './temp';
 
+const ALL_BASEPOOLS_CACHE_KEY = `basePools:all`;
+
 export class SorV2Service {
+    cache: CacheClass<string, BasePool[]>;
+
+    constructor() {
+        this.cache = new Cache<string, BasePool[]>();
+    }
     public async getSwaps({
         tokenIn,
         tokenOut,
@@ -35,9 +43,9 @@ export class SorV2Service {
         swapAmount,
     }: GetSwapsInput): Promise<GqlSorGetSwapsResponseNew> {
         // TODO - This takes ~1.262s on my local machine. Is this fast enough? Any obvious ways to improve?
-        console.time('poolsFromDb');
-        const poolsFromDb = await this.getBasePoolsFromDb();
-        console.timeEnd('poolsFromDb');
+        console.time('getBasePools');
+        const poolsFromDb = await this.getBasePools();
+        console.timeEnd('getBasePools');
         const chainId = networkContext.chainId as unknown as ChainId;
         const tIn = await this.getToken(tokenIn as Address, chainId);
         const tOut = await this.getToken(tokenOut as Address, chainId);
@@ -102,6 +110,16 @@ export class SorV2Service {
 
     private mapSwapType(swapType: GqlSorSwapType): SwapKind {
         return swapType === "EXACT_IN" ? SwapKind.GivenIn : SwapKind.GivenOut;
+    }
+
+    private async getBasePools(): Promise<BasePool[]> {
+        let basePools: BasePool[] | null = this.cache.get(`${ALL_BASEPOOLS_CACHE_KEY}:${networkContext.chainId}`);
+        if (!basePools) {
+            console.log('Fetching pools from db as cache expired...')
+            basePools = await this.getBasePoolsFromDb();
+            this.cache.put(`${ALL_BASEPOOLS_CACHE_KEY}:${networkContext.chainId}`, basePools, 5 * 60 * 1000);
+        }
+        return basePools;
     }
 
     /**
