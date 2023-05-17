@@ -81,7 +81,12 @@ export class ReaperCryptAprService implements PoolAprService {
                     group: 'REAPER',
                     type: 'LINEAR_BOOSTED',
                 },
-                update: { title: `${wrappedToken.token.symbol} APR`, apr: apr },
+                update: {
+                    title: `${wrappedToken.token.symbol} APR`,
+                    apr: apr,
+                    group: 'REAPER',
+                    type: 'LINEAR_BOOSTED',
+                },
             });
 
             // if we have sftmx as the main token in this linear pool, we want to take the linear APR top level and
@@ -90,21 +95,17 @@ export class ReaperCryptAprService implements PoolAprService {
             if (this.sFtmXAddress && isSameAddress(mainToken.address, this.sFtmXAddress)) {
                 const baseApr = await liquidStakedBaseAprService.getSftmxBaseApr();
                 if (baseApr > 0) {
-                    const totalApr = this.getBoostedIbApr(
+                    const boostedVaultApr = this.getBoostedVaultApr(
                         totalLiquidity,
                         avgAprAcrossXHarvests,
                         baseApr,
                         poolWrappedLiquidity,
                     );
 
-                    const userApr = totalApr * (1 - networkConfig.balancer.yieldProtocolFeePercentage);
-
                     await prisma.prismaPoolAprItem.update({
                         where: { id: itemId },
                         data: {
-                            group: null,
-                            apr: userApr,
-                            title: 'Boosted sFTMx APR',
+                            apr: boostedVaultApr,
                         },
                     });
                 }
@@ -113,39 +114,30 @@ export class ReaperCryptAprService implements PoolAprService {
             if (this.wstEthAddress && isSameAddress(mainToken.address, this.wstEthAddress)) {
                 const baseApr = await liquidStakedBaseAprService.getWstEthBaseApr();
                 if (baseApr > 0) {
-                    const totalApr = this.getBoostedIbApr(
+                    const boostedVaultApr = this.getBoostedVaultApr(
                         totalLiquidity,
                         avgAprAcrossXHarvests,
                         baseApr,
                         poolWrappedLiquidity,
                     );
 
-                    const userApr = totalApr * (1 - networkConfig.balancer.yieldProtocolFeePercentage);
-
                     await prisma.prismaPoolAprItem.update({
                         where: { id: itemId },
-                        data: {
-                            group: null,
-                            apr: userApr,
-                            title: 'Boosted stETH APR',
-                        },
+                        data: { apr: boostedVaultApr },
                     });
                 }
             }
         }
     }
 
-    private getBoostedIbApr(
+    private getBoostedVaultApr(
         totalLiquidity: number,
         vaultHarvestApr: number,
         IbBaseApr: number,
         poolWrappedLiquidity: number,
     ) {
-        const vaultApr =
-            totalLiquidity > 0
-                ? ((1 + vaultHarvestApr) * (1 + IbBaseApr) - 1) * (poolWrappedLiquidity / totalLiquidity)
-                : 0;
-        const ibApr = totalLiquidity > 0 ? (IbBaseApr * (totalLiquidity - poolWrappedLiquidity)) / totalLiquidity : 0;
-        return vaultApr + ibApr;
+        return totalLiquidity > 0
+            ? ((1 + vaultHarvestApr) * (1 + IbBaseApr) - 1) * (poolWrappedLiquidity / totalLiquidity)
+            : 0;
     }
 }

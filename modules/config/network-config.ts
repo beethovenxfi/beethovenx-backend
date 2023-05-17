@@ -95,6 +95,7 @@ export interface NetworkConfig {
     };
     ankr?: {
         ankrFtmContract: string;
+        ankrEthContract: string;
     };
     spooky?: {
         xBooContract: string;
@@ -262,6 +263,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         ankr: {
             ankrFtmContract: '0xcfc785741dc0e98ad4c9f6394bb9d43cd1ef5179',
+            ankrEthContract: '0x12d8ce035c5de3ce39b1fdd4c1d5a745eaba3b8c',
         },
         datastudio: {
             main: {
@@ -326,12 +328,12 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
             composableStablePoolFactories: [
                 '0xf145caFB67081895EE80eB7c04A30Cf87f07b745',
                 '0xe2e901ab09f37884ba31622df3ca7fc19aa443be',
-                '0xe2E901AB09f37884BA31622dF3Ca7FC19AA443Be',
+                '0x1802953277FD955f9a254B80Aa0582f193cF1d77',
             ],
             weightedPoolV2Factories: [
                 '0xad901309d9e9DbC5Df19c84f729f429F0189a633',
                 '0xa0dabebaad1b243bbb243f933013d560819eb66f',
-                '0xA0DAbEBAAd1b243BBb243f933013d560819eB66f',
+                '0x230a59f4d9adc147480f03b0d3fffecd56c3289a',
             ],
             poolsInRecoveryMode: [
                 '0x05e7732bf9ae5592e6aa05afe8cd80f7ab0a7bea',

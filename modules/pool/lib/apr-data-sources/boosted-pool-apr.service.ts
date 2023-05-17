@@ -35,7 +35,10 @@ export class BoostedPoolAprService implements PoolAprService {
 
             const poolIds = tokens.map((token) => token.nestedPool?.id || '');
             const aprItems = await prisma.prismaPoolAprItem.findMany({
-                where: { poolId: { in: poolIds }, type: { in: ['LINEAR_BOOSTED', 'PHANTOM_STABLE_BOOSTED'] } },
+                where: {
+                    poolId: { in: poolIds },
+                    type: { in: ['LINEAR_BOOSTED', 'PHANTOM_STABLE_BOOSTED', 'IB_YIELD'] },
+                },
             });
 
             for (const token of tokens) {
@@ -75,7 +78,7 @@ export class BoostedPoolAprService implements PoolAprService {
                             title: aprItem.title,
                             group: aprItem.group,
                         },
-                        update: { apr: userApr, title: aprItem.title },
+                        update: { apr: userApr, title: aprItem.title, group: aprItem.group },
                     });
                 }
             }

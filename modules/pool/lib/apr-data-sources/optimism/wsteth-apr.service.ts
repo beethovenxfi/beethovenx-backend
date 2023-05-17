@@ -40,11 +40,11 @@ export class WstethAprService implements PoolAprService {
                     create: {
                         id: itemId,
                         poolId: pool.id,
-                        title: `stETH APR`,
+                        title: `wstETH APR`,
                         apr: protocolTakesFeeOnYield(pool) ? userApr : wstethApr,
                         type: 'IB_YIELD',
                     },
-                    update: { apr: protocolTakesFeeOnYield(pool) ? userApr : wstethApr, title: `stETH APR` },
+                    update: { apr: protocolTakesFeeOnYield(pool) ? userApr : wstethApr, title: `wstETH APR` },
                 });
             }
         }
