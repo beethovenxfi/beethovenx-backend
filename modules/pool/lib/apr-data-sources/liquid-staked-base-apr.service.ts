@@ -28,8 +28,8 @@ export class LiquidStakedBaseAprService {
             {},
         );
 
-        const ankrFtmApy = data.services.find((service) => service.serviceName === 'eth');
-        return parseFloat(ankrFtmApy?.apy || '0') / 100;
+        const ankrEthApy = data.services.find((service) => service.serviceName === 'eth');
+        return parseFloat(ankrEthApy?.apy || '0') / 100;
     }
 
     public async getXBooBaseApr(): Promise<number> {

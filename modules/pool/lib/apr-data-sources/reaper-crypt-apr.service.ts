@@ -81,7 +81,12 @@ export class ReaperCryptAprService implements PoolAprService {
                     group: 'REAPER',
                     type: 'LINEAR_BOOSTED',
                 },
-                update: { title: `${wrappedToken.token.symbol} APR`, apr: apr },
+                update: {
+                    title: `${wrappedToken.token.symbol} APR`,
+                    apr: apr,
+                    group: 'REAPER',
+                    type: 'LINEAR_BOOSTED',
+                },
             });
 
             // if we have sftmx as the main token in this linear pool, we want to take the linear APR top level and
