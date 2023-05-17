@@ -95,6 +95,7 @@ export interface NetworkConfig {
     };
     ankr?: {
         ankrFtmContract: string;
+        ankrEthContract: string;
     };
     spooky?: {
         xBooContract: string;
@@ -262,6 +263,7 @@ const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
         },
         ankr: {
             ankrFtmContract: '0xcfc785741dc0e98ad4c9f6394bb9d43cd1ef5179',
+            ankrEthContract: '0x12d8ce035c5de3ce39b1fdd4c1d5a745eaba3b8c',
         },
         datastudio: {
             main: {

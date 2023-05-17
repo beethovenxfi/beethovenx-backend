@@ -22,6 +22,16 @@ export class LiquidStakedBaseAprService {
         return parseFloat(ankrFtmApy?.apy || '0') / 100;
     }
 
+    public async getAnkrEthBaseApr(): Promise<number> {
+        const { data } = await axios.get<{ services: { serviceName: string; apy: string }[] }>(
+            'https://api.staking.ankr.com/v1alpha/metrics',
+            {},
+        );
+
+        const ankrFtmApy = data.services.find((service) => service.serviceName === 'eth');
+        return parseFloat(ankrFtmApy?.apy || '0') / 100;
+    }
+
     public async getXBooBaseApr(): Promise<number> {
         const { data } = await axios.get<string>('https://api.spooky.fi/api/xboo', {});
         return parseFloat(data) / 100;

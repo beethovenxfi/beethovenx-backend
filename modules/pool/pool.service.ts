@@ -60,6 +60,7 @@ import { GaugeStakingService } from './lib/staking/optimism/gauge-staking.servic
 import { PoolStakingService } from './pool-types';
 import { BeefyVaultAprService } from './lib/apr-data-sources/beefy-vault-apr.service';
 import { ReaperMultistratAprService } from './lib/apr-data-sources/reaper-multistrat-apr.service';
+import { AnkrStakedEthAprService } from './lib/apr-data-sources/fantom/ankr-staked-eth-apr.service';
 
 const FEATURED_POOL_GROUPS_CACHE_KEY = 'pool:featuredPoolGroups';
 
@@ -354,6 +355,7 @@ export const poolService = new PoolService(
                   new YearnVaultAprService(tokenService),
                   new StaderStakedFtmAprService(tokenService, networkConfig.stader!.sFtmxContract),
                   new AnkrStakedFtmAprService(tokenService, networkConfig.ankr!.ankrFtmContract),
+                  new AnkrStakedEthAprService(tokenService, networkConfig.ankr!.ankrEthContract),
               ]
             : [
                   new RocketPoolStakedEthAprService(tokenService, networkConfig.rocket!.rEthContract),
