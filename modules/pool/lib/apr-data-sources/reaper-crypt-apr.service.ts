@@ -130,10 +130,6 @@ export class ReaperCryptAprService implements PoolAprService {
         }
     }
 
-    private getIbApr(totalLiquidity: number, IbBaseApr: number, poolWrappedLiquidity: number) {
-        return totalLiquidity > 0 ? (IbBaseApr * (totalLiquidity - poolWrappedLiquidity)) / totalLiquidity : 0;
-    }
-
     private getBoostedVaultApr(
         totalLiquidity: number,
         vaultHarvestApr: number,
