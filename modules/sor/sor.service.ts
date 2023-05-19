@@ -1,7 +1,6 @@
-import { GqlSorGetSwapsResponseNew, GqlSorSwapType } from '../../schema';
+import { GqlCowSwapApiResponse, GqlSorSwapType } from '../../schema';
 import { sorV1Service } from './sorV1/sorV1.service';
 import { sorV2Service } from './sorV2/sorV2.service';
-import { CowSwapApiResponse } from './sorV1/types';
 import { Swap } from '@balancer/sdk';
 
 export interface GetSwapsInput {
@@ -17,7 +16,7 @@ export class SorService {
         tokenOut,
         swapType,
         swapAmount,
-    }: GetSwapsInput): Promise<GqlSorGetSwapsResponseNew> {
+    }: GetSwapsInput): Promise<GqlCowSwapApiResponse> {
         console.time('sorV1');
         const sorV1Result = await sorV1Service.getSwaps({
             tokenIn,
@@ -35,14 +34,7 @@ export class SorService {
         });
         console.timeEnd('sorV2');
 
-        const bestSwap = this.getBestSwap(sorV1Result, sorV2Result, swapType);
-
-        // TODO - Return in current CowSwap format so its plug and play
-        return {
-            tokenIn,
-            tokenOut,
-            result: bestSwap.returnAmount
-        }
+        return this.getBestSwap(sorV1Result, sorV2Result, swapType);
     }
 
     /**
@@ -52,7 +44,7 @@ export class SorService {
      * @param swapType 
      * @returns 
      */
-    private getBestSwap(v1: CowSwapApiResponse, v2: Swap | null, swapType: GqlSorSwapType): CowSwapApiResponse {
+    private getBestSwap(v1: GqlCowSwapApiResponse, v2: Swap | null, swapType: GqlSorSwapType): GqlCowSwapApiResponse {
         if(!v2) {
             if(v1.returnAmount === '0') {
                 this.logResult(`No Result`, v1, v2, swapType);
@@ -70,7 +62,7 @@ export class SorService {
         }
     }
 
-    private logResult(logType: string, v1: CowSwapApiResponse, v2: Swap | null, swapType: GqlSorSwapType) {
+    private logResult(logType: string, v1: GqlCowSwapApiResponse, v2: Swap | null, swapType: GqlSorSwapType) {
         // console.log() will log to cloudwatch
         console.log('SOR Service', logType, swapType, v1.tokenIn, v1.tokenOut, v1.swapAmount, v1.returnAmount, v2?.outputAmount.amount.toString());
     }

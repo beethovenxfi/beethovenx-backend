@@ -1,6 +1,6 @@
-import { CowSwapApiResponse } from '../sorV1/types';
+import { GqlCowSwapApiResponse } from '../../../schema';
 
-export const EMPTY_COWSWAP_RESPONSE: CowSwapApiResponse = {
+export const EMPTY_COWSWAP_RESPONSE: GqlCowSwapApiResponse = {
     tokenAddresses: [],
     swaps: [],
     swapAmount: '0',

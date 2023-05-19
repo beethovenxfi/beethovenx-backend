@@ -1,20 +1,20 @@
-import axios, { AxiosError } from 'axios';
-import { GqlSorSwapType, GqlSorSwapOptionsInput } from '../../../schema';
+import axios from 'axios';
+import { GqlSorSwapType, GqlSorSwapOptionsInput, GqlCowSwapApiResponse } from '../../../schema';
 import { GetSwapsInput } from '../sor.service';
 import { SwapInfo } from '@balancer-labs/sdk';
 import { env } from '../../../app/env';
 import { networkContext } from '../../network/network-context.service';
 import { DeploymentEnv } from '../../network/network-config-types';
-import { CowSwapApiResponse, CowSwapSwapType } from './types';
 import { EMPTY_COWSWAP_RESPONSE } from './constants';
 
+type CowSwapSwapType = 'buy' | 'sell';
 export class SorV1Service {
     public async getSwaps({
         tokenIn,
         tokenOut,
         swapType,
         swapAmount,
-    }: GetSwapsInput): Promise<CowSwapApiResponse> {
+    }: GetSwapsInput): Promise<GqlCowSwapApiResponse> {
         return await this.querySorBalancer(swapType, tokenIn, tokenOut, swapAmount); 
     }
 
@@ -32,7 +32,7 @@ export class SorV1Service {
         tokenIn: string,
         tokenOut: string,
         swapAmountScaled: string,
-    ): Promise<CowSwapApiResponse> {
+    ): Promise<GqlCowSwapApiResponse> {
         const endPoint = `https://api.balancer.fi/sor/${networkContext.chainId}`;
         const gasPrice = networkContext.data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].gasPrice.toString();
         const swapData = {
@@ -44,7 +44,7 @@ export class SorV1Service {
             };
 
         try {
-            const { data } = await axios.post<CowSwapApiResponse>(
+            const { data } = await axios.post<GqlCowSwapApiResponse>(
                 endPoint, 
                 swapData,
             );

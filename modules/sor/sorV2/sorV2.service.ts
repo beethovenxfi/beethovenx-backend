@@ -25,7 +25,7 @@ import { HumanAmount, SupportedRawPoolTypes } from '@balancer/sdk';
 import { env } from '../../../app/env';
 import { DeploymentEnv } from '../../network/network-config-types';
 import { Cache, CacheClass } from 'memory-cache';
-import { CowSwapApiResponse } from '../sorV1/types';
+import { GqlCowSwapApiResponse } from '../../../schema';
 import { EMPTY_COWSWAP_RESPONSE } from '../sorV1/constants';
 
 const ALL_BASEPOOLS_CACHE_KEY = `basePools:all`;
@@ -64,7 +64,7 @@ export class SorV2Service {
         }
     }
 
-    public mapResultToCowSwap(swap: Swap): CowSwapApiResponse {
+    public mapResultToCowSwap(swap: Swap): GqlCowSwapApiResponse {
         // TODO - match existing CowSwap SOR API format so its plug and play
         return EMPTY_COWSWAP_RESPONSE;
     }
