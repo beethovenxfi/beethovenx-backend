@@ -105,6 +105,7 @@ const gnosisNetworkData: NetworkData = {
     reaper: {
         linearPoolFactories: [''],
         averageAPRAcrossLastNHarvests: 2,
+        multiStratLinearPoolIds: [],
     },
     lido: {
         wstEthAprEndpoint: '',

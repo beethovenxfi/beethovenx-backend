@@ -22,7 +22,7 @@ const mainnetNetworkData: NetworkData = {
     chain: {
         slug: 'ethereum',
         id: 1,
-        nativeAssetAddress: '0xb5AE3c648709913Ef9739e9F6eDB5a821c6Ab160',
+        nativeAssetAddress: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
         wrappedNativeAssetAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
         prismaId: 'MAINNET',
         gqlId: 'MAINNET',
@@ -36,8 +36,8 @@ const mainnetNetworkData: NetworkData = {
         userBalances: 'https://',
     },
     eth: {
-        address: '0xb5ae3c648709913ef9739e9f6edb5a821c6ab160',
-        addressFormatted: '0xb5AE3c648709913Ef9739e9F6eDB5a821c6Ab160',
+        address: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        addressFormatted: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
         symbol: 'ETH',
         name: 'Ether',
     },
@@ -149,6 +149,7 @@ const mainnetNetworkData: NetworkData = {
     reaper: {
         linearPoolFactories: ['0x1b986138a4F2aA538E79fdEC222dad93F8d66703'],
         averageAPRAcrossLastNHarvests: 2,
+        multiStratLinearPoolIds: [],
     },
     beefy: {
         linearPools: [''],

@@ -391,6 +391,12 @@ export class PoolCreatorService {
                 return 'ELEMENT';
             case 'Investment':
                 return 'INVESTMENT';
+            case 'Gyro2':
+                return 'GYRO';
+            case 'Gyro3':
+                return 'GYRO';
+            case 'GyroE':
+                return 'GYRO';
         }
 
         // balancer still uses AaveLinear, etc, so we account for that here
