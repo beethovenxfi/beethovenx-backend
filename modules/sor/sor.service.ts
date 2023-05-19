@@ -47,7 +47,7 @@ export class SorService {
                 tokenOut,
                 swapAmount,
                 swapType,
-                sorV1Result: sorV1Result.result,
+                sorV1Result: sorV1Result.returnAmount,
                 sorV2Result: sorV2Result.result,
                 isSorV1
             }
@@ -57,7 +57,7 @@ export class SorService {
         return {
             tokenIn,
             tokenOut,
-            result: isSorV1 ? sorV1Result.result : sorV2Service.mapResultToCowSwap(sorV2Result.result)
+            result: isSorV1 ? sorV1Result.returnAmount : sorV2Service.mapResultToCowSwap(sorV2Result.result)
         }
     }
 }
