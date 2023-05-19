@@ -1,7 +1,7 @@
 import { GqlCowSwapApiResponse, GqlSorSwapType } from '../../schema';
 import { sorV1Service } from './sorV1/sorV1.service';
 import { sorV2Service } from './sorV2/sorV2.service';
-import { Swap } from '@balancer/sdk';
+import { Swap, SwapKind } from '@balancer/sdk';
 
 export interface GetSwapsInput {
     tokenIn: string;
@@ -33,7 +33,6 @@ export class SorService {
             swapAmount,
         });
         console.timeEnd('sorV2');
-
         return this.getBestSwap(sorV1Result, sorV2Result, swapType);
     }
 
@@ -44,27 +43,35 @@ export class SorService {
      * @param swapType 
      * @returns 
      */
-    private getBestSwap(v1: GqlCowSwapApiResponse, v2: Swap | null, swapType: GqlSorSwapType): GqlCowSwapApiResponse {
+    private getBestSwap(v1: GqlCowSwapApiResponse, v2: Swap | null, swapType: GqlSorSwapType, debugOut=false): GqlCowSwapApiResponse {
+        // Useful for comparing
+        if(debugOut && v2) {
+            console.log(v1);
+            console.log(sorV2Service.mapResultToCowSwap(v2));
+        }
+
         if(!v2) {
-            if(v1.returnAmount === '0') {
-                this.logResult(`No Result`, v1, v2, swapType);
-            }
-            else {
-                this.logResult(`V1 (No V2)`, v1, v2, swapType);
-            }
+            if(v1.returnAmount === '0') this.logResult(`No Result`, v1, v2, swapType);
+            else this.logResult(`V1 (No V2)`, v1, v2, swapType);
             return v1;
         }
-        if(v2.outputAmount.amount < BigInt(v1.returnAmount)) {
+
+        let isV1 = false;
+        if(v2.swapKind === SwapKind.GivenIn) {
+            if(v2.outputAmount.amount < BigInt(v1.returnAmount)) isV1 = true;
+        } else {
+            if(v2.inputAmount.amount > BigInt(v1.returnAmount)) isV1 = true;      
+        }
+        if (isV1) {
             this.logResult(`V1`, v1, v2, swapType);
             return v1;
-        } else {
+        } else
             return sorV2Service.mapResultToCowSwap(v2);
-        }
     }
 
     private logResult(logType: string, v1: GqlCowSwapApiResponse, v2: Swap | null, swapType: GqlSorSwapType) {
         // console.log() will log to cloudwatch
-        console.log('SOR Service', logType, swapType, v1.tokenIn, v1.tokenOut, v1.swapAmount, v1.returnAmount, v2?.outputAmount.amount.toString());
+        console.log('SOR Service', logType, swapType, v1.tokenIn, v1.tokenOut, v1.swapAmount, v1.returnAmount, v2?.inputAmount.amount.toString(), v2?.outputAmount.amount.toString());
     }
 }
 
