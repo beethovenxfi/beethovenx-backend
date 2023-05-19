@@ -1,11 +1,4 @@
 extend type Query {
-    sorGetSwaps(
-        tokenIn: String!
-        tokenOut: String!
-        swapType: GqlSorSwapType!
-        swapAmount: BigDecimal! #expected in human readable form
-        swapOptions: GqlSorSwapOptionsInput!
-    ): GqlSorGetSwapsResponse!
     sorGetBatchSwapForTokensIn(
         tokensIn: [GqlTokenAmountHumanReadable!]!
         tokenOut: String!

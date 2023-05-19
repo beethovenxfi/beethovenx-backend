@@ -4,7 +4,7 @@ import { tokenService } from '../token/token.service';
 
 const sorResolvers: Resolvers = {
     Query: {
-        sorGetSwapsNew: async (parent, args, context) => {
+        sorGetSwaps: async (parent, args, context) => {
             return sorService.getSwaps({ ...args });
         },
     },
