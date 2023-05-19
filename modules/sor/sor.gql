@@ -31,5 +31,4 @@ type GqlSwap {
     assetOutIndex: Int!
     amount: String!
     userData: String!
-    returnAmount: String!
 }

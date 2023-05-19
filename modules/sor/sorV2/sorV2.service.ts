@@ -14,7 +14,7 @@ import {
     Swap,
     RawPool
 } from '@balancer/sdk';
-import { GqlSorSwapType } from '../../../schema';
+import { GqlSorSwapType, GqlSwap } from '../../../schema';
 import { PrismaPoolType, PrismaToken } from '@prisma/client';
 import { GetSwapsInput } from '../sor.service';
 import { tokenService } from '../../token/token.service';
@@ -64,9 +64,45 @@ export class SorV2Service {
         }
     }
 
+    /**
+     * Maps Swap to GqlCowSwapApiResponse which is what current CowSwap Solver uses.
+     * @param swap 
+     * @returns 
+     */
     public mapResultToCowSwap(swap: Swap): GqlCowSwapApiResponse {
-        // TODO - match existing CowSwap SOR API format so its plug and play
-        return EMPTY_COWSWAP_RESPONSE;
+        let swaps: GqlSwap[];
+        if (swap.swaps instanceof Array) {
+            swaps = swap.swaps.map(swap => {
+                return {
+                    ...swap,
+                    amount: swap.amount.toString(),
+                    assetInIndex: Number(swap.assetInIndex),
+                    assetOutIndex: Number(swap.assetOutIndex),
+                }
+            });
+        } else {
+            swaps = [{
+                amount: swap.inputAmount.amount.toString(),
+                assetInIndex: swap.assets.indexOf(swap.swaps.assetIn),
+                assetOutIndex: swap.assets.indexOf(swap.swaps.assetOut),
+                poolId: swap.swaps.poolId,
+                userData: swap.swaps.userData
+            }];
+        }
+        const returnAmount = swap.swapKind === SwapKind.GivenIn ? swap.outputAmount.amount.toString() : swap.inputAmount.amount.toString();
+        const swapAmount = swap.swapKind === SwapKind.GivenIn ? swap.inputAmount.amount.toString() : swap.outputAmount.amount.toString(); 
+        return {
+            marketSp: '', // TODO - Could this be calculate using out/in?
+            returnAmount,
+            returnAmountConsideringFees: returnAmount, // TODO - Check if CowSwap actually use this?
+            returnAmountFromSwaps: returnAmount, // TODO - Check if CowSwap actually use this?
+            swapAmount,
+            swapAmountForSwaps: swapAmount, // TODO - Check if CowSwap actually use this?
+            swaps,
+            tokenAddresses: swap.assets,
+            tokenIn: swap.inputAmount.token.address,
+            tokenOut: swap.outputAmount.token.address,
+        }
     }
 
     /**
