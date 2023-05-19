@@ -26,7 +26,7 @@ import { env } from '../../../app/env';
 import { DeploymentEnv } from '../../network/network-config-types';
 import { Cache, CacheClass } from 'memory-cache';
 import { GqlCowSwapApiResponse } from '../../../schema';
-import { EMPTY_COWSWAP_RESPONSE } from '../sorV1/constants';
+import cloneDeep from 'lodash/cloneDeep';
 
 const ALL_BASEPOOLS_CACHE_KEY = `basePools:all`;
 
@@ -49,12 +49,13 @@ export class SorV2Service {
         const tIn = await this.getToken(tokenIn as Address, chainId);
         const tOut = await this.getToken(tokenOut as Address, chainId);
         try {
+            // Constructing a Swap mutates the pools so I used cloneDeep
             const swap = await sorGetSwapsWithPools(
                         tIn,
                         tOut,
                         this.mapSwapType(swapType),
                         swapAmount,
-                        poolsFromDb,
+                        cloneDeep(poolsFromDb),
                         // swapOptions, // TODO - Handle properly
                     );
             return swap;
