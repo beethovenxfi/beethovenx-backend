@@ -1,4 +1,4 @@
-export interface ApiResponse {
+export interface CowSwapApiResponse {
     tokenAddresses: string[];
     swaps: Swap[];
     swapAmount: string;

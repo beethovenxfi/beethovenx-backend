@@ -11,22 +11,20 @@ import {
     RawWeightedPool, 
     RawComposableStablePool, 
     RawMetaStablePool,
-    Swap
+    Swap,
+    RawPool
 } from '@balancer/sdk';
-import { GqlSorGetSwapsResponseNew, GqlSorSwapType } from '../../../schema';
+import { GqlSorSwapType } from '../../../schema';
 import { PrismaPoolType, PrismaToken } from '@prisma/client';
 import { GetSwapsInput } from '../sor.service';
 import { tokenService } from '../../token/token.service';
 import { networkContext } from '../../network/network-context.service';
 import { prisma } from '../../../prisma/prisma-client';
 import { PrismaPoolWithDynamic, prismaPoolWithDynamic } from '../../../prisma/prisma-types';
-import { RawPool } from '@balancer/sdk';
 import { HumanAmount, SupportedRawPoolTypes } from '@balancer/sdk';
 import { env } from '../../../app/env';
 import { DeploymentEnv } from '../../network/network-config-types';
 import { Cache, CacheClass } from 'memory-cache';
-
-import { getSwapCompare } from './temp';
 
 const ALL_BASEPOOLS_CACHE_KEY = `basePools:all`;
 
@@ -41,44 +39,32 @@ export class SorV2Service {
         tokenOut,
         swapType,
         swapAmount,
-    }: GetSwapsInput): Promise<GqlSorGetSwapsResponseNew> {
-        // TODO - This takes ~1.262s on my local machine. Is this fast enough? Any obvious ways to improve?
+    }: GetSwapsInput): Promise<Swap | null> {
         console.time('getBasePools');
         const poolsFromDb = await this.getBasePools();
         console.timeEnd('getBasePools');
         const chainId = networkContext.chainId as unknown as ChainId;
         const tIn = await this.getToken(tokenIn as Address, chainId);
         const tOut = await this.getToken(tokenOut as Address, chainId);
-        const swap = await sorGetSwapsWithPools(
-                    tIn,
-                    tOut,
-                    this.mapSwapType(swapType),
-                    swapAmount,
-                    poolsFromDb,
-                    // swapOptions, // TODO - Handle properly
-                );
-
-        if (!swap) throw new Error('Swap is undefined');
-        console.log(`Swap (db pools)`);
-        console.log(poolsFromDb.length);
-        console.log(swap.swaps);
-        console.log(swap.outputAmount.amount.toString());
-        console.log(`------------------`);
-
-        // Just using to compare results against onchain pool calls
-        // await getSwapCompare(tIn, tOut, swapAmount);
-
-        // TODO - Update with proper required result data
-        return {
-            tokenIn,
-            tokenOut,
-            result: swap.outputAmount.amount.toString()
-        }  
+        try {
+            const swap = await sorGetSwapsWithPools(
+                        tIn,
+                        tOut,
+                        this.mapSwapType(swapType),
+                        swapAmount,
+                        poolsFromDb,
+                        // swapOptions, // TODO - Handle properly
+                    );
+            return swap;
+        } catch (err) {
+            console.log(`sorV2 Service Error`, err);
+            return null;
+        }
     }
 
-    public mapResultToCowSwap(swap: string): string {
+    public mapResultToCowSwap(swap: Swap): string {
         // TODO - match existing CowSwap SOR API format so its plug and play
-        return swap;
+        return 'TODO';
     }
 
     /**
@@ -115,7 +101,6 @@ export class SorV2Service {
     private async getBasePools(): Promise<BasePool[]> {
         let basePools: BasePool[] | null = this.cache.get(`${ALL_BASEPOOLS_CACHE_KEY}:${networkContext.chainId}`);
         if (!basePools) {
-            console.log('Fetching pools from db as cache expired...')
             basePools = await this.getBasePoolsFromDb();
             this.cache.put(`${ALL_BASEPOOLS_CACHE_KEY}:${networkContext.chainId}`, basePools, 5 * 60 * 1000);
         }

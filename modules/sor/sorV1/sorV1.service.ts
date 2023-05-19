@@ -5,9 +5,9 @@ import { SwapInfo } from '@balancer-labs/sdk';
 import { env } from '../../../app/env';
 import { networkContext } from '../../network/network-context.service';
 import { DeploymentEnv } from '../../network/network-config-types';
-import { ApiResponse, CowSwapSwapType } from './types';
+import { CowSwapApiResponse, CowSwapSwapType } from './types';
 
-const EMPTY_APIRESPONSE: ApiResponse = {
+const EMPTY_APIRESPONSE: CowSwapApiResponse = {
     tokenAddresses: [],
     swaps: [],
     swapAmount: '0',
@@ -26,7 +26,7 @@ export class SorV1Service {
         tokenOut,
         swapType,
         swapAmount,
-    }: GetSwapsInput): Promise<ApiResponse> {
+    }: GetSwapsInput): Promise<CowSwapApiResponse> {
         return await this.querySorBalancer(swapType, tokenIn, tokenOut, swapAmount); 
     }
 
@@ -44,7 +44,7 @@ export class SorV1Service {
         tokenIn: string,
         tokenOut: string,
         swapAmountScaled: string,
-    ): Promise<ApiResponse> {
+    ): Promise<CowSwapApiResponse> {
         const endPoint = `https://api.balancer.fi/sor/${networkContext.chainId}`;
         const gasPrice = networkContext.data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].gasPrice.toString();
         const swapData = {
@@ -56,7 +56,7 @@ export class SorV1Service {
             };
 
         try {
-            const { data } = await axios.post<ApiResponse>(
+            const { data } = await axios.post<CowSwapApiResponse>(
                 endPoint, 
                 swapData,
             );

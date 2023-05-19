@@ -3,6 +3,8 @@ import { networkContext } from '../network/network-context.service';
 import { sorV1Service } from './sorV1/sorV1.service';
 import { sorV2Service } from './sorV2/sorV2.service';
 import { prisma } from '../../prisma/prisma-client';
+import { CowSwapApiResponse } from './sorV1/types';
+import { Swap } from '@balancer/sdk';
 
 export interface GetSwapsInput {
     tokenIn: string;
@@ -34,7 +36,7 @@ export class SorService {
             swapAmount,
         });
 
-        let isSorV1 = false;
+        const bestSwap = this.getBestSwap(sorV1Result, sorV2Result);
         // TODO - Compare V1 vs V2 result and return/log best
 
         // Update db with best result so we can track performace
@@ -57,7 +59,25 @@ export class SorService {
         return {
             tokenIn,
             tokenOut,
-            result: isSorV1 ? sorV1Result.returnAmount : sorV2Service.mapResultToCowSwap(sorV2Result.result)
+            result: bestSwap
+        }
+    }
+
+    private getBestSwap(v1: CowSwapApiResponse, v2: Swap | null): CowSwapApiResponse {
+        if(!v2) {
+            if(v1.returnAmount === '0') {
+                console.log('NO RESULT');
+            }
+            else {
+                console.log('V1');
+            }
+            return v1;
+        }
+        if(v2.outputAmount.amount < BigInt(v1.returnAmount)) {
+            console.log('V1');
+            return v1;
+        } else {
+            return sorV2Service.mapResultToCowSwap(v2);
         }
     }
 }
