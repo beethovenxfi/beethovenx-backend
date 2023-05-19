@@ -5,7 +5,6 @@ extend type Query {
         swapType: GqlSorSwapType!
         swapAmount: BigDecimal! #expected in raw amount
     ): GqlSorGetSwapsResponseNew!
-    tradeResults: [GqlTradeResults]!
 }
 
 enum GqlSorSwapType {
@@ -17,17 +16,4 @@ type GqlSorGetSwapsResponseNew {
     tokenIn: String!
     tokenOut: String!
     result: String!
-}
-
-type GqlTradeResults {
-    id: String!
-    timestamp: Int!
-    chain: String!
-    tokenIn: String!
-    tokenOut: String!
-    swapAmount: String!
-    swapType: String!
-    sorV1Result: String!
-    sorV2Result: String!
-    isSorV1: Boolean!
 }

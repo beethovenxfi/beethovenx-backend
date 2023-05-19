@@ -39,22 +39,6 @@ export class SorService {
         const bestSwap = this.getBestSwap(sorV1Result, sorV2Result);
         // TODO - Compare V1 vs V2 result and return/log best
 
-        // Update db with best result so we can track performace
-        await prisma.prismaTradeResult.create({
-            data: {
-                id: `${timestamp}-${tokenIn}-${tokenOut}`,
-                timestamp,
-                chain: networkContext.chain,
-                tokenIn,
-                tokenOut,
-                swapAmount,
-                swapType,
-                sorV1Result: sorV1Result.returnAmount,
-                sorV2Result: sorV2Result.result,
-                isSorV1
-            }
-        });
-
         // TODO - Return in current CowSwap format so its plug and play
         return {
             tokenIn,
