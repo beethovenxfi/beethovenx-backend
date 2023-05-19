@@ -6,19 +6,7 @@ import { env } from '../../../app/env';
 import { networkContext } from '../../network/network-context.service';
 import { DeploymentEnv } from '../../network/network-config-types';
 import { CowSwapApiResponse, CowSwapSwapType } from './types';
-
-const EMPTY_APIRESPONSE: CowSwapApiResponse = {
-    tokenAddresses: [],
-    swaps: [],
-    swapAmount: '0',
-    swapAmountForSwaps: '0',
-    returnAmount: '0',
-    returnAmountFromSwaps: '0',
-    returnAmountConsideringFees: '0',
-    tokenIn: '',
-    tokenOut: '',
-    marketSp: '0',
-};
+import { EMPTY_COWSWAP_RESPONSE } from './constants';
 
 export class SorV1Service {
     public async getSwaps({
@@ -63,7 +51,7 @@ export class SorV1Service {
             return data;
         } catch (err) {
             console.log(`sorV1 Service Error`, err);
-            return EMPTY_APIRESPONSE;
+            return EMPTY_COWSWAP_RESPONSE;
         }
     }
 
