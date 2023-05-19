@@ -56,7 +56,7 @@ export class SorV2Service {
                         this.mapSwapType(swapType),
                         swapAmount,
                         cloneDeep(poolsFromDb),
-                        // swapOptions, // TODO - Handle properly
+                        // swapOptions, // I don't think we need specific swapOptions for this?
                     );
             return swap;
         } catch (err) {
