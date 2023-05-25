@@ -12,7 +12,8 @@ import {
     RawComposableStablePool, 
     RawMetaStablePool,
     Swap as SwapSdk,
-    RawPool
+    RawPool,
+    TokenAmount
 } from '@balancer/sdk';
 import { GqlSorSwapType, GqlSwap } from '../../../schema';
 import { PrismaPoolType, PrismaToken } from '@prisma/client';
@@ -31,42 +32,51 @@ import cloneDeep from 'lodash/cloneDeep';
 const ALL_BASEPOOLS_CACHE_KEY = `basePools:all`;
 
 class SwapResult implements Swap {
-
     private swap: SwapSdk | null;
     public inputAmount: bigint;
     public outputAmount: bigint;
+    public assetIn: string;
+    public assetOut: string;
 
     constructor(swap: SwapSdk | null) {
         if(swap === null) {
             this.swap = null;
             this.inputAmount = BigInt(0);
             this.outputAmount = BigInt(0);
+            this.assetIn = '';
+            this.assetOut = '';
         } else {
             this.swap = swap;
+            this.assetIn = swap.inputAmount.token.address;
+            this.assetOut = swap.outputAmount.token.address;
             this.inputAmount = swap.inputAmount.amount;
             this.outputAmount = swap.outputAmount.amount;
         }
     }
 
-    getSwap(): GqlCowSwapApiResponse {
+    async getSwap(queryFirst = false): Promise<GqlCowSwapApiResponse> {
         if(this.swap === null)
             return {} as GqlCowSwapApiResponse;
-        return this.mapResultToCowSwap(this.swap);
+        if(!queryFirst)
+            return this.mapResultToCowSwap(this.swap, this.swap.inputAmount, this.swap.outputAmount);
+        else {
+            // Needs node >= 18 (https://github.com/wagmi-dev/viem/discussions/147)
+            const updatedResult = await this.swap.query(networkContext.data.rpcUrl);
+            console.log(`UPDATE:`, this.swap.quote.amount.toString(), updatedResult.amount.toString());
+
+            const ip = this.swap.swapKind === SwapKind.GivenIn ? this.swap.inputAmount : updatedResult;
+            const op = this.swap.swapKind === SwapKind.GivenIn ? updatedResult : this.swap.outputAmount;
+
+            return this.mapResultToCowSwap(this.swap, ip, op);
+        }
     }
 
-    async queryAndUpdate(): Promise<GqlCowSwapApiResponse> {
-        // TODO
-        if(this.swap === null)
-            return {} as GqlCowSwapApiResponse;
-        return this.mapResultToCowSwap(this.swap);
-    }
-
-        /**
+    /**
      * Maps Swap to GqlCowSwapApiResponse which is what current CowSwap Solver uses.
      * @param swap 
      * @returns 
      */
-    private mapResultToCowSwap(swap: SwapSdk): GqlCowSwapApiResponse {
+    private mapResultToCowSwap(swap: SwapSdk, inputAmount: TokenAmount, outputAmount: TokenAmount): GqlCowSwapApiResponse {
         let swaps: GqlSwap[];
         if (swap.swaps instanceof Array) {
             swaps = swap.swaps.map(swap => {
@@ -79,15 +89,15 @@ class SwapResult implements Swap {
             });
         } else {
             swaps = [{
-                amount: swap.inputAmount.amount.toString(),
+                amount: inputAmount.amount.toString(),
                 assetInIndex: swap.assets.indexOf(swap.swaps.assetIn),
                 assetOutIndex: swap.assets.indexOf(swap.swaps.assetOut),
                 poolId: swap.swaps.poolId,
                 userData: swap.swaps.userData
             }];
         }
-        const returnAmount = swap.swapKind === SwapKind.GivenIn ? swap.outputAmount.amount.toString() : swap.inputAmount.amount.toString();
-        const swapAmount = swap.swapKind === SwapKind.GivenIn ? swap.inputAmount.amount.toString() : swap.outputAmount.amount.toString(); 
+        const returnAmount = swap.swapKind === SwapKind.GivenIn ? outputAmount.amount.toString() : inputAmount.amount.toString();
+        const swapAmount = swap.swapKind === SwapKind.GivenIn ? inputAmount.amount.toString() : outputAmount.amount.toString(); 
         return {
             marketSp: '', // TODO - Could this be calculate using out/in?
             returnAmount,

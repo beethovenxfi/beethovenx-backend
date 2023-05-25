@@ -8,8 +8,9 @@ export interface GetSwapsInput {
 }
 
 export interface Swap {
-    getSwap(): GqlCowSwapApiResponse;
-    queryAndUpdate(): Promise<GqlCowSwapApiResponse>;
+    getSwap(queryFirst: boolean): Promise<GqlCowSwapApiResponse>;
+    assetIn: string;
+    assetOut: string;
     outputAmount: bigint;
     inputAmount: bigint;
 }

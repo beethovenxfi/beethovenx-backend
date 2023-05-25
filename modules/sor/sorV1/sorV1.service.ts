@@ -10,16 +10,15 @@ import { EMPTY_COWSWAP_RESPONSE } from './constants';
 type CowSwapSwapType = 'buy' | 'sell';
 
 class SwapResult implements Swap {
+    public assetIn: string;
+    public assetOut: string;
 
     constructor(private swap: GqlCowSwapApiResponse, public inputAmount: bigint, public outputAmount: bigint) {
+        this.assetIn = swap.tokenIn;
+        this.assetOut = swap.tokenOut;
     }
 
-    getSwap(): GqlCowSwapApiResponse {
-        return this.swap;
-    }
-
-    async queryAndUpdate(): Promise<GqlCowSwapApiResponse> {
-        // TODO
+    async getSwap(queryFirst = false): Promise<GqlCowSwapApiResponse> {
         return this.swap;
     }
 }
