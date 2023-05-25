@@ -62,7 +62,7 @@ class SwapResult implements Swap {
         else {
             // Needs node >= 18 (https://github.com/wagmi-dev/viem/discussions/147)
             const updatedResult = await this.swap.query(networkContext.data.rpcUrl);
-            console.log(`UPDATE:`, this.swap.quote.amount.toString(), updatedResult.amount.toString());
+            // console.log(`UPDATE:`, this.swap.quote.amount.toString(), updatedResult.amount.toString());
 
             const ip = this.swap.swapKind === SwapKind.GivenIn ? this.swap.inputAmount : updatedResult;
             const op = this.swap.swapKind === SwapKind.GivenIn ? updatedResult : this.swap.outputAmount;

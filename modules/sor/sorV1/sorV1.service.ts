@@ -1,11 +1,16 @@
 import axios from 'axios';
+import { AddressZero } from '@ethersproject/constants';
+import { Contract } from '@ethersproject/contracts';
 import { GqlSorSwapType, GqlSorSwapOptionsInput, GqlCowSwapApiResponse } from '../../../schema';
 import { GetSwapsInput, SwapService, Swap } from '../types';
-import { SwapInfo } from '@balancer-labs/sdk';
+import { SwapInfo, FundManagement, SwapTypes, SwapV2 } from '@balancer-labs/sdk';
 import { env } from '../../../app/env';
 import { networkContext } from '../../network/network-context.service';
 import { DeploymentEnv } from '../../network/network-config-types';
 import { EMPTY_COWSWAP_RESPONSE } from './constants';
+
+import VaultAbi from '../../pool/abi/Vault.json';
+import { BigNumber } from 'ethers';
 
 type CowSwapSwapType = 'buy' | 'sell';
 
@@ -13,13 +18,41 @@ class SwapResult implements Swap {
     public assetIn: string;
     public assetOut: string;
 
-    constructor(private swap: GqlCowSwapApiResponse, public inputAmount: bigint, public outputAmount: bigint) {
+    constructor(private swap: GqlCowSwapApiResponse, public inputAmount: bigint, public outputAmount: bigint, private swapType: GqlSorSwapType) {
         this.assetIn = swap.tokenIn;
         this.assetOut = swap.tokenOut;
     }
 
     async getSwap(queryFirst = false): Promise<GqlCowSwapApiResponse> {
+        if(queryFirst) {
+            const swapType = this.mapSwapType(this.swapType);
+            const deltas = await this.queryBatchSwap(swapType, this.swap.swaps, this.swap.tokenAddresses);
+            const tokenInAmount = deltas[this.swap.tokenAddresses.indexOf(this.assetIn)].toString();
+            const tokenOutAmount = deltas[this.swap.tokenAddresses.indexOf(this.assetOut)].abs().toString();
+            // console.log(`UPDATE:`, this.inputAmount, this.outputAmount, tokenInAmount, tokenOutAmount, deltas.toString());
+            return {
+                ...this.swap,
+                returnAmount: swapType === SwapTypes.SwapExactIn ? tokenOutAmount : tokenInAmount,
+                swapAmount: swapType === SwapTypes.SwapExactIn ? tokenInAmount : tokenOutAmount,
+            }
+        }
         return this.swap;
+    }
+
+    private queryBatchSwap(swapType: SwapTypes, swaps: SwapV2[], assets: string[]): Promise<BigNumber[]> {
+        const vaultContract = new Contract(networkContext.data.balancer.vault, VaultAbi, networkContext.provider);
+        const funds: FundManagement = {
+            sender: AddressZero,
+            recipient: AddressZero,
+            fromInternalBalance: false,
+            toInternalBalance: false,
+        };
+
+        return vaultContract.queryBatchSwap(swapType, swaps, assets, funds);
+    }
+
+    private mapSwapType(swapType: GqlSorSwapType): SwapTypes {
+        return swapType === "EXACT_IN" ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut;
     }
 }
 export class SorV1Service implements SwapService {
@@ -33,7 +66,7 @@ export class SorV1Service implements SwapService {
         const swap = await this.querySorBalancer(swapType, tokenIn, tokenOut, swapAmount);
         const inputAmout = swapType === 'EXACT_IN' ? swapAmount : swap.returnAmount;
         const outputAmout = swapType === 'EXACT_IN' ? swap.returnAmount : swapAmount;
-        return new SwapResult(swap, BigInt(inputAmout), BigInt(outputAmout));
+        return new SwapResult(swap, BigInt(inputAmout), BigInt(outputAmout), swapType);
     };
 
     /**
