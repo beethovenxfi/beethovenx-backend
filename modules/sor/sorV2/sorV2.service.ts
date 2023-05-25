@@ -11,12 +11,12 @@ import {
     RawWeightedPool, 
     RawComposableStablePool, 
     RawMetaStablePool,
-    Swap,
+    Swap as SwapSdk,
     RawPool
 } from '@balancer/sdk';
 import { GqlSorSwapType, GqlSwap } from '../../../schema';
 import { PrismaPoolType, PrismaToken } from '@prisma/client';
-import { GetSwapsInput } from '../sor.service';
+import { GetSwapsInput, Swap } from '../types';
 import { tokenService } from '../../token/token.service';
 import { networkContext } from '../../network/network-context.service';
 import { prisma } from '../../../prisma/prisma-client';
@@ -30,47 +30,43 @@ import cloneDeep from 'lodash/cloneDeep';
 
 const ALL_BASEPOOLS_CACHE_KEY = `basePools:all`;
 
-export class SorV2Service {
-    cache: CacheClass<string, BasePool[]>;
+class SwapResult implements Swap {
 
-    constructor() {
-        this.cache = new Cache<string, BasePool[]>();
-    }
-    public async getSwaps({
-        tokenIn,
-        tokenOut,
-        swapType,
-        swapAmount,
-    }: GetSwapsInput): Promise<Swap | null> {
-        console.time('getBasePools');
-        const poolsFromDb = await this.getBasePools();
-        console.timeEnd('getBasePools');
-        const chainId = networkContext.chainId as unknown as ChainId;
-        const tIn = await this.getToken(tokenIn as Address, chainId);
-        const tOut = await this.getToken(tokenOut as Address, chainId);
-        try {
-            // Constructing a Swap mutates the pools so I used cloneDeep
-            const swap = await sorGetSwapsWithPools(
-                        tIn,
-                        tOut,
-                        this.mapSwapType(swapType),
-                        swapAmount,
-                        cloneDeep(poolsFromDb),
-                        // swapOptions, // I don't think we need specific swapOptions for this?
-                    );
-            return swap;
-        } catch (err) {
-            console.log(`sorV2 Service Error`, err);
-            return null;
+    private swap: SwapSdk | null;
+    public inputAmount: bigint;
+    public outputAmount: bigint;
+
+    constructor(swap: SwapSdk | null) {
+        if(swap === null) {
+            this.swap = null;
+            this.inputAmount = BigInt(0);
+            this.outputAmount = BigInt(0);
+        } else {
+            this.swap = swap;
+            this.inputAmount = swap.inputAmount.amount;
+            this.outputAmount = swap.outputAmount.amount;
         }
     }
 
-    /**
+    getSwap(): GqlCowSwapApiResponse {
+        if(this.swap === null)
+            return {} as GqlCowSwapApiResponse;
+        return this.mapResultToCowSwap(this.swap);
+    }
+
+    async queryAndUpdate(): Promise<GqlCowSwapApiResponse> {
+        // TODO
+        if(this.swap === null)
+            return {} as GqlCowSwapApiResponse;
+        return this.mapResultToCowSwap(this.swap);
+    }
+
+        /**
      * Maps Swap to GqlCowSwapApiResponse which is what current CowSwap Solver uses.
      * @param swap 
      * @returns 
      */
-    public mapResultToCowSwap(swap: Swap): GqlCowSwapApiResponse {
+    private mapResultToCowSwap(swap: SwapSdk): GqlCowSwapApiResponse {
         let swaps: GqlSwap[];
         if (swap.swaps instanceof Array) {
             swaps = swap.swaps.map(swap => {
@@ -105,6 +101,43 @@ export class SorV2Service {
             tokenOut: swap.outputAmount.token.address,
         }
     }
+}
+
+export class SorV2Service {
+    cache: CacheClass<string, BasePool[]>;
+
+    constructor() {
+        this.cache = new Cache<string, BasePool[]>();
+    }
+
+    public async getSwap({
+        tokenIn,
+        tokenOut,
+        swapType,
+        swapAmount,
+    }: GetSwapsInput): Promise<Swap> {
+        console.time('getBasePools');
+        const poolsFromDb = await this.getBasePools();
+        console.timeEnd('getBasePools');
+        const chainId = networkContext.chainId as unknown as ChainId;
+        const tIn = await this.getToken(tokenIn as Address, chainId);
+        const tOut = await this.getToken(tokenOut as Address, chainId);
+        try {
+            // Constructing a Swap mutates the pools so I used cloneDeep
+            const swap = await sorGetSwapsWithPools(
+                        tIn,
+                        tOut,
+                        this.mapSwapType(swapType),
+                        swapAmount,
+                        cloneDeep(poolsFromDb),
+                        // swapOptions, // I don't think we need specific swapOptions for this?
+                    );
+            return new SwapResult(swap);
+        } catch (err) {
+            console.log(`sorV2 Service Error`, err);
+            return new SwapResult(null);
+        }
+    };
 
     /**
      * Gets a b-sdk Token based off tokenAddr.

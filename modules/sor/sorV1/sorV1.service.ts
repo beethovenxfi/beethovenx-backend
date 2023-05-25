@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { GqlSorSwapType, GqlSorSwapOptionsInput, GqlCowSwapApiResponse } from '../../../schema';
-import { GetSwapsInput } from '../sor.service';
+import { GetSwapsInput, SwapService, Swap } from '../types';
 import { SwapInfo } from '@balancer-labs/sdk';
 import { env } from '../../../app/env';
 import { networkContext } from '../../network/network-context.service';
@@ -8,15 +8,34 @@ import { DeploymentEnv } from '../../network/network-config-types';
 import { EMPTY_COWSWAP_RESPONSE } from './constants';
 
 type CowSwapSwapType = 'buy' | 'sell';
-export class SorV1Service {
-    public async getSwaps({
+
+class SwapResult implements Swap {
+
+    constructor(private swap: GqlCowSwapApiResponse, public inputAmount: bigint, public outputAmount: bigint) {
+    }
+
+    getSwap(): GqlCowSwapApiResponse {
+        return this.swap;
+    }
+
+    async queryAndUpdate(): Promise<GqlCowSwapApiResponse> {
+        // TODO
+        return this.swap;
+    }
+}
+export class SorV1Service implements SwapService {
+
+    public async getSwap({
         tokenIn,
         tokenOut,
         swapType,
         swapAmount,
-    }: GetSwapsInput): Promise<GqlCowSwapApiResponse> {
-        return await this.querySorBalancer(swapType, tokenIn, tokenOut, swapAmount); 
-    }
+    }: GetSwapsInput): Promise<Swap> {
+        const swap = await this.querySorBalancer(swapType, tokenIn, tokenOut, swapAmount);
+        const inputAmout = swapType === 'EXACT_IN' ? swapAmount : swap.returnAmount;
+        const outputAmout = swapType === 'EXACT_IN' ? swap.returnAmount : swapAmount;
+        return new SwapResult(swap, BigInt(inputAmout), BigInt(outputAmout));
+    };
 
     /**
      * Query Balancer API CowSwap/SOR endpoint.
