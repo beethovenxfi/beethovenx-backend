@@ -1,15 +1,12 @@
 import { GqlCowSwapApiResponse, GqlSorSwapType } from '../../schema';
 
-export const EMPTY_COWSWAP_RESPONSE = (assetIn: string, assetOut: string, swapType: GqlSorSwapType, amount: string): GqlCowSwapApiResponse =>  {
-    const returnAmount = swapType === "EXACT_IN" ? '0' : amount;
-    const swapAmount = swapType === "EXACT_IN" ? amount : '0'; 
-
+export const EMPTY_COWSWAP_RESPONSE = (assetIn: string, assetOut: string, amount: string): GqlCowSwapApiResponse =>  {
     return {
         marketSp: '0',
-        returnAmount,
+        returnAmount: '0',
         returnAmountConsideringFees: '0',
         returnAmountFromSwaps: '0',
-        swapAmount,
+        swapAmount: amount,
         swapAmountForSwaps: '0',
         swaps: [],
         tokenAddresses: [],

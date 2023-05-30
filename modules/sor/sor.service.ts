@@ -28,9 +28,9 @@ export class SorService {
         });
         console.timeEnd('sorV2');
 
-        if(!swapV1.isValid && !swapV2.isValid) return EMPTY_COWSWAP_RESPONSE(tokenIn, tokenOut, swapType, swapAmount);
+        if(!swapV1.isValid && !swapV2.isValid) return EMPTY_COWSWAP_RESPONSE(tokenIn, tokenOut, swapAmount);
 
-        const bestSwap = this.getBestSwap(swapV1, swapV2, swapType, tokenIn, tokenOut, true);
+        const bestSwap = this.getBestSwap(swapV1, swapV2, swapType, tokenIn, tokenOut);
         
         try {
             // Updates with latest onchain data before returning
@@ -38,7 +38,7 @@ export class SorService {
         } catch (err) {
             console.log(`Error Retrieving QuerySwap`);
             console.log(err);
-            return EMPTY_COWSWAP_RESPONSE(tokenIn, tokenOut, swapType, swapAmount);
+            return EMPTY_COWSWAP_RESPONSE(tokenIn, tokenOut, swapAmount);
         }
     }
 
@@ -52,6 +52,7 @@ export class SorService {
     private getBestSwap(v1: SwapResult, v2: SwapResult, swapType: GqlSorSwapType, assetIn: string, assetOut: string, debugOut=false): SwapResult {
         // Useful for comparing
         if(debugOut) {
+            console.log(`------ DEBUG`)
             console.log(v1);
             console.log(v2);
         }
