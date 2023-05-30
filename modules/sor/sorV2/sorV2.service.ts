@@ -223,7 +223,7 @@ export class SorV2Service implements SwapService {
                 id: prismaPool.id as Address,
                 address: prismaPool.address as Address,
                 poolType: this.mapRawPoolType(prismaPool.type),
-                poolTypeVersion: 1, // TODO - Can we add this to Prisma??
+                poolTypeVersion: prismaPool.version,
                 tokensList: prismaPool.tokens.map(t => t.address as Address),
                 swapEnabled: prismaPool.dynamicData!.swapEnabled,
                 swapFee: prismaPool.dynamicData!.swapFee as unknown as HumanAmount,
