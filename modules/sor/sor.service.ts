@@ -58,11 +58,15 @@ export class SorService {
         }
 
         let isV1 = false;
-        if(swapType === 'EXACT_IN') {
+        if(!v1.isValid || !v2.isValid) {
+            isV1 = v1.isValid ? true : false;
+        }
+        else if(swapType === 'EXACT_IN') {
             if(v2.outputAmount < v1.outputAmount) isV1 = true;
         } else {
             if(v2.inputAmount > v1.inputAmount) isV1 = true;      
         }
+
         if(isV1 === true) {
             this.logResult(`V1`, v1, v2, swapType, assetIn, assetOut);
             return v1;
