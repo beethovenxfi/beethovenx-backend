@@ -15,9 +15,10 @@ import {
     RawPool,
     TokenAmount
 } from '@balancer/sdk';
+import cloneDeep from 'lodash/cloneDeep';
 import { GqlSorSwapType, GqlSwap } from '../../../schema';
 import { PrismaPoolType, PrismaToken } from '@prisma/client';
-import { GetSwapsInput, Swap } from '../types';
+import { GetSwapsInput, SwapResult, SwapService } from '../types';
 import { tokenService } from '../../token/token.service';
 import { networkContext } from '../../network/network-context.service';
 import { prisma } from '../../../prisma/prisma-client';
@@ -27,36 +28,30 @@ import { env } from '../../../app/env';
 import { DeploymentEnv } from '../../network/network-config-types';
 import { Cache, CacheClass } from 'memory-cache';
 import { GqlCowSwapApiResponse } from '../../../schema';
-import cloneDeep from 'lodash/cloneDeep';
 
 const ALL_BASEPOOLS_CACHE_KEY = `basePools:all`;
 
-class SwapResult implements Swap {
+class SwapResultV2 implements SwapResult {
     private swap: SwapSdk | null;
-    public inputAmount: bigint;
-    public outputAmount: bigint;
-    public assetIn: string;
-    public assetOut: string;
+    public inputAmount: bigint = BigInt(0);
+    public outputAmount: bigint = BigInt(0);
+    public isValid: boolean;
 
     constructor(swap: SwapSdk | null) {
         if(swap === null) {
+            this.isValid = false;
             this.swap = null;
-            this.inputAmount = BigInt(0);
-            this.outputAmount = BigInt(0);
-            this.assetIn = '';
-            this.assetOut = '';
         } else {
+            this.isValid = true;
             this.swap = swap;
-            this.assetIn = swap.inputAmount.token.address;
-            this.assetOut = swap.outputAmount.token.address;
             this.inputAmount = swap.inputAmount.amount;
             this.outputAmount = swap.outputAmount.amount;
         }
     }
 
-    async getSwap(queryFirst = false): Promise<GqlCowSwapApiResponse> {
-        if(this.swap === null)
-            return {} as GqlCowSwapApiResponse;
+    async getSwapResponse(queryFirst = false): Promise<GqlCowSwapApiResponse> {
+        if(!this.isValid || this.swap === null) throw new Error('No Response - Invalid Swap')
+
         if(!queryFirst)
             return this.mapResultToCowSwap(this.swap, this.swap.inputAmount, this.swap.outputAmount);
         else {
@@ -99,7 +94,7 @@ class SwapResult implements Swap {
         const returnAmount = swap.swapKind === SwapKind.GivenIn ? outputAmount.amount.toString() : inputAmount.amount.toString();
         const swapAmount = swap.swapKind === SwapKind.GivenIn ? inputAmount.amount.toString() : outputAmount.amount.toString(); 
         return {
-            marketSp: '', // TODO - Could this be calculate using out/in?
+            marketSp: '', // TODO - Check if CowSwap actually use this? Could this be calculate using out/in?
             returnAmount,
             returnAmountConsideringFees: returnAmount, // TODO - Check if CowSwap actually use this?
             returnAmountFromSwaps: returnAmount, // TODO - Check if CowSwap actually use this?
@@ -113,39 +108,40 @@ class SwapResult implements Swap {
     }
 }
 
-export class SorV2Service {
+export class SorV2Service implements SwapService {
     cache: CacheClass<string, BasePool[]>;
 
     constructor() {
         this.cache = new Cache<string, BasePool[]>();
     }
 
-    public async getSwap({
+    public async getSwapResult({
         tokenIn,
         tokenOut,
         swapType,
         swapAmount,
-    }: GetSwapsInput): Promise<Swap> {
+    }: GetSwapsInput): Promise<SwapResult> {
         console.time('getBasePools');
         const poolsFromDb = await this.getBasePools();
         console.timeEnd('getBasePools');
         const chainId = networkContext.chainId as unknown as ChainId;
         const tIn = await this.getToken(tokenIn as Address, chainId);
         const tOut = await this.getToken(tokenOut as Address, chainId);
+        const swapKind = this.mapSwapType(swapType);
         try {
             // Constructing a Swap mutates the pools so I used cloneDeep
             const swap = await sorGetSwapsWithPools(
                         tIn,
                         tOut,
-                        this.mapSwapType(swapType),
+                        swapKind,
                         swapAmount,
                         cloneDeep(poolsFromDb),
                         // swapOptions, // I don't think we need specific swapOptions for this?
                     );
-            return new SwapResult(swap);
+            return new SwapResultV2(swap);
         } catch (err) {
             console.log(`sorV2 Service Error`, err);
-            return new SwapResult(null);
+            return new SwapResultV2(null);
         }
     };
 

@@ -7,14 +7,13 @@ export interface GetSwapsInput {
     swapAmount: string;
 }
 
-export interface Swap {
-    getSwap(queryFirst: boolean): Promise<GqlCowSwapApiResponse>;
-    assetIn: string;
-    assetOut: string;
+export interface SwapResult {
+    getSwapResponse(queryFirst: boolean): Promise<GqlCowSwapApiResponse>;
+    isValid: boolean;
     outputAmount: bigint;
     inputAmount: bigint;
 }
 
 export interface SwapService {
-    getSwap(inputs: GetSwapsInput): Promise<Swap>;
+    getSwapResult(inputs: GetSwapsInput): Promise<SwapResult>;
 }
