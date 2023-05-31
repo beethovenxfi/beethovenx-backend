@@ -15,6 +15,7 @@ import {
     RawPool,
     TokenAmount
 } from '@balancer/sdk';
+import { parseFixed } from '@ethersproject/bignumber';
 import cloneDeep from 'lodash/cloneDeep';
 import { GqlSorSwapType, GqlSwap } from '../../../schema';
 import { PrismaPoolType, PrismaToken } from '@prisma/client';
@@ -212,12 +213,26 @@ export class SorV2Service implements SwapService {
     }
 
     /**
+     * Remove linear pools that cause issues because of price rate.
+     * @param pools 
+     */
+    private filterLinearPoolsWithZeroRate(pools: PrismaPoolWithDynamic[]): PrismaPoolWithDynamic[] {
+        // 0x3c640f0d3036ad85afa2d5a9e32be651657b874f00000000000000000000046b is a linear pool with priceRate = 0.0 for some tokens which causes issues with b-sdk
+        return pools.filter((p) => {
+            const isLinearPriceRateOk = p.type === "LINEAR" ? !p.tokens.some(t => t.dynamicData?.priceRate === '0.0') : true;
+            return isLinearPriceRateOk;
+        })
+    }
+
+    /**
      * Map Prisma pools to b-sdk RawPool.
      * @param pools 
      * @returns 
      */
     private mapToRawPools(pools: PrismaPoolWithDynamic[]): RawPool[] {
-        return pools.map(prismaPool => {
+
+        const filteredPools = this.filterLinearPoolsWithZeroRate(pools);
+        return filteredPools.map(prismaPool => {
             // b-sdk: src/data/types.ts
             let rawPool: RawPool = {
                 id: prismaPool.id as Address,
