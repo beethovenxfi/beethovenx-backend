@@ -27,6 +27,8 @@ import { SanityContentService } from '../content/sanity-content.service';
 import { AnkrStakedFtmAprService } from '../pool/lib/apr-data-sources/fantom/ankr-staked-ftm-apr.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
 import { coingeckoService } from '../coingecko/coingecko.service';
+import { ReaperMultistratAprService } from '../pool/lib/apr-data-sources/reaper-multistrat-apr.service';
+import { AnkrStakedEthAprService } from '../pool/lib/apr-data-sources/fantom/ankr-staked-eth-apr.service';
 
 const fantomNetworkData: NetworkData = {
     chain: {
@@ -105,6 +107,7 @@ const fantomNetworkData: NetworkData = {
         poolDataQueryContract: '0x3e898A1A3aEFB543DA20232994aeDaD2ce7Fa856',
     },
     multicall: '0x66335d7ad8011f6aa3f48aadcb523b62b38ed961',
+    multicall3: '0xca11bde05977b3631167028862be2a173976ca11',
     masterchef: {
         address: '0x8166994d9ebBe5829EC86Bd81258149B87faCfd3',
         excludedFarmIds: [
@@ -124,7 +127,7 @@ const fantomNetworkData: NetworkData = {
     avgBlockSpeed: 1,
     sor: {
         main: {
-            url: 'https://seb3bxrechp46fx7h3d2ksmjce0minwk.lambda-url.ca-central-1.on.aws/',
+            url: 'https://2bz6hsr2y54svqgow7tbwwsrta0icouy.lambda-url.ca-central-1.on.aws/',
             maxPools: 8,
             forceRefresh: false,
             gasPrice: BigNumber.from(10),
@@ -146,10 +149,28 @@ const fantomNetworkData: NetworkData = {
     },
     reaper: {
         linearPoolFactories: ['0xd448c4156b8de31e56fdfc071c8d96459bb28119'],
+        multiStratLinearPoolIds: [
+            '0xa0051ab2c3eb7f17758428b02a07cf72eb0ef1a300000000000000000000071c',
+            '0x3c1420df122ac809b9d1ba77906f833764d6450100000000000000000000071b',
+            '0x685056d3a4e574b163d0fa05a78f1b0b3aa04a8000000000000000000000071a',
+            '0x442988091cdc18acb8912cd3fe062cda9233f9dc00000000000000000000071d',
+            '0xc385e76e575b2d71eb877c27dcc1608f77fada99000000000000000000000719',
+            '0x92502cd8e00f5b8e737b2ba203fdd7cd27b23c8f000000000000000000000718',
+        ],
         averageAPRAcrossLastNHarvests: 5,
     },
     beefy: {
         linearPools: [''],
+    },
+    spooky: {
+        xBooContract: '0x841fad6eae12c286d1fd18d1d525dffa75c7effe',
+    },
+    stader: {
+        sFtmxContract: '0xd7028092c830b5c8fce061af2e593413ebbc1fc1',
+    },
+    ankr: {
+        ankrFtmContract: '0xcfc785741dc0e98ad4c9f6394bb9d43cd1ef5179',
+        ankrEthContract: '0x12d8ce035c5de3ce39b1fdd4c1d5a745eaba3b8c',
     },
     datastudio: {
         main: {
@@ -182,15 +203,19 @@ export const fantomNetworkConfig: NetworkConfig = {
     contentService: new SanityContentService(),
     provider: new ethers.providers.JsonRpcProvider(fantomNetworkData.rpcUrl),
     poolAprServices: [
-        new SpookySwapAprService(tokenService),
+        new SpookySwapAprService(tokenService, fantomNetworkData.spooky!.xBooContract),
         new YearnVaultAprService(tokenService),
-        new StaderStakedFtmAprService(tokenService),
-        new AnkrStakedFtmAprService(tokenService),
+        new StaderStakedFtmAprService(tokenService, fantomNetworkData.stader!.sFtmxContract),
+        new AnkrStakedFtmAprService(tokenService, fantomNetworkData.ankr!.ankrFtmContract),
+        new AnkrStakedEthAprService(tokenService, fantomNetworkData.ankr!.ankrEthContract),
         new ReaperCryptAprService(
             fantomNetworkData.reaper.linearPoolFactories,
             fantomNetworkData.reaper.averageAPRAcrossLastNHarvests,
             tokenService,
+            fantomNetworkData.stader ? fantomNetworkData.stader.sFtmxContract : undefined,
+            fantomNetworkData.lido ? fantomNetworkData.lido.wstEthContract : undefined,
         ),
+        new ReaperMultistratAprService(fantomNetworkData.reaper.multiStratLinearPoolIds, tokenService),
         new PhantomStableAprService(fantomNetworkData.balancer.yieldProtocolFeePercentage),
         new BoostedPoolAprService(fantomNetworkData.balancer.yieldProtocolFeePercentage),
         new SwapFeeAprService(fantomNetworkData.balancer.swapProtocolFeePercentage),

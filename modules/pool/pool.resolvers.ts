@@ -261,6 +261,20 @@ const balancerResolvers: Resolvers = {
 
             return 'success';
         },
+        poolDeletePool: async (parent, { poolId }, context) => {
+            isAdminRoute(context);
+
+            await poolService.deletePool(poolId);
+
+            return 'success';
+        },
+        poolSyncAllPoolVersions: async (parent, {}, context) => {
+            isAdminRoute(context);
+
+            await poolService.syncPoolVersionForAllPools();
+
+            return 'success';
+        },
     },
 };
 

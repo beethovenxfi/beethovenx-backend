@@ -8,7 +8,7 @@ import { ReaperCryptAprService } from '../pool/lib/apr-data-sources/reaper-crypt
 import { PhantomStableAprService } from '../pool/lib/apr-data-sources/phantom-stable-apr.service';
 import { BoostedPoolAprService } from '../pool/lib/apr-data-sources/boosted-pool-apr.service';
 import { SwapFeeAprService } from '../pool/lib/apr-data-sources/swap-fee-apr.service';
-import { GaugeAprService } from '../pool/lib/apr-data-sources/ve-bal-guage-apr.service';
+import { GaugeAprService } from '../pool/lib/apr-data-sources/ve-bal-gauge-apr.service';
 import { GaugeStakingService } from '../pool/lib/staking/gauge-staking.service';
 import { BeetsPriceHandlerService } from '../token/lib/token-price-handlers/beets-price-handler.service';
 import { BptPriceHandlerService } from '../token/lib/token-price-handlers/bpt-price-handler.service';
@@ -21,6 +21,7 @@ import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph
 import { coingeckoService } from '../coingecko/coingecko.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
 import { BeefyVaultAprService } from '../pool/lib/apr-data-sources/beefy-vault-apr.service copy';
+import { ReaperMultistratAprService } from '../pool/lib/apr-data-sources/reaper-multistrat-apr.service';
 
 const optimismNetworkData: NetworkData = {
     chain: {
@@ -38,6 +39,7 @@ const optimismNetworkData: NetworkData = {
         blocks: 'https://api.thegraph.com/subgraphs/name/danielmkm/optimism-blocks',
         gauge: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-gauges-optimism',
         userBalances: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/user-bpt-balances-optimism',
+        veBalLocks: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-gauges',
     },
     eth: {
         address: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
@@ -69,6 +71,10 @@ const optimismNetworkData: NetworkData = {
     },
     bal: {
         address: '0xfe8b128ba8c78aabc59d4c64cee7ff28e9379921',
+    },
+    veBal: {
+        address: '0xc128a9954e6c874ea3d62ce62b468ba073093f25',
+        delegationProxy: '0x9da18982a33fd0c7051b19f0d7c76f2d5e7e017c',
     },
     balancer: {
         vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
@@ -114,6 +120,7 @@ const optimismNetworkData: NetworkData = {
         poolDataQueryContract: '0xB79C16EfD530e46b7A1499c1854f13f4Bd10f4DF',
     },
     multicall: '0x2DC0E2aa608532Da689e89e237dF582B783E552C',
+    multicall3: '0xca11bde05977b3631167028862be2a173976ca11',
     masterchef: {
         address: '0x0000000000000000000000000000000000000000',
         excludedFarmIds: [],
@@ -121,7 +128,7 @@ const optimismNetworkData: NetworkData = {
     avgBlockSpeed: 1,
     sor: {
         main: {
-            url: 'https://uu6cfghhd5lqa7py3nojxkivd40zuugb.lambda-url.ca-central-1.on.aws/',
+            url: 'https://nplks2oknz5lhxn6kpgxbfrxgm0hzicm.lambda-url.ca-central-1.on.aws/',
             maxPools: 8,
             forceRefresh: false,
             gasPrice: BigNumber.from(10),
@@ -143,6 +150,7 @@ const optimismNetworkData: NetworkData = {
             '0x19968d4b7126904fd665ed25417599df9604df83',
             '0xe4b88e745dce9084b9fc2439f85a9a4c5cd6f361',
         ],
+        multiStratLinearPoolIds: [],
         averageAPRAcrossLastNHarvests: 2,
     },
     beefy: {
@@ -154,6 +162,9 @@ const optimismNetworkData: NetworkData = {
     lido: {
         wstEthAprEndpoint: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
         wstEthContract: '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
+    },
+    rocket: {
+        rEthContract: '0x9bcef72be871e61ed4fbbc7630889bee758eb81d',
     },
     overnight: {
         aprEndpoint: 'https://api.overnight.fi/optimism',
@@ -189,19 +200,17 @@ export const optimismNetworkConfig: NetworkConfig = {
     contentService: new SanityContentService(),
     provider: new ethers.providers.JsonRpcProvider(optimismNetworkData.rpcUrl),
     poolAprServices: [
-        new RocketPoolStakedEthAprService(tokenService, optimismNetworkData.balancer.yieldProtocolFeePercentage),
-        new WstethAprService(
-            tokenService,
-            optimismNetworkData.lido!.wstEthAprEndpoint,
-            optimismNetworkData.lido!.wstEthContract,
-            optimismNetworkData.balancer.yieldProtocolFeePercentage,
-        ),
+        new RocketPoolStakedEthAprService(tokenService, optimismNetworkData.rocket!.rEthContract),
+        new WstethAprService(tokenService, optimismNetworkData.lido!.wstEthContract),
         new OvernightAprService(optimismNetworkData.overnight!.aprEndpoint, tokenService),
         new ReaperCryptAprService(
             optimismNetworkData.reaper.linearPoolFactories,
             optimismNetworkData.reaper.averageAPRAcrossLastNHarvests,
             tokenService,
+            optimismNetworkData.stader ? optimismNetworkData.stader.sFtmxContract : undefined,
+            optimismNetworkData.lido ? optimismNetworkData.lido.wstEthContract : undefined,
         ),
+        new ReaperMultistratAprService(optimismNetworkData.reaper.multiStratLinearPoolIds, tokenService),
         new BeefyVaultAprService(optimismNetworkData.beefy.linearPools, tokenService),
         new PhantomStableAprService(optimismNetworkData.balancer.yieldProtocolFeePercentage),
         new BoostedPoolAprService(optimismNetworkData.balancer.yieldProtocolFeePercentage),
@@ -317,6 +326,14 @@ export const optimismNetworkConfig: NetworkConfig = {
         {
             name: 'update-yield-capture',
             interval: every(1, 'hours'),
+        },
+        {
+            name: 'sync-vebal-balances',
+            interval: every(1, 'minutes'),
+        },
+        {
+            name: 'sync-vebal-totalSupply',
+            interval: every(5, 'minutes'),
         },
     ],
 };
