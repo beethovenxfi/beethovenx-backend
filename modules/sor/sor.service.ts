@@ -1,14 +1,8 @@
-import { GqlSorGetSwapsResponseNew, GqlSorSwapType } from '../../schema';
-import { networkContext } from '../network/network-context.service';
+import { GqlCowSwapApiResponse, GqlSorSwapType } from '../../schema';
+import { sorV1Service } from './sorV1/sorV1.service';
 import { sorV2Service } from './sorV2/sorV2.service';
-import { prisma } from '../../prisma/prisma-client';
-
-export interface GetSwapsInput {
-    tokenIn: string;
-    tokenOut: string;
-    swapType: GqlSorSwapType;
-    swapAmount: string;
-}
+import { GetSwapsInput, SwapResult } from './types';
+import { EMPTY_COWSWAP_RESPONSE } from './constants';
 
 export class SorService {
     public async getSwaps({
@@ -16,45 +10,72 @@ export class SorService {
         tokenOut,
         swapType,
         swapAmount,
-    }: GetSwapsInput): Promise<GqlSorGetSwapsResponseNew> {
-        const timestamp = Math.floor(Date.now() / 1000);
-
-        // TODO - SORV1 result - via API call to current API or using SORV1/pools directly?
-        // const sorV1Result = await sorV1Service.getSwaps(...);
-        const sorV1Result = 'TODO';
-
-        const sorV2Result = await sorV2Service.getSwaps({
+    }: GetSwapsInput): Promise<GqlCowSwapApiResponse> {
+        console.time('sorV1');
+        const swapV1 = await sorV1Service.getSwapResult({
             tokenIn,
             tokenOut,
             swapType,
             swapAmount,
         });
-
-        let isSorV1 = false;
-        // TODO - Compare V1 vs V2 result and return/log best
-
-        // Update db with best result so we can track performace
-        await prisma.prismaTradeResult.create({
-            data: {
-                id: `${timestamp}-${tokenIn}-${tokenOut}`,
-                timestamp,
-                chain: networkContext.chain,
-                tokenIn,
-                tokenOut,
-                swapAmount,
-                swapType,
-                sorV1Result,
-                sorV2Result: sorV2Result.result,
-                isSorV1
-            }
-        });
-
-        // TODO - Return in current CowSwap format so its plug and play
-        return {
+        console.timeEnd('sorV1');
+        console.time('sorV2');
+        const swapV2 = await sorV2Service.getSwapResult({
             tokenIn,
             tokenOut,
-            result: isSorV1 ? sorV1Result : sorV2Service.mapResultToCowSwap(sorV2Result.result)
+            swapType,
+            swapAmount,
+        });
+        console.timeEnd('sorV2');
+
+        if(!swapV1.isValid && !swapV2.isValid) return EMPTY_COWSWAP_RESPONSE(tokenIn, tokenOut, swapAmount);
+
+        const bestSwap = this.getBestSwap(swapV1, swapV2, swapType, tokenIn, tokenOut);
+        
+        try {
+            // Updates with latest onchain data before returning
+            return await bestSwap.getSwapResponse(true);
+        } catch (err) {
+            console.log(`Error Retrieving QuerySwap`);
+            console.log(err);
+            return EMPTY_COWSWAP_RESPONSE(tokenIn, tokenOut, swapAmount);
         }
+    }
+
+    /**
+     * Find best swap result for V1 vs V2 and return in CowSwap API format. Log if V1 wins.
+     * @param v1 
+     * @param v2 
+     * @param swapType 
+     * @returns 
+     */
+    private getBestSwap(v1: SwapResult, v2: SwapResult, swapType: GqlSorSwapType, assetIn: string, assetOut: string, debugOut=false): SwapResult {
+        // Useful for comparing
+        if(debugOut) {
+            console.log(`------ DEBUG`)
+            console.log(v1);
+            console.log(v2);
+        }
+
+        let isV1 = false;
+        if(!v1.isValid || !v2.isValid) {
+            isV1 = v1.isValid ? true : false;
+        }
+        else if(swapType === 'EXACT_IN') {
+            if(v2.outputAmount < v1.outputAmount) isV1 = true;
+        } else {
+            if(v2.inputAmount > v1.inputAmount) isV1 = true;      
+        }
+
+        if(isV1 === true) {
+            this.logResult(`V1`, v1, v2, swapType, assetIn, assetOut);
+            return v1;
+        } else return v2;
+    }
+
+    private logResult(logType: string, v1: SwapResult, v2: SwapResult, swapType: GqlSorSwapType, assetIn: string, assetOut: string) {
+        // console.log() will log to cloudwatch
+        console.log('SOR Service', logType, swapType, assetIn, assetOut, v1.inputAmount, v1.outputAmount, v2.inputAmount, v2.outputAmount);
     }
 }
 

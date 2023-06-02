@@ -1,11 +1,10 @@
 extend type Query {
-    sorGetSwapsNew(
+    sorGetSwaps(
         tokenIn: String!
         tokenOut: String!
         swapType: GqlSorSwapType!
         swapAmount: BigDecimal! #expected in raw amount
-    ): GqlSorGetSwapsResponseNew!
-    tradeResults: [GqlTradeResults]!
+    ): GqlCowSwapApiResponse!
 }
 
 enum GqlSorSwapType {
@@ -13,21 +12,23 @@ enum GqlSorSwapType {
     EXACT_OUT
 }
 
-type GqlSorGetSwapsResponseNew {
+type GqlCowSwapApiResponse {
+    tokenAddresses: [String!]!
+    swaps: [GqlSwap!]!
+    swapAmount: String!
+    swapAmountForSwaps: String!
+    returnAmount: String!
+    returnAmountFromSwaps: String! 
+    returnAmountConsideringFees: String!
     tokenIn: String!
     tokenOut: String!
-    result: String!
+    marketSp: String!
 }
 
-type GqlTradeResults {
-    id: String!
-    timestamp: Int!
-    chain: String!
-    tokenIn: String!
-    tokenOut: String!
-    swapAmount: String!
-    swapType: String!
-    sorV1Result: String!
-    sorV2Result: String!
-    isSorV1: Boolean!
+type GqlSwap {
+    poolId: String!
+    assetInIndex: Int!
+    assetOutIndex: Int!
+    amount: String!
+    userData: String!
 }

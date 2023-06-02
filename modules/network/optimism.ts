@@ -133,6 +133,7 @@ const optimismNetworkData: NetworkData = {
             forceRefresh: false,
             gasPrice: BigNumber.from(10),
             swapGas: BigNumber.from('1000000'),
+            poolIdsToExclude: [],
         },
         canary: {
             url: 'https://svlitjilcr5qtp7iolimlrlg7e0ipupj.lambda-url.eu-central-1.on.aws/',
@@ -140,6 +141,7 @@ const optimismNetworkData: NetworkData = {
             forceRefresh: false,
             gasPrice: BigNumber.from(10),
             swapGas: BigNumber.from('1000000'),
+            poolIdsToExclude: [],
         },
     },
     yearn: {

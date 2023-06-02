@@ -11,68 +11,140 @@ import {
     RawWeightedPool, 
     RawComposableStablePool, 
     RawMetaStablePool,
-    Swap
+    Swap as SwapSdk,
+    RawPool,
+    TokenAmount
 } from '@balancer/sdk';
-import { GqlSorGetSwapsResponseNew, GqlSorSwapType } from '../../../schema';
+import { parseFixed } from '@ethersproject/bignumber';
+import cloneDeep from 'lodash/cloneDeep';
+import { GqlSorSwapType, GqlSwap } from '../../../schema';
 import { PrismaPoolType, PrismaToken } from '@prisma/client';
-import { GetSwapsInput } from '../sor.service';
+import { GetSwapsInput, SwapResult, SwapService } from '../types';
 import { tokenService } from '../../token/token.service';
 import { networkContext } from '../../network/network-context.service';
 import { prisma } from '../../../prisma/prisma-client';
 import { PrismaPoolWithDynamic, prismaPoolWithDynamic } from '../../../prisma/prisma-types';
-import { RawPool } from '@balancer/sdk';
 import { HumanAmount, SupportedRawPoolTypes } from '@balancer/sdk';
+import { env } from '../../../app/env';
+import { DeploymentEnv } from '../../network/network-config-types';
+import { Cache, CacheClass } from 'memory-cache';
+import { GqlCowSwapApiResponse } from '../../../schema';
 
-import { getSwapCompare } from './temp';
+const ALL_BASEPOOLS_CACHE_KEY = `basePools:all`;
 
-// TODO - Check if this has been deployed to same address across networks?
-export const SOR_QUERIES = '0x1814a3b3e4362caf4eb54cd85b82d39bd7b34e41';
+class SwapResultV2 implements SwapResult {
+    private swap: SwapSdk | null;
+    public inputAmount: bigint = BigInt(0);
+    public outputAmount: bigint = BigInt(0);
+    public isValid: boolean;
 
-export class SorV2Service {
-    public async getSwaps({
+    constructor(swap: SwapSdk | null) {
+        if(swap === null) {
+            this.isValid = false;
+            this.swap = null;
+        } else {
+            this.isValid = true;
+            this.swap = swap;
+            this.inputAmount = swap.inputAmount.amount;
+            this.outputAmount = swap.outputAmount.amount;
+        }
+    }
+
+    async getSwapResponse(queryFirst = false): Promise<GqlCowSwapApiResponse> {
+        if(!this.isValid || this.swap === null) throw new Error('No Response - Invalid Swap')
+
+        if(!queryFirst)
+            return this.mapResultToCowSwap(this.swap, this.swap.inputAmount, this.swap.outputAmount);
+        else {
+            // Needs node >= 18 (https://github.com/wagmi-dev/viem/discussions/147)
+            const updatedResult = await this.swap.query(networkContext.data.rpcUrl);
+            // console.log(`UPDATE:`, this.swap.quote.amount.toString(), updatedResult.amount.toString());
+
+            const ip = this.swap.swapKind === SwapKind.GivenIn ? this.swap.inputAmount : updatedResult;
+            const op = this.swap.swapKind === SwapKind.GivenIn ? updatedResult : this.swap.outputAmount;
+
+            return this.mapResultToCowSwap(this.swap, ip, op);
+        }
+    }
+
+    /**
+     * Maps Swap to GqlCowSwapApiResponse which is what current CowSwap Solver uses.
+     * @param swap 
+     * @returns 
+     */
+    private mapResultToCowSwap(swap: SwapSdk, inputAmount: TokenAmount, outputAmount: TokenAmount): GqlCowSwapApiResponse {
+        let swaps: GqlSwap[];
+        if (swap.swaps instanceof Array) {
+            swaps = swap.swaps.map(swap => {
+                return {
+                    ...swap,
+                    amount: swap.amount.toString(),
+                    assetInIndex: Number(swap.assetInIndex),
+                    assetOutIndex: Number(swap.assetOutIndex),
+                }
+            });
+        } else {
+            swaps = [{
+                amount: inputAmount.amount.toString(),
+                assetInIndex: swap.assets.indexOf(swap.swaps.assetIn),
+                assetOutIndex: swap.assets.indexOf(swap.swaps.assetOut),
+                poolId: swap.swaps.poolId,
+                userData: swap.swaps.userData
+            }];
+        }
+        const returnAmount = swap.swapKind === SwapKind.GivenIn ? outputAmount.amount.toString() : inputAmount.amount.toString();
+        const swapAmount = swap.swapKind === SwapKind.GivenIn ? inputAmount.amount.toString() : outputAmount.amount.toString(); 
+        return {
+            marketSp: '', // TODO - Check if CowSwap actually use this? Could this be calculate using out/in?
+            returnAmount,
+            returnAmountConsideringFees: returnAmount, // TODO - Check if CowSwap actually use this?
+            returnAmountFromSwaps: returnAmount, // TODO - Check if CowSwap actually use this?
+            swapAmount,
+            swapAmountForSwaps: swapAmount, // TODO - Check if CowSwap actually use this?
+            swaps,
+            tokenAddresses: swap.assets,
+            tokenIn: swap.inputAmount.token.address,
+            tokenOut: swap.outputAmount.token.address,
+        }
+    }
+}
+
+export class SorV2Service implements SwapService {
+    cache: CacheClass<string, BasePool[]>;
+
+    constructor() {
+        this.cache = new Cache<string, BasePool[]>();
+    }
+
+    public async getSwapResult({
         tokenIn,
         tokenOut,
         swapType,
         swapAmount,
-    }: GetSwapsInput): Promise<GqlSorGetSwapsResponseNew> {
-        // TODO - This takes ~1.262s on my local machine. Is this fast enough? Any obvious ways to improve?
-        console.time('poolsFromDb');
-        const poolsFromDb = await this.getBasePoolsFromDb();
-        console.timeEnd('poolsFromDb');
+    }: GetSwapsInput): Promise<SwapResult> {
+        console.time('getBasePools');
+        const poolsFromDb = await this.getBasePools();
+        console.timeEnd('getBasePools');
         const chainId = networkContext.chainId as unknown as ChainId;
         const tIn = await this.getToken(tokenIn as Address, chainId);
         const tOut = await this.getToken(tokenOut as Address, chainId);
-        const swap = await sorGetSwapsWithPools(
-                    tIn,
-                    tOut,
-                    this.mapSwapType(swapType),
-                    swapAmount,
-                    poolsFromDb,
-                    // swapOptions, // TODO - Handle properly
-                );
-
-        if (!swap) throw new Error('Swap is undefined');
-        console.log(`Swap (db pools)`);
-        console.log(poolsFromDb.length);
-        console.log(swap.swaps);
-        console.log(swap.outputAmount.amount.toString());
-        console.log(`------------------`);
-
-        // Just using to compare results against onchain pool calls
-        // await getSwapCompare(tIn, tOut, swapAmount);
-
-        // TODO - Update with proper required result data
-        return {
-            tokenIn,
-            tokenOut,
-            result: swap.outputAmount.amount.toString()
-        }  
-    }
-
-    public mapResultToCowSwap(swap: string): string {
-        // TODO - match existing CowSwap SOR API format so its plug and play
-        return swap;
-    }
+        const swapKind = this.mapSwapType(swapType);
+        try {
+            // Constructing a Swap mutates the pools so I used cloneDeep
+            const swap = await sorGetSwapsWithPools(
+                        tIn,
+                        tOut,
+                        swapKind,
+                        swapAmount,
+                        cloneDeep(poolsFromDb),
+                        // swapOptions, // I don't think we need specific swapOptions for this?
+                    );
+            return new SwapResultV2(swap);
+        } catch (err) {
+            console.log(`sorV2 Service Error`, err);
+            return new SwapResultV2(null);
+        }
+    };
 
     /**
      * Gets a b-sdk Token based off tokenAddr.
@@ -105,6 +177,15 @@ export class SorV2Service {
         return swapType === "EXACT_IN" ? SwapKind.GivenIn : SwapKind.GivenOut;
     }
 
+    private async getBasePools(): Promise<BasePool[]> {
+        let basePools: BasePool[] | null = this.cache.get(`${ALL_BASEPOOLS_CACHE_KEY}:${networkContext.chainId}`);
+        if (!basePools) {
+            basePools = await this.getBasePoolsFromDb();
+            this.cache.put(`${ALL_BASEPOOLS_CACHE_KEY}:${networkContext.chainId}`, basePools, 5 * 60 * 1000);
+        }
+        return basePools;
+    }
+
     /**
      * Fetch pools from Prisma and map to b-sdk BasePool.
      * @returns 
@@ -119,23 +200,28 @@ export class SorV2Service {
                     },
                     swapEnabled: true,
                 },
+                NOT: {
+                    id: {
+                        in: networkContext.data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].poolIdsToExclude,
+                    }
+                }
             },
             include: prismaPoolWithDynamic.include
         });
         const rawPools = this.mapToRawPools(pools);
-        // TODO - The pools below cause issue with b-sdk maths. Both have a token with balance = 0 so maybe that's issue?
-        const linearPoolsToIgnore = [
-            "0xbfa413a2ff0f20456d57b643746133f54bfe0cd20000000000000000000004c3", 
-            "0xdc063deafce952160ec112fa382ac206305657e60000000000000000000004c4", 
-        ]
+        return this.mapToBasePools(rawPools);
+    }
 
-        const basePools = this.mapToBasePools(rawPools.filter(p => {
-            if (p.poolType == 'Linear') {
-                return !linearPoolsToIgnore.includes(p.id);
-            } else return true;
-        }));
-        // const basePools = this.mapToBasePools(rawPools);
-        return basePools;
+    /**
+     * Remove linear pools that cause issues because of price rate.
+     * @param pools 
+     */
+    private filterLinearPoolsWithZeroRate(pools: PrismaPoolWithDynamic[]): PrismaPoolWithDynamic[] {
+        // 0x3c640f0d3036ad85afa2d5a9e32be651657b874f00000000000000000000046b is a linear pool with priceRate = 0.0 for some tokens which causes issues with b-sdk
+        return pools.filter((p) => {
+            const isLinearPriceRateOk = p.type === "LINEAR" ? !p.tokens.some(t => t.dynamicData?.priceRate === '0.0') : true;
+            return isLinearPriceRateOk;
+        })
     }
 
     /**
@@ -144,13 +230,15 @@ export class SorV2Service {
      * @returns 
      */
     private mapToRawPools(pools: PrismaPoolWithDynamic[]): RawPool[] {
-        return pools.map(prismaPool => {
+
+        const filteredPools = this.filterLinearPoolsWithZeroRate(pools);
+        return filteredPools.map(prismaPool => {
             // b-sdk: src/data/types.ts
             let rawPool: RawPool = {
                 id: prismaPool.id as Address,
                 address: prismaPool.address as Address,
                 poolType: this.mapRawPoolType(prismaPool.type),
-                poolTypeVersion: 1, // TODO - Can we add this to Prisma??
+                poolTypeVersion: prismaPool.version,
                 tokensList: prismaPool.tokens.map(t => t.address as Address),
                 swapEnabled: prismaPool.dynamicData!.swapEnabled,
                 swapFee: prismaPool.dynamicData!.swapFee as unknown as HumanAmount,
@@ -227,11 +315,12 @@ export class SorV2Service {
             case PrismaPoolType.LIQUIDITY_BOOTSTRAPPING:
                 return 'LiquidityBootstrapping';
             case PrismaPoolType.STABLE:
-                return 'Stable'; // TODO - Is there a ComposableStable/Stable differentiation in Prisma?
+                return 'Stable';
             case PrismaPoolType.META_STABLE:
                 return 'MetaStable';
             case PrismaPoolType.PHANTOM_STABLE:
-                return 'ComposableStable'; // b-sdk just treats these as ComposableStable
+                // Composablestables are PHANTOM_STABLE in Prisma. b-sdk treats Phantoms as ComposableStable.
+                return 'ComposableStable';
             case PrismaPoolType.LINEAR:
                 return 'Linear';
             default:
