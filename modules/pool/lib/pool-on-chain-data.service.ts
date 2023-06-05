@@ -33,6 +33,8 @@ interface PoolDataQueryConfig {
     loadScalingFactors: boolean;
     loadAmps: boolean;
     loadRates: boolean;
+    loadInRecoveryMode: boolean;
+    loadIsPaused: boolean;
     blockNumber: number;
     totalSupplyTypes: PoolQueriesTotalSupplyType[];
     swapFeeTypes: PoolQuerySwapFeeType[];
@@ -52,6 +54,8 @@ const defaultPoolDataQueryConfig: PoolDataQueryConfig = {
     loadScalingFactors: false,
     loadAmps: false,
     loadRates: false,
+    loadInRecoveryMode: false,
+    loadIsPaused: false,
     blockNumber: 0,
     totalSupplyTypes: [],
     swapFeeTypes: [],
@@ -65,7 +69,7 @@ const defaultPoolDataQueryConfig: PoolDataQueryConfig = {
 interface MulticallExecuteResult {
     targets?: string[];
     swapEnabled?: boolean;
-    pausedState?: [boolean, string, string]
+    pausedState?: [boolean, string, string];
 }
 
 const SUPPORTED_POOL_TYPES: PrismaPoolType[] = [
@@ -111,8 +115,6 @@ export class PoolOnChainDataService {
             },
         });
 
-        console.log("Filtered pools: ", filteredPools);
-
         const poolIdsFromDb = filteredPools.map((pool) => pool.id);
 
         const weightedPoolIndexes: number[] = [];
@@ -140,8 +142,6 @@ export class PoolOnChainDataService {
         }
 
         const ratePoolsIndexes = [...linearPoolIdexes, ...gyroPoolIdexes];
-
-        console.log("Querying pool data");
 
         const queryPoolDataResult = await this.queryPoolData({
             poolIds: poolIdsFromDb,
@@ -206,8 +206,6 @@ export class PoolOnChainDataService {
             ignored: queryPoolDataResult.ignoreIdxs.some((index) => index.eq(i)),
         }));
 
-        console.log("Getting token prices")
-
         const tokenPrices = await this.tokenService.getTokenPrices();
 
         const abis: any = Object.values(
@@ -216,8 +214,6 @@ export class PoolOnChainDataService {
                 [...ElementPoolAbi, ...LinearPoolAbi, ...LiquidityBootstrappingPoolAbi].map((row) => [row.name, row]),
             ),
         );
-
-        console.log("Calling multicall", networkContext.data.multicall, " abi: ", abis);
 
         const multiPool = new Multicaller(networkContext.data.multicall, provider, abis);
 
@@ -228,21 +224,24 @@ export class PoolOnChainDataService {
             }
 
             if (pool.type === 'LINEAR') {
-                console.log("Multipool call linear")
                 multiPool.call(`${pool.id}.targets`, pool.address, 'getTargets');
             }
 
             if (pool.type === 'LIQUIDITY_BOOTSTRAPPING' || pool.type === 'INVESTMENT') {
-                console.log("Multipool call lbp")
                 multiPool.call(`${pool.id}.swapEnabled`, pool.address, 'getSwapEnabled');
             }
 
-            if (pool.type === 'LINEAR' || pool.type === 'META_STABLE' || pool.type === 'PHANTOM_STABLE' || pool.type === 'STABLE' || pool.type === 'WEIGHTED') {
+            if (
+                pool.type === 'LINEAR' ||
+                pool.type === 'META_STABLE' ||
+                pool.type === 'PHANTOM_STABLE' ||
+                pool.type === 'STABLE' ||
+                pool.type === 'WEIGHTED'
+            ) {
                 multiPool.call(`${pool.id}.pausedState`, pool.address, 'getPausedState');
             }
         });
 
-        console.log("executing multicall ", multiPool.numCalls);
         let poolsOnChainData = {} as Record<string, MulticallExecuteResult>;
 
         try {
@@ -321,12 +320,10 @@ export class PoolOnChainDataService {
                 const swapFee = formatFixed(poolData.swapFee, 18);
                 const totalShares = formatFixed(poolData.totalSupply, 18);
                 let swapEnabled: boolean | undefined;
-                if(typeof multicallResult?.swapEnabled !== 'undefined')
-                    swapEnabled =  multicallResult.swapEnabled;
-                else if(typeof multicallResult?.pausedState !== 'undefined')
+                if (typeof multicallResult?.swapEnabled !== 'undefined') swapEnabled = multicallResult.swapEnabled;
+                else if (typeof multicallResult?.pausedState !== 'undefined')
                     swapEnabled = !multicallResult.pausedState[0];
-                else
-                    swapEnabled = pool.dynamicData?.swapEnabled;
+                else swapEnabled = pool.dynamicData?.swapEnabled;
 
                 if (
                     pool.dynamicData &&
@@ -436,8 +433,6 @@ export class PoolOnChainDataService {
             BalancerPoolDataQueryAbi,
             networkContext.provider,
         );
-
-        console.log("Contract address: ", networkContext.data.balancer.poolDataQueryContract)
 
         const response = await contract.getPoolData(poolIds, {
             ...defaultPoolDataQueryConfig,
