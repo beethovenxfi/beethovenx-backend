@@ -111,6 +111,8 @@ export class PoolOnChainDataService {
             },
         });
 
+        console.log("Filtered pools: ", filteredPools);
+
         const poolIdsFromDb = filteredPools.map((pool) => pool.id);
 
         const weightedPoolIndexes: number[] = [];
@@ -138,6 +140,8 @@ export class PoolOnChainDataService {
         }
 
         const ratePoolsIndexes = [...linearPoolIdexes, ...gyroPoolIdexes];
+
+        console.log("Querying pool data");
 
         const queryPoolDataResult = await this.queryPoolData({
             poolIds: poolIdsFromDb,
@@ -202,6 +206,8 @@ export class PoolOnChainDataService {
             ignored: queryPoolDataResult.ignoreIdxs.some((index) => index.eq(i)),
         }));
 
+        console.log("Getting token prices")
+
         const tokenPrices = await this.tokenService.getTokenPrices();
 
         const abis: any = Object.values(
@@ -210,6 +216,8 @@ export class PoolOnChainDataService {
                 [...ElementPoolAbi, ...LinearPoolAbi, ...LiquidityBootstrappingPoolAbi].map((row) => [row.name, row]),
             ),
         );
+
+        console.log("Calling multicall", networkContext.data.multicall, " abi: ", abis);
 
         const multiPool = new Multicaller(networkContext.data.multicall, provider, abis);
 
@@ -220,10 +228,12 @@ export class PoolOnChainDataService {
             }
 
             if (pool.type === 'LINEAR') {
+                console.log("Multipool call linear")
                 multiPool.call(`${pool.id}.targets`, pool.address, 'getTargets');
             }
 
             if (pool.type === 'LIQUIDITY_BOOTSTRAPPING' || pool.type === 'INVESTMENT') {
+                console.log("Multipool call lbp")
                 multiPool.call(`${pool.id}.swapEnabled`, pool.address, 'getSwapEnabled');
             }
 
@@ -232,6 +242,7 @@ export class PoolOnChainDataService {
             }
         });
 
+        console.log("executing multicall ", multiPool.numCalls);
         let poolsOnChainData = {} as Record<string, MulticallExecuteResult>;
 
         try {
@@ -425,6 +436,8 @@ export class PoolOnChainDataService {
             BalancerPoolDataQueryAbi,
             networkContext.provider,
         );
+
+        console.log("Contract address: ", networkContext.data.balancer.poolDataQueryContract)
 
         const response = await contract.getPoolData(poolIds, {
             ...defaultPoolDataQueryConfig,

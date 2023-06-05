@@ -14,16 +14,21 @@ export class PoolSyncService {
         const lastSyncBlock = lastSync?.blockNumber ?? 0;
         const latestBlock = await networkContext.provider.getBlockNumber();
 
-        const startBlock = lastSyncBlock + 1;
-        const endBlock =
-            latestBlock - startBlock > networkContext.data.rpcMaxBlockRange
-                ? startBlock + networkContext.data.rpcMaxBlockRange
-                : latestBlock;
+        // const startBlock = lastSyncBlock + 1;
+        // const endBlock =
+        //     latestBlock - startBlock > networkContext.data.rpcMaxBlockRange
+        //         ? startBlock + networkContext.data.rpcMaxBlockRange
+        //         : latestBlock;
+
+        const startBlock = 552170;
+        const endBlock = 552190;
+        console.log("Start block: ", startBlock, " end block: ", endBlock);
 
         // no new blocks have been minted, needed for slow networks
         if (startBlock > endBlock) {
             return;
         }
+
 
         const contract = getContractAt(networkContext.data.balancer.vault, VaultAbi);
 
@@ -32,6 +37,7 @@ export class PoolSyncService {
             startBlock,
             endBlock,
         );
+        console.log("Events: ", events);
         const filteredEvents = events.filter((event) =>
             ['PoolBalanceChanged', 'PoolBalanceManaged', 'Swap'].includes(event.event!),
         );
@@ -40,7 +46,11 @@ export class PoolSyncService {
             console.log(`Syncing ${poolIds.length} pools`);
             await poolService.updateOnChainDataForPools(poolIds, endBlock);
 
+            console.log('Syncing swaps');
+
             const poolsWithNewSwaps = await poolService.syncSwapsForLast48Hours();
+
+            console.log("Updating volume and fee values")
             await poolService.updateVolumeAndFeeValuesForPools(poolsWithNewSwaps);
         }
 
