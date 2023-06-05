@@ -324,10 +324,13 @@ export class PoolOnChainDataService {
                 const swapFee = formatFixed(poolData.swapFee, 18);
                 const totalShares = formatFixed(poolData.totalSupply, 18);
                 let swapEnabled: boolean | undefined;
-                if (typeof multicallResult?.swapEnabled !== 'undefined') swapEnabled = multicallResult.swapEnabled;
-                else if (typeof multicallResult?.pausedState !== 'undefined')
+                if (typeof multicallResult?.swapEnabled !== 'undefined') {
+                    swapEnabled = multicallResult.swapEnabled;
+                } else if (typeof multicallResult?.pausedState !== 'undefined') {
                     swapEnabled = !multicallResult.pausedState[0];
-                else swapEnabled = pool.dynamicData?.swapEnabled;
+                } else {
+                    swapEnabled = pool.dynamicData?.swapEnabled;
+                }
 
                 if (
                     pool.dynamicData &&
