@@ -65,7 +65,7 @@ const defaultPoolDataQueryConfig: PoolDataQueryConfig = {
 interface MulticallExecuteResult {
     targets?: string[];
     swapEnabled?: boolean;
-    pausedState?: [boolean, string, string]
+    pausedState?: [boolean, string, string];
 }
 
 const SUPPORTED_POOL_TYPES: PrismaPoolType[] = [
@@ -227,7 +227,13 @@ export class PoolOnChainDataService {
                 multiPool.call(`${pool.id}.swapEnabled`, pool.address, 'getSwapEnabled');
             }
 
-            if (pool.type === 'LINEAR' || pool.type === 'META_STABLE' || pool.type === 'PHANTOM_STABLE' || pool.type === 'STABLE' || pool.type === 'WEIGHTED') {
+            if (
+                pool.type === 'LINEAR' ||
+                pool.type === 'META_STABLE' ||
+                pool.type === 'PHANTOM_STABLE' ||
+                pool.type === 'STABLE' ||
+                pool.type === 'WEIGHTED'
+            ) {
                 multiPool.call(`${pool.id}.pausedState`, pool.address, 'getPausedState');
             }
         });
@@ -246,7 +252,15 @@ export class PoolOnChainDataService {
         for (const poolData of poolDataPerPool) {
             if (poolData.ignored) {
                 console.log(`Pool query return with error, skipping: ${poolData.id}`);
-                continue;
+                // Set swapEnabled to false to avoid issues with b-sdk considering these pools for swaps
+                await prisma.prismaPoolDynamicData.update({
+                    where: { id_chain: { id: poolData.id, chain: networkContext.chain } },
+                    data: {
+                        swapEnabled: false,
+                        blockNumber,
+                    },
+                });
+                                continue;
             }
             const poolId = poolData.id;
             const pool = filteredPools.find((pool) => pool.id === poolId)!;
@@ -310,12 +324,10 @@ export class PoolOnChainDataService {
                 const swapFee = formatFixed(poolData.swapFee, 18);
                 const totalShares = formatFixed(poolData.totalSupply, 18);
                 let swapEnabled: boolean | undefined;
-                if(typeof multicallResult?.swapEnabled !== 'undefined')
-                    swapEnabled =  multicallResult.swapEnabled;
-                else if(typeof multicallResult?.pausedState !== 'undefined')
+                if (typeof multicallResult?.swapEnabled !== 'undefined') swapEnabled = multicallResult.swapEnabled;
+                else if (typeof multicallResult?.pausedState !== 'undefined')
                     swapEnabled = !multicallResult.pausedState[0];
-                else
-                    swapEnabled = pool.dynamicData?.swapEnabled;
+                else swapEnabled = pool.dynamicData?.swapEnabled;
 
                 if (
                     pool.dynamicData &&
