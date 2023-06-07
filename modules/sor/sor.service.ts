@@ -1,14 +1,14 @@
 import { networkContext } from '../network/network-context.service';
 import { GqlCowSwapApiResponse, GqlSorSwapType } from '../../schema';
-import { sorV1Service } from './sorV1/sorV1.service';
+import { sorV1BalancerService } from './sorV1Balancer/sorV1Balancer.service';
 import { sorV2Service } from './sorV2/sorV2.service';
 import { GetSwapsInput, SwapResult } from './types';
 import { EMPTY_COWSWAP_RESPONSE } from './constants';
 
 export class SorService {
-    public async getSwaps({ tokenIn, tokenOut, swapType, swapAmount }: GetSwapsInput): Promise<GqlCowSwapApiResponse> {
+    public async getCowSwaps({ tokenIn, tokenOut, swapType, swapAmount }: GetSwapsInput): Promise<GqlCowSwapApiResponse> {
         console.time(`sorV1-${networkContext.chain}`);
-        const swapV1 = await sorV1Service.getSwapResult({
+        const swapV1 = await sorV1BalancerService.getSwapResult({
             tokenIn,
             tokenOut,
             swapType,
@@ -30,7 +30,7 @@ export class SorService {
 
         try {
             // Updates with latest onchain data before returning
-            return await bestSwap.getSwapResponse(true);
+            return await bestSwap.getCowSwapResponse(true);
         } catch (err) {
             console.log(`Error Retrieving QuerySwap`);
             console.log(err);

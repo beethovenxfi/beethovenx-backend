@@ -29,7 +29,7 @@ class SwapResultV1 implements SwapResult {
         }
     }
 
-    async getSwapResponse(queryFirst = false): Promise<GqlCowSwapApiResponse> {
+    async getCowSwapResponse(queryFirst = false): Promise<GqlCowSwapApiResponse> {
         if (!this.isValid || this.swap === null) throw new Error('No Response - Invalid Swap');
 
         if (queryFirst) {
@@ -63,7 +63,7 @@ class SwapResultV1 implements SwapResult {
         return swapType === 'EXACT_IN' ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut;
     }
 }
-export class SorV1Service implements SwapService {
+export class SorV1BalancerService implements SwapService {
     public async getSwapResult({ tokenIn, tokenOut, swapType, swapAmount }: GetSwapsInput): Promise<SwapResult> {
         try {
             const swap = await this.querySorBalancer(swapType, tokenIn, tokenOut, swapAmount);
@@ -137,4 +137,4 @@ export class SorV1Service implements SwapService {
     }
 }
 
-export const sorV1Service = new SorV1Service();
+export const sorV1BalancerService = new SorV1BalancerService();

@@ -8,7 +8,7 @@ export interface GetSwapsInput {
 }
 
 export interface SwapResult {
-    getSwapResponse(queryFirst: boolean): Promise<GqlCowSwapApiResponse>;
+    getCowSwapResponse(queryFirst: boolean): Promise<GqlCowSwapApiResponse>;
     isValid: boolean;
     outputAmount: bigint;
     inputAmount: bigint;

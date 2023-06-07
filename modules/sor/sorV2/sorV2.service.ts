@@ -50,7 +50,7 @@ class SwapResultV2 implements SwapResult {
         }
     }
 
-    async getSwapResponse(queryFirst = false): Promise<GqlCowSwapApiResponse> {
+    async getCowSwapResponse(queryFirst = false): Promise<GqlCowSwapApiResponse> {
         if (!this.isValid || this.swap === null) throw new Error('No Response - Invalid Swap');
 
         if (!queryFirst) return this.mapResultToCowSwap(this.swap, this.swap.inputAmount, this.swap.outputAmount);
