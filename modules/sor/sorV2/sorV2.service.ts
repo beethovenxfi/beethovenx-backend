@@ -1,19 +1,19 @@
-import { 
-    BasePool, 
-    ChainId,  
-    sorGetSwapsWithPools, 
-    Token, 
-    Address, 
-    SwapKind, 
-    sorParseRawPools, 
-    RawStablePool, 
-    RawLinearPool, 
-    RawWeightedPool, 
-    RawComposableStablePool, 
+import {
+    BasePool,
+    ChainId,
+    sorGetSwapsWithPools,
+    Token,
+    Address,
+    SwapKind,
+    sorParseRawPools,
+    RawStablePool,
+    RawLinearPool,
+    RawWeightedPool,
+    RawComposableStablePool,
     RawMetaStablePool,
     Swap as SwapSdk,
     RawPool,
-    TokenAmount
+    TokenAmount,
 } from '@balancer/sdk';
 import { parseFixed } from '@ethersproject/bignumber';
 import cloneDeep from 'lodash/cloneDeep';
@@ -39,7 +39,7 @@ class SwapResultV2 implements SwapResult {
     public isValid: boolean;
 
     constructor(swap: SwapSdk | null) {
-        if(swap === null) {
+        if (swap === null) {
             this.isValid = false;
             this.swap = null;
         } else {
@@ -51,10 +51,9 @@ class SwapResultV2 implements SwapResult {
     }
 
     async getSwapResponse(queryFirst = false): Promise<GqlCowSwapApiResponse> {
-        if(!this.isValid || this.swap === null) throw new Error('No Response - Invalid Swap')
+        if (!this.isValid || this.swap === null) throw new Error('No Response - Invalid Swap');
 
-        if(!queryFirst)
-            return this.mapResultToCowSwap(this.swap, this.swap.inputAmount, this.swap.outputAmount);
+        if (!queryFirst) return this.mapResultToCowSwap(this.swap, this.swap.inputAmount, this.swap.outputAmount);
         else {
             // Needs node >= 18 (https://github.com/wagmi-dev/viem/discussions/147)
             const updatedResult = await this.swap.query(networkContext.data.rpcUrl);
@@ -69,31 +68,39 @@ class SwapResultV2 implements SwapResult {
 
     /**
      * Maps Swap to GqlCowSwapApiResponse which is what current CowSwap Solver uses.
-     * @param swap 
-     * @returns 
+     * @param swap
+     * @returns
      */
-    private mapResultToCowSwap(swap: SwapSdk, inputAmount: TokenAmount, outputAmount: TokenAmount): GqlCowSwapApiResponse {
+    private mapResultToCowSwap(
+        swap: SwapSdk,
+        inputAmount: TokenAmount,
+        outputAmount: TokenAmount,
+    ): GqlCowSwapApiResponse {
         let swaps: GqlSwap[];
         if (swap.swaps instanceof Array) {
-            swaps = swap.swaps.map(swap => {
+            swaps = swap.swaps.map((swap) => {
                 return {
                     ...swap,
                     amount: swap.amount.toString(),
                     assetInIndex: Number(swap.assetInIndex),
                     assetOutIndex: Number(swap.assetOutIndex),
-                }
+                };
             });
         } else {
-            swaps = [{
-                amount: inputAmount.amount.toString(),
-                assetInIndex: swap.assets.indexOf(swap.swaps.assetIn),
-                assetOutIndex: swap.assets.indexOf(swap.swaps.assetOut),
-                poolId: swap.swaps.poolId,
-                userData: swap.swaps.userData
-            }];
+            swaps = [
+                {
+                    amount: inputAmount.amount.toString(),
+                    assetInIndex: swap.assets.indexOf(swap.swaps.assetIn),
+                    assetOutIndex: swap.assets.indexOf(swap.swaps.assetOut),
+                    poolId: swap.swaps.poolId,
+                    userData: swap.swaps.userData,
+                },
+            ];
         }
-        const returnAmount = swap.swapKind === SwapKind.GivenIn ? outputAmount.amount.toString() : inputAmount.amount.toString();
-        const swapAmount = swap.swapKind === SwapKind.GivenIn ? inputAmount.amount.toString() : outputAmount.amount.toString(); 
+        const returnAmount =
+            swap.swapKind === SwapKind.GivenIn ? outputAmount.amount.toString() : inputAmount.amount.toString();
+        const swapAmount =
+            swap.swapKind === SwapKind.GivenIn ? inputAmount.amount.toString() : outputAmount.amount.toString();
         return {
             marketSp: '', // TODO - Check if CowSwap actually use this? Could this be calculate using out/in?
             returnAmount,
@@ -105,7 +112,7 @@ class SwapResultV2 implements SwapResult {
             tokenAddresses: swap.assets,
             tokenIn: swap.inputAmount.token.address,
             tokenOut: swap.outputAmount.token.address,
-        }
+        };
     }
 }
 
@@ -116,15 +123,8 @@ export class SorV2Service implements SwapService {
         this.cache = new Cache<string, BasePool[]>();
     }
 
-    public async getSwapResult({
-        tokenIn,
-        tokenOut,
-        swapType,
-        swapAmount,
-    }: GetSwapsInput): Promise<SwapResult> {
-        console.time('getBasePools');
+    public async getSwapResult({ tokenIn, tokenOut, swapType, swapAmount }: GetSwapsInput): Promise<SwapResult> {
         const poolsFromDb = await this.getBasePools();
-        console.timeEnd('getBasePools');
         const chainId = networkContext.chainId as unknown as ChainId;
         const tIn = await this.getToken(tokenIn as Address, chainId);
         const tOut = await this.getToken(tokenOut as Address, chainId);
@@ -132,35 +132,30 @@ export class SorV2Service implements SwapService {
         try {
             // Constructing a Swap mutates the pools so I used cloneDeep
             const swap = await sorGetSwapsWithPools(
-                        tIn,
-                        tOut,
-                        swapKind,
-                        swapAmount,
-                        cloneDeep(poolsFromDb),
-                        // swapOptions, // I don't think we need specific swapOptions for this?
-                    );
+                tIn,
+                tOut,
+                swapKind,
+                swapAmount,
+                cloneDeep(poolsFromDb),
+                // swapOptions, // I don't think we need specific swapOptions for this?
+            );
             return new SwapResultV2(swap);
         } catch (err) {
             console.log(`sorV2 Service Error`, err);
             return new SwapResultV2(null);
         }
-    };
+    }
 
     /**
      * Gets a b-sdk Token based off tokenAddr.
-     * @param tokenAddr 
-     * @param chainId 
-     * @returns 
+     * @param tokenAddr
+     * @param chainId
+     * @returns
      */
     private async getToken(tokenAddr: Address, chainId: ChainId): Promise<Token> {
         const tokens = await tokenService.getTokens();
         const prismaToken = this.getPrismaToken(tokenAddr, tokens);
-        return new Token(
-            chainId,
-            tokenAddr,
-            prismaToken.decimals,
-            prismaToken.symbol,
-        );
+        return new Token(chainId, tokenAddr, prismaToken.decimals, prismaToken.symbol);
     }
 
     private getPrismaToken(tokenAddress: string, tokens: PrismaToken[]): PrismaToken {
@@ -174,7 +169,7 @@ export class SorV2Service implements SwapService {
     }
 
     private mapSwapType(swapType: GqlSorSwapType): SwapKind {
-        return swapType === "EXACT_IN" ? SwapKind.GivenIn : SwapKind.GivenOut;
+        return swapType === 'EXACT_IN' ? SwapKind.GivenIn : SwapKind.GivenOut;
     }
 
     private async getBasePools(): Promise<BasePool[]> {
@@ -188,11 +183,11 @@ export class SorV2Service implements SwapService {
 
     /**
      * Fetch pools from Prisma and map to b-sdk BasePool.
-     * @returns 
+     * @returns
      */
     private async getBasePoolsFromDb(): Promise<BasePool[]> {
         const pools = await prisma.prismaPool.findMany({
-            where: { 
+            where: {
                 chain: networkContext.chain,
                 dynamicData: {
                     totalSharesNum: {
@@ -203,10 +198,10 @@ export class SorV2Service implements SwapService {
                 NOT: {
                     id: {
                         in: networkContext.data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].poolIdsToExclude,
-                    }
-                }
+                    },
+                },
             },
-            include: prismaPoolWithDynamic.include
+            include: prismaPoolWithDynamic.include,
         });
         const rawPools = this.mapToRawPools(pools);
         return this.mapToBasePools(rawPools);
@@ -214,74 +209,80 @@ export class SorV2Service implements SwapService {
 
     /**
      * Remove linear pools that cause issues because of price rate.
-     * @param pools 
+     * @param pools
      */
     private filterLinearPoolsWithZeroRate(pools: PrismaPoolWithDynamic[]): PrismaPoolWithDynamic[] {
         // 0x3c640f0d3036ad85afa2d5a9e32be651657b874f00000000000000000000046b is a linear pool with priceRate = 0.0 for some tokens which causes issues with b-sdk
         return pools.filter((p) => {
-            const isLinearPriceRateOk = p.type === "LINEAR" ? !p.tokens.some(t => t.dynamicData?.priceRate === '0.0') : true;
+            const isLinearPriceRateOk =
+                p.type === 'LINEAR' ? !p.tokens.some((t) => t.dynamicData?.priceRate === '0.0') : true;
             return isLinearPriceRateOk;
-        })
+        });
     }
 
     /**
      * Map Prisma pools to b-sdk RawPool.
-     * @param pools 
-     * @returns 
+     * @param pools
+     * @returns
      */
     private mapToRawPools(pools: PrismaPoolWithDynamic[]): RawPool[] {
-
         const filteredPools = this.filterLinearPoolsWithZeroRate(pools);
-        return filteredPools.map(prismaPool => {
+        return filteredPools.map((prismaPool) => {
             // b-sdk: src/data/types.ts
             let rawPool: RawPool = {
                 id: prismaPool.id as Address,
                 address: prismaPool.address as Address,
                 poolType: this.mapRawPoolType(prismaPool.type),
                 poolTypeVersion: prismaPool.version,
-                tokensList: prismaPool.tokens.map(t => t.address as Address),
+                tokensList: prismaPool.tokens.map((t) => t.address as Address),
                 swapEnabled: prismaPool.dynamicData!.swapEnabled,
                 swapFee: prismaPool.dynamicData!.swapFee as unknown as HumanAmount,
                 totalShares: prismaPool.dynamicData!.totalShares as unknown as HumanAmount,
                 liquidity: prismaPool.dynamicData!.totalLiquidity as unknown as HumanAmount,
-                tokens: prismaPool.tokens.map(t => {
+                tokens: prismaPool.tokens.map((t) => {
                     return {
-                            address: t.token.address as Address,
-                            index: t.index,
-                            symbol: t.token.symbol,
-                            name: t.token.name,
-                            decimals: t.token.decimals,
-                            balance: t.dynamicData?.balance as unknown as HumanAmount
-                    }
+                        address: t.token.address as Address,
+                        index: t.index,
+                        symbol: t.token.symbol,
+                        name: t.token.name,
+                        decimals: t.token.decimals,
+                        balance: t.dynamicData?.balance as unknown as HumanAmount,
+                    };
                 }),
             };
-            if(["Weighted", "Investment", "LiquidityBootstrapping"].includes(rawPool.poolType)) {
+            if (['Weighted', 'Investment', 'LiquidityBootstrapping'].includes(rawPool.poolType)) {
                 rawPool = {
                     ...rawPool,
-                    tokens: rawPool.tokens.map((t, i) => { return {...t, weight: prismaPool.tokens[i].dynamicData?.weight} }),
+                    tokens: rawPool.tokens.map((t, i) => {
+                        return { ...t, weight: prismaPool.tokens[i].dynamicData?.weight };
+                    }),
                 } as RawWeightedPool;
             }
-            if(rawPool.poolType === "Stable") {
+            if (rawPool.poolType === 'Stable') {
                 rawPool = {
                     ...rawPool,
                     amp: prismaPool.stableDynamicData?.amp,
                 } as RawStablePool;
             }
-            if(["MetaStable", "ComposableStable"].includes(rawPool.poolType)) {
+            if (['MetaStable', 'ComposableStable'].includes(rawPool.poolType)) {
                 rawPool = {
                     ...rawPool,
                     amp: prismaPool.stableDynamicData?.amp.split('.')[0], // Taken b-sdk onChainPoolDataEnricher.ts
-                    tokens: rawPool.tokens.map((t, i) => { return {...t, priceRate: prismaPool.tokens[i].dynamicData?.priceRate} }),
+                    tokens: rawPool.tokens.map((t, i) => {
+                        return { ...t, priceRate: prismaPool.tokens[i].dynamicData?.priceRate };
+                    }),
                 } as RawMetaStablePool;
             }
-            if(rawPool.poolType === "Linear") {
+            if (rawPool.poolType === 'Linear') {
                 rawPool = {
                     ...rawPool,
-                    mainIndex: prismaPool.linearData?.mainIndex, 
+                    mainIndex: prismaPool.linearData?.mainIndex,
                     wrappedIndex: prismaPool.linearData?.wrappedIndex,
                     lowerTarget: prismaPool.linearDynamicData?.lowerTarget,
                     upperTarget: prismaPool.linearDynamicData?.upperTarget,
-                    tokens: rawPool.tokens.map((t, i) => { return {...t, priceRate: prismaPool.tokens[i].dynamicData?.priceRate} }),
+                    tokens: rawPool.tokens.map((t, i) => {
+                        return { ...t, priceRate: prismaPool.tokens[i].dynamicData?.priceRate };
+                    }),
                 } as RawLinearPool;
             }
             return rawPool;
@@ -291,7 +292,7 @@ export class SorV2Service implements SwapService {
     /**
      * Map b-sdk RawPools to BasePools.
      * @param pools
-     * @returns 
+     * @returns
      */
     private mapToBasePools(pools: RawPool[]): BasePool[] {
         const chainId = networkContext.chainId as unknown as ChainId;
@@ -300,14 +301,14 @@ export class SorV2Service implements SwapService {
 
     /**
      * Map Prisma pool type to b-sdk Raw pool type.
-     * @param type 
-     * @returns 
+     * @param type
+     * @returns
      */
     private mapRawPoolType(type: PrismaPoolType): SupportedRawPoolTypes | string {
         // From b-sdk:
         // - type LinearPoolType = `${string}Linear`;
         // - LinearPoolType | 'Weighted' | 'Investment' | 'LiquidityBootstrapping' | 'Stable' | 'MetaStable' | 'ComposableStable' | 'StablePhantom' | 'Element';
-        switch(type) {
+        switch (type) {
             case PrismaPoolType.WEIGHTED:
                 return 'Weighted';
             case PrismaPoolType.INVESTMENT:
@@ -326,7 +327,7 @@ export class SorV2Service implements SwapService {
             default:
                 return type;
         }
-    } 
+    }
 }
 
 export const sorV2Service = new SorV2Service();

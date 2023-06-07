@@ -19,7 +19,7 @@ class SwapResultV1 implements SwapResult {
     public isValid: boolean;
 
     constructor(private swap: GqlCowSwapApiResponse | null, private swapType: GqlSorSwapType) {
-        if(swap === null) {
+        if (swap === null) {
             this.isValid = false;
             this.swap = null;
         } else {
@@ -30,9 +30,9 @@ class SwapResultV1 implements SwapResult {
     }
 
     async getSwapResponse(queryFirst = false): Promise<GqlCowSwapApiResponse> {
-        if(!this.isValid || this.swap === null) throw new Error('No Response - Invalid Swap')
+        if (!this.isValid || this.swap === null) throw new Error('No Response - Invalid Swap');
 
-        if(queryFirst) {
+        if (queryFirst) {
             const swapType = this.mapSwapType(this.swapType);
             const deltas = await this.queryBatchSwap(swapType, this.swap.swaps, this.swap.tokenAddresses);
             const tokenInAmount = deltas[this.swap.tokenAddresses.indexOf(this.swap.tokenIn)].toString();
@@ -42,7 +42,7 @@ class SwapResultV1 implements SwapResult {
                 ...this.swap,
                 returnAmount: swapType === SwapTypes.SwapExactIn ? tokenOutAmount : tokenInAmount,
                 swapAmount: swapType === SwapTypes.SwapExactIn ? tokenInAmount : tokenOutAmount,
-            }
+            };
         }
         return this.swap;
     }
@@ -60,17 +60,11 @@ class SwapResultV1 implements SwapResult {
     }
 
     private mapSwapType(swapType: GqlSorSwapType): SwapTypes {
-        return swapType === "EXACT_IN" ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut;
+        return swapType === 'EXACT_IN' ? SwapTypes.SwapExactIn : SwapTypes.SwapExactOut;
     }
 }
 export class SorV1Service implements SwapService {
-
-    public async getSwapResult({
-        tokenIn,
-        tokenOut,
-        swapType,
-        swapAmount,
-    }: GetSwapsInput): Promise<SwapResult> {
+    public async getSwapResult({ tokenIn, tokenOut, swapType, swapAmount }: GetSwapsInput): Promise<SwapResult> {
         try {
             const swap = await this.querySorBalancer(swapType, tokenIn, tokenOut, swapAmount);
             return new SwapResultV1(swap, swapType);
@@ -78,16 +72,16 @@ export class SorV1Service implements SwapService {
             console.log(`sorV1 Service Error`, err);
             return new SwapResultV1(null, swapType);
         }
-    };
+    }
 
     /**
      * Query Balancer API CowSwap/SOR endpoint.
-     * @param swapType 
-     * @param tokenIn 
-     * @param tokenOut 
-     * @param swapAmountScaled 
-     * @param swapOptions 
-     * @returns 
+     * @param swapType
+     * @param tokenIn
+     * @param tokenOut
+     * @param swapAmountScaled
+     * @param swapOptions
+     * @returns
      */
     private async querySorBalancer(
         swapType: GqlSorSwapType,
@@ -98,22 +92,19 @@ export class SorV1Service implements SwapService {
         const endPoint = `https://api.balancer.fi/sor/${networkContext.chainId}`;
         const gasPrice = networkContext.data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].gasPrice.toString();
         const swapData = {
-                orderKind: this.mapSwapType(swapType),
-                sellToken: tokenIn,
-                buyToken: tokenOut,
-                amount: swapAmountScaled,
-                gasPrice
-            };
+            orderKind: this.mapSwapType(swapType),
+            sellToken: tokenIn,
+            buyToken: tokenOut,
+            amount: swapAmountScaled,
+            gasPrice,
+        };
 
-        const { data } = await axios.post<GqlCowSwapApiResponse>(
-            endPoint, 
-            swapData,
-        );
+        const { data } = await axios.post<GqlCowSwapApiResponse>(endPoint, swapData);
         return data;
     }
 
     private mapSwapType(swapType: GqlSorSwapType): CowSwapSwapType {
-        return swapType === "EXACT_IN" ? 'sell' : 'buy';
+        return swapType === 'EXACT_IN' ? 'sell' : 'buy';
     }
 
     private async querySorBeets(

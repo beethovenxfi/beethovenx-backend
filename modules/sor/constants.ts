@@ -1,6 +1,6 @@
 import { GqlCowSwapApiResponse, GqlSorSwapType } from '../../schema';
 
-export const EMPTY_COWSWAP_RESPONSE = (assetIn: string, assetOut: string, amount: string): GqlCowSwapApiResponse =>  {
+export const EMPTY_COWSWAP_RESPONSE = (assetIn: string, assetOut: string, amount: string): GqlCowSwapApiResponse => {
     return {
         marketSp: '0',
         returnAmount: '0',
@@ -12,5 +12,5 @@ export const EMPTY_COWSWAP_RESPONSE = (assetIn: string, assetOut: string, amount
         tokenAddresses: [],
         tokenIn: assetIn,
         tokenOut: assetOut,
-    }
-}
+    };
+};
