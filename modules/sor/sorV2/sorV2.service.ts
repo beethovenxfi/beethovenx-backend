@@ -17,7 +17,7 @@ import {
 } from '@balancer/sdk';
 import { parseFixed } from '@ethersproject/bignumber';
 import cloneDeep from 'lodash/cloneDeep';
-import { GqlSorSwapType, GqlSwap, GqlSorGetSwapsResponse } from '../../../schema';
+import { GqlSorSwapType, GqlSwap, GqlSorGetSwapsResponse, GqlPoolMinimal } from '../../../schema';
 import { PrismaPoolType, PrismaToken } from '@prisma/client';
 import { GetSwapsInput, SwapResult, SwapService } from '../types';
 import { tokenService } from '../../token/token.service';
@@ -29,6 +29,13 @@ import { env } from '../../../app/env';
 import { DeploymentEnv } from '../../network/network-config-types';
 import { Cache, CacheClass } from 'memory-cache';
 import { GqlCowSwapApiResponse } from '../../../schema';
+import { BalancerSorService } from '../../beethoven/balancer-sor.service';
+import { poolService } from '../../pool/pool.service';
+import { BatchSwapStep } from '@balancer/sdk';
+import { SingleSwap } from '@balancer/sdk';
+import { SwapInfoRoute, SwapTypes, Swap, bnum, SwapInfoRouteHop } from '@balancer-labs/sor';
+import { BigNumber } from 'ethers';
+import { oldBnumScale } from '../../big-number/old-big-number';
 
 const ALL_BASEPOOLS_CACHE_KEY = `basePools:all`;
 
@@ -69,15 +76,116 @@ class SwapResultV2 implements SwapResult {
     async getBeetsSwapResponse(queryFirst: boolean): Promise<GqlSorGetSwapsResponse> {
         if (!this.isValid || this.swap === null) throw new Error('No Response - Invalid Swap');
 
-        return this.mapResultToBeetsSwap(this.swap, this.swap.inputAmount, this.swap.outputAmount);
+        return await this.mapResultToBeetsSwap(this.swap, this.swap.inputAmount, this.swap.outputAmount);
     }
 
-    private mapResultToBeetsSwap(
+    private async mapResultToBeetsSwap(
         swap: SwapSdk,
         inputAmount: TokenAmount,
         outputAmount: TokenAmount,
-    ): GqlSorGetSwapsResponse {
-        throw new Error('NOT IMPLEMENTED YET');
+    ): Promise<GqlSorGetSwapsResponse> {
+        const sor = new BalancerSorService();
+        const tokens = await tokenService.getTokens();
+        let poolIds: string[];
+        if (swap.isBatchSwap) {
+            const swaps = swap.swaps as BatchSwapStep[];
+            poolIds = swaps.map((swap) => swap.poolId);
+        } else {
+            const singleSwap = swap.swaps as SingleSwap;
+            poolIds = [singleSwap.poolId];
+        }
+        const pools = await poolService.getGqlPools({
+            where: { idIn: poolIds },
+        });
+
+        const swapAmountForSwaps =
+            swap.swapKind === SwapKind.GivenIn ? inputAmount.amount.toString() : outputAmount.amount.toString();
+        const returnAmountFromSwaps =
+            swap.swapKind === SwapKind.GivenIn ? outputAmount.amount.toString() : inputAmount.amount.toString();
+
+        const swapData = {
+            tokenIn: inputAmount.token.address.toString(),
+            tokenOut: outputAmount.token.address.toString(),
+            tokens,
+            swapType: this.mapSwapKind(swap.swapKind),
+            tokenInAmtEvm: inputAmount.amount.toString(),
+            tokenOutAmtEvm: outputAmount.amount.toString(),
+            swapAmountForSwaps,
+            returnAmountFromSwaps,
+            returnAmountConsideringFees: returnAmountFromSwaps,
+            routes: [], // TODO
+            pools,
+            marketSp: '', // TODO
+            swaps: this.mapSwaps(swap.swaps, swap.assets),
+            tokenAddresses: swap.assets,
+        };
+        return sor.formatResponse(swapData);
+    }
+
+    private mapSwaps(swaps: BatchSwapStep[] | SingleSwap, assets: string[]): GqlSwap[] {
+        if (Array.isArray(swaps)) {
+            return swaps.map((swap) => {
+                return {
+                    ...swap,
+                    assetInIndex: Number(swap.assetInIndex.toString()),
+                    assetOutIndex: Number(swap.assetOutIndex.toString()),
+                    amount: swap.amount.toString(),
+                };
+            });
+        } else {
+            const assetInIndex = assets.indexOf(swaps.assetIn);
+            const assetOutIndex = assets.indexOf(swaps.assetOut);
+            return [
+                {
+                    ...swaps,
+                    assetInIndex,
+                    assetOutIndex,
+                    amount: swaps.amount.toString(),
+                },
+            ];
+        }
+    }
+
+    private mapSwapKind(kind: SwapKind): GqlSorSwapType {
+        return kind === SwapKind.GivenIn ? 'EXACT_IN' : 'EXACT_OUT';
+    }
+
+    /**
+     * Formats a sequence of swaps to a format that is useful for displaying the routes in user interfaces.
+     * Taken directly from Beets SOR: https://github.com/beethovenxfi/balancer-sor/blob/beethovenx-master/src/formatSwaps.ts#L167
+     * @dev The swaps are converted to an array of routes, where each route has an array of hops
+     * @param swapType - exact in or exact out
+     * @param routes - The original Swaps
+     * @param swapAmount - The total amount being swapped
+     * @returns SwapInfoRoute[] - The swaps formatted as routes with hops
+     */
+    private formatRoutesSOR(swapType: SwapTypes, routes: Swap[][], swapAmount: BigNumber): SwapInfoRoute[] {
+        const exactIn = swapType === SwapTypes.SwapExactIn;
+
+        return routes.map((swaps) => {
+            const first = swaps[0];
+            const last = swaps[swaps.length - 1];
+            const tokenInAmount = (exactIn ? first.swapAmount : last.swapAmountOut) || '0';
+            const tokenOutAmount = (exactIn ? last.swapAmountOut : first.swapAmount) || '0';
+            const tokenInAmountScaled = oldBnumScale(bnum(tokenInAmount), first.tokenInDecimals);
+
+            return {
+                tokenIn: first.tokenIn,
+                tokenOut: last.tokenOut,
+                tokenInAmount,
+                tokenOutAmount,
+                share: tokenInAmountScaled.div(bnum(swapAmount.toString())).toNumber(),
+                hops: swaps.map((swap): SwapInfoRouteHop => {
+                    return {
+                        tokenIn: swap.tokenIn,
+                        tokenOut: swap.tokenOut,
+                        tokenInAmount: (exactIn ? swap.swapAmount : swap.swapAmountOut) || '0',
+                        tokenOutAmount: (exactIn ? swap.swapAmountOut : swap.swapAmount) || '0',
+                        poolId: swap.pool,
+                    };
+                }),
+            };
+        });
     }
 
     /**
