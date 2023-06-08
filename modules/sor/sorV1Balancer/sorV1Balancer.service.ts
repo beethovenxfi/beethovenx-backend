@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { AddressZero } from '@ethersproject/constants';
 import { Contract } from '@ethersproject/contracts';
-import { GqlSorSwapType, GqlSorSwapOptionsInput, GqlCowSwapApiResponse } from '../../../schema';
+import { GqlSorSwapType, GqlCowSwapApiResponse, GqlSorGetSwapsResponse } from '../../../schema';
 import { GetSwapsInput, SwapService, SwapResult } from '../types';
-import { SwapInfo, FundManagement, SwapTypes, SwapV2 } from '@balancer-labs/sdk';
+import { FundManagement, SwapTypes, SwapV2 } from '@balancer-labs/sdk';
 import { env } from '../../../app/env';
 import { networkContext } from '../../network/network-context.service';
 import { DeploymentEnv } from '../../network/network-config-types';
@@ -45,6 +45,10 @@ class SwapResultV1 implements SwapResult {
             };
         }
         return this.swap;
+    }
+
+    async getBeetsSwapResponse(queryFirst: boolean): Promise<GqlSorGetSwapsResponse> {
+        throw new Error('Use Beets service.');
     }
 
     private queryBatchSwap(swapType: SwapTypes, swaps: SwapV2[], assets: string[]): Promise<BigNumber[]> {
@@ -105,35 +109,6 @@ export class SorV1BalancerService implements SwapService {
 
     private mapSwapType(swapType: GqlSorSwapType): CowSwapSwapType {
         return swapType === 'EXACT_IN' ? 'sell' : 'buy';
-    }
-
-    private async querySorBeets(
-        swapType: string,
-        tokenIn: string,
-        tokenOut: string,
-        swapAmountScaled: string,
-        swapOptions: GqlSorSwapOptionsInput,
-    ) {
-        // Taken from: modules/beethoven/balancer-sor.service.ts
-        // TODO - Currently don't get a swap from mainnet. Need an example curl?
-        const { data } = await axios.post<{ swapInfo: SwapInfo }>(
-            networkContext.data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].url,
-            {
-                swapType,
-                tokenIn,
-                tokenOut,
-                swapAmountScaled,
-                swapOptions: {
-                    maxPools:
-                        swapOptions.maxPools || networkContext.data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].maxPools,
-                    forceRefresh:
-                        swapOptions.forceRefresh ||
-                        networkContext.data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].forceRefresh,
-                },
-            },
-        );
-        const swapInfo = data.swapInfo;
-        return swapInfo;
     }
 }
 

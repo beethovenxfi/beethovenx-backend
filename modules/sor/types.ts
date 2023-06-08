@@ -1,5 +1,4 @@
-import { GqlCowSwapApiResponse, GqlSorSwapType } from '../../schema';
-
+import { GqlCowSwapApiResponse, GqlSorSwapType, GqlSorGetSwapsResponse } from '../../schema';
 export interface GetSwapsInput {
     tokenIn: string;
     tokenOut: string;
@@ -9,6 +8,7 @@ export interface GetSwapsInput {
 
 export interface SwapResult {
     getCowSwapResponse(queryFirst: boolean): Promise<GqlCowSwapApiResponse>;
+    getBeetsSwapResponse(queryFirst: boolean): Promise<GqlSorGetSwapsResponse>;
     isValid: boolean;
     outputAmount: bigint;
     inputAmount: bigint;

@@ -17,7 +17,7 @@ import {
 } from '@balancer/sdk';
 import { parseFixed } from '@ethersproject/bignumber';
 import cloneDeep from 'lodash/cloneDeep';
-import { GqlSorSwapType, GqlSwap } from '../../../schema';
+import { GqlSorSwapType, GqlSwap, GqlSorGetSwapsResponse } from '../../../schema';
 import { PrismaPoolType, PrismaToken } from '@prisma/client';
 import { GetSwapsInput, SwapResult, SwapService } from '../types';
 import { tokenService } from '../../token/token.service';
@@ -64,6 +64,20 @@ class SwapResultV2 implements SwapResult {
 
             return this.mapResultToCowSwap(this.swap, ip, op);
         }
+    }
+
+    async getBeetsSwapResponse(queryFirst: boolean): Promise<GqlSorGetSwapsResponse> {
+        if (!this.isValid || this.swap === null) throw new Error('No Response - Invalid Swap');
+
+        return this.mapResultToBeetsSwap(this.swap, this.swap.inputAmount, this.swap.outputAmount);
+    }
+
+    private mapResultToBeetsSwap(
+        swap: SwapSdk,
+        inputAmount: TokenAmount,
+        outputAmount: TokenAmount,
+    ): GqlSorGetSwapsResponse {
+        throw new Error('NOT IMPLEMENTED YET');
     }
 
     /**
