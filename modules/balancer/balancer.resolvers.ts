@@ -1,6 +1,5 @@
 import { Resolvers } from '../../schema';
-import { sorService as sorService } from '../sor/sor.service';
-
+import { sorService } from '../sor/sor.service';
 
 const balancerResolvers: Resolvers = {
     Query: {

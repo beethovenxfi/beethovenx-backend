@@ -1,12 +1,18 @@
 import { networkContext } from '../network/network-context.service';
-import { GqlCowSwapApiResponse, GqlSorSwapType } from '../../schema';
+import { GqlCowSwapApiResponse, GqlSorSwapType, GqlSorGetSwapsResponse, GqlSorSwapOptionsInput } from '../../schema';
 import { sorV1BalancerService } from './sorV1Balancer/sorV1Balancer.service';
+import { sorV1BeetsService } from './sorV1Beets/sorV1Beets.service';
 import { sorV2Service } from './sorV2/sorV2.service';
 import { GetSwapsInput, SwapResult } from './types';
 import { EMPTY_COWSWAP_RESPONSE } from './constants';
 
 export class SorService {
-    public async getCowSwaps({ tokenIn, tokenOut, swapType, swapAmount }: GetSwapsInput): Promise<GqlCowSwapApiResponse> {
+    public async getCowSwaps({
+        tokenIn,
+        tokenOut,
+        swapType,
+        swapAmount,
+    }: GetSwapsInput): Promise<GqlCowSwapApiResponse> {
         console.time(`sorV1-${networkContext.chain}`);
         const swapV1 = await sorV1BalancerService.getSwapResult({
             tokenIn,
@@ -36,6 +42,15 @@ export class SorService {
             console.log(err);
             return EMPTY_COWSWAP_RESPONSE(tokenIn, tokenOut, swapAmount);
         }
+    }
+
+    public async getBeetsSwaps(
+        input: GetSwapsInput & { swapOptions: GqlSorSwapOptionsInput },
+    ): Promise<GqlSorGetSwapsResponse> {
+        console.time(`sorV1-${networkContext.chain}`);
+        const swapV1 = await sorV1BeetsService.getSwapResult(input);
+        console.timeEnd(`sorV1-${networkContext.chain}`);
+        return swapV1.getBeetsSwapResponse(false);
     }
 
     /**
