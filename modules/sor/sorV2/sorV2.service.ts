@@ -114,7 +114,16 @@ class SwapResultV2 implements SwapResult {
             swapAmountForSwaps,
             returnAmountFromSwaps,
             returnAmountConsideringFees: returnAmountFromSwaps,
-            routes: this.mapRoutes(swap.swaps, inputAmount.amount.toString(), outputAmount.amount.toString(), pools), // TODO
+            routes: this.mapRoutes(
+                swap.swaps,
+                inputAmount.amount.toString(),
+                outputAmount.amount.toString(),
+                pools,
+                swap.inputAmount.token.address,
+                swap.outputAmount.token.address,
+                swap.assets,
+                swap.swapKind,
+            ),
             pools,
             marketSp: '', // TODO
             swaps: this.mapSwaps(swap.swaps, swap.assets),
@@ -156,8 +165,12 @@ class SwapResultV2 implements SwapResult {
         inputAmount: string,
         outputAmount: string,
         pools: GqlPoolMinimal[],
+        assetIn: string,
+        assetOut: string,
+        assets: string[],
+        kind: SwapKind,
     ): GqlSorSwapRoute[] {
-        return mapRoutes(swaps, inputAmount, outputAmount, pools);
+        return mapRoutes(swaps, inputAmount, outputAmount, pools, assetIn, assetOut, assets, kind);
     }
 
     /**
