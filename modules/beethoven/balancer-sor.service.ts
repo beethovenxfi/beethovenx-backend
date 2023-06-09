@@ -56,35 +56,7 @@ export class BalancerSorService {
         let swapInfo = await this.querySor(swapType, tokenIn, tokenOut, swapAmountScaled, swapOptions);
         // no swaps found, return 0
         if (swapInfo.swaps.length === 0) {
-            return {
-                ...swapInfo,
-                tokenIn: replaceZeroAddressWithEth(swapInfo.tokenIn),
-                tokenOut: replaceZeroAddressWithEth(swapInfo.tokenOut),
-                swapType,
-                tokenInAmount: swapType === 'EXACT_IN' ? swapAmount : BigNumber.from('0').toString(),
-                tokenOutAmount: swapType === 'EXACT_IN' ? BigNumber.from('0').toString() : swapAmount,
-                swapAmount: swapType === 'EXACT_IN' ? BigNumber.from('0').toString() : swapAmount,
-                swapAmountScaled: BigNumber.from('0').toString(),
-                swapAmountForSwaps: swapInfo.swapAmountForSwaps
-                    ? BigNumber.from(swapInfo.swapAmountForSwaps).toString()
-                    : undefined,
-                returnAmount: BigNumber.from('0').toString(),
-                returnAmountScaled: BigNumber.from('0').toString(),
-                returnAmountConsideringFees: BigNumber.from(swapInfo.returnAmountConsideringFees).toString(),
-                returnAmountFromSwaps: swapInfo.returnAmountFromSwaps
-                    ? BigNumber.from(swapInfo.returnAmountFromSwaps).toString()
-                    : undefined,
-                routes: swapInfo.routes.map((route) => ({
-                    ...route,
-                    hops: route.hops.map((hop) => ({
-                        ...hop,
-                        pool: pools.find((pool) => pool.id === hop.poolId)!,
-                    })),
-                })),
-                effectivePrice: BigNumber.from('0').toString(),
-                effectivePriceReversed: BigNumber.from('0').toString(),
-                priceImpact: BigNumber.from('0').toString(),
-            };
+            return this.zeroResponse(swapType, tokenIn, tokenOut, swapAmount);
         }
 
         let deltas: string[] = [];
@@ -244,6 +216,30 @@ export class BalancerSorService {
             effectivePriceReversed: effectivePriceReversed.toString(),
             priceImpact: priceImpact.toString(),
         };
+    }
+
+    zeroResponse(swapType: GqlSorSwapType, tokenIn: string, tokenOut: string, swapAmount: string): GqlSorGetSwapsResponse {
+            return {
+                marketSp: '0',
+                tokenAddresses: [],
+                swaps: [],
+                tokenIn: replaceZeroAddressWithEth(tokenIn),
+                tokenOut: replaceZeroAddressWithEth(tokenOut),
+                swapType,
+                tokenInAmount: swapType === 'EXACT_IN' ? swapAmount : '0',
+                tokenOutAmount: swapType === 'EXACT_IN' ? '0' : swapAmount,
+                swapAmount: swapType === 'EXACT_IN' ? '0' : swapAmount,
+                swapAmountScaled: '0',
+                swapAmountForSwaps: '0',
+                returnAmount: '0',
+                returnAmountScaled: '0',
+                returnAmountConsideringFees: '0',
+                returnAmountFromSwaps: '0',
+                routes: [],
+                effectivePrice:'0',
+                effectivePriceReversed: '0',
+                priceImpact: '0',
+            };
     }
 
     private async querySor(

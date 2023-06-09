@@ -50,7 +50,23 @@ export class SorService {
         console.time(`sorV1-${networkContext.chain}`);
         const swapV1 = await sorV1BeetsService.getSwapResult(input);
         console.timeEnd(`sorV1-${networkContext.chain}`);
-        return swapV1.getBeetsSwapResponse(false);
+        console.time(`sorV2-${networkContext.chain}`);
+        const swapV2 = await sorV2Service.getSwapResult(input);
+        console.timeEnd(`sorV2-${networkContext.chain}`);
+
+        if (!swapV1.isValid && !swapV2.isValid)
+            return sorV1BeetsService.zeroResponse(input.swapType, input.tokenIn, input.tokenOut, input.swapAmount);
+
+        const bestSwap = this.getBestSwap(swapV1, swapV2, input.swapType, input.tokenIn, input.tokenOut);
+
+        try {
+            // Updates with latest onchain data before returning
+            return await bestSwap.getBeetsSwapResponse(true);
+        } catch (err) {
+            console.log(`Error Retrieving QuerySwap`);
+            console.log(err);
+            return sorV1BeetsService.zeroResponse(input.swapType, input.tokenIn, input.tokenOut, input.swapAmount);
+        }
     }
 
     /**

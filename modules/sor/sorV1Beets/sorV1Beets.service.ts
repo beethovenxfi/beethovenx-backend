@@ -31,6 +31,12 @@ class SwapResultV1 implements SwapResult {
     }
 }
 export class SorV1BeetsService implements SwapService {
+    sorService: BalancerSorService;
+
+    constructor() {
+        this.sorService = new BalancerSorService();
+    }
+
     public async getSwapResult(input: GetSwapsInput & { swapOptions: GqlSorSwapOptionsInput }): Promise<SwapResult> {
         try {
             const swap = await this.querySorBeets(input);
@@ -41,12 +47,20 @@ export class SorV1BeetsService implements SwapService {
         }
     }
 
+    public zeroResponse(
+        swapType: GqlSorSwapType,
+        tokenIn: string,
+        tokenOut: string,
+        swapAmount: string,
+    ): GqlSorGetSwapsResponse {
+        return this.sorService.zeroResponse(swapType, tokenIn, tokenOut, swapAmount);
+    }
+
     private async querySorBeets(
         input: GetSwapsInput & { swapOptions: GqlSorSwapOptionsInput },
     ): Promise<GqlSorGetSwapsResponse> {
         const tokens = await tokenService.getTokens();
-        const sorService = new BalancerSorService();
-        return await sorService.getSwaps({ ...input, tokens });
+        return await this.sorService.getSwaps({ ...input, tokens });
     }
 }
 
