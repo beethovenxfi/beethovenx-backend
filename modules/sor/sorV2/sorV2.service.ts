@@ -17,7 +17,7 @@ import {
 } from '@balancer/sdk';
 import { parseFixed } from '@ethersproject/bignumber';
 import cloneDeep from 'lodash/cloneDeep';
-import { GqlSorSwapType, GqlSwap, GqlSorGetSwapsResponse, GqlPoolMinimal } from '../../../schema';
+import { GqlSorSwapType, GqlSwap, GqlSorGetSwapsResponse, GqlPoolMinimal, GqlSorSwapRoute } from '../../../schema';
 import { PrismaPoolType, PrismaToken } from '@prisma/client';
 import { GetSwapsInput, SwapResult, SwapService } from '../types';
 import { tokenService } from '../../token/token.service';
@@ -36,6 +36,7 @@ import { SingleSwap } from '@balancer/sdk';
 import { SwapInfoRoute, SwapTypes, Swap, bnum, SwapInfoRouteHop } from '@balancer-labs/sor';
 import { BigNumber } from 'ethers';
 import { oldBnumScale } from '../../big-number/old-big-number';
+import { mapRoutes } from './beetsHelpers';
 
 const ALL_BASEPOOLS_CACHE_KEY = `basePools:all`;
 
@@ -113,7 +114,7 @@ class SwapResultV2 implements SwapResult {
             swapAmountForSwaps,
             returnAmountFromSwaps,
             returnAmountConsideringFees: returnAmountFromSwaps,
-            routes: [], // TODO
+            routes: this.mapRoutes(swap.swaps, inputAmount.amount.toString(), outputAmount.amount.toString(), pools), // TODO
             pools,
             marketSp: '', // TODO
             swaps: this.mapSwaps(swap.swaps, swap.assets),
@@ -148,6 +149,15 @@ class SwapResultV2 implements SwapResult {
 
     private mapSwapKind(kind: SwapKind): GqlSorSwapType {
         return kind === SwapKind.GivenIn ? 'EXACT_IN' : 'EXACT_OUT';
+    }
+
+    private mapRoutes(
+        swaps: BatchSwapStep[] | SingleSwap,
+        inputAmount: string,
+        outputAmount: string,
+        pools: GqlPoolMinimal[],
+    ): GqlSorSwapRoute[] {
+        return mapRoutes(swaps, inputAmount, outputAmount, pools);
     }
 
     /**
