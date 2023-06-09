@@ -1,5 +1,6 @@
 import { BatchSwapStep, SingleSwap, SwapKind } from '@balancer/sdk';
 import { GqlPoolMinimal, GqlSorSwapRoute, GqlSorSwapRouteHop } from '../../../schema';
+import { formatFixed } from '@ethersproject/bignumber';
 
 export function mapRoutes(
     swaps: BatchSwapStep[] | SingleSwap,
@@ -9,7 +10,7 @@ export function mapRoutes(
     assetIn: string,
     assetOut: string,
     assets: string[],
-    kind: SwapKind
+    kind: SwapKind,
 ): GqlSorSwapRoute[] {
     const isBatchSwap = Array.isArray(swaps);
     if (!isBatchSwap) {
@@ -32,16 +33,26 @@ export function mapBatchSwap(
     const exactIn = kind === SwapKind.GivenIn;
     const first = swaps[0];
     const last = swaps[swaps.length - 1];
-    const share = 1; // tokenInAmountScaled.div(bnum(swapAmount.toString())).toNumber()
-    const tokenInAmount = exactIn ? first.amount.toString() : amountIn; // * share
-    const tokenOutAmount = exactIn ? amountOut : last.amount.toString(); // * share
+    let tokenInAmount: string;
+    let tokenOutAmount: string;
+    let share: bigint;
+    const one = BigInt(1e18);
+    if (exactIn) {
+        tokenInAmount = first.amount.toString();
+        share = (BigInt(tokenInAmount) * one) / BigInt(amountIn);
+        tokenOutAmount = ((BigInt(amountOut) * share) / one).toString();
+    } else {
+        tokenOutAmount = last.amount.toString();
+        share = (BigInt(tokenOutAmount) * one) / BigInt(amountOut);
+        tokenInAmount = ((BigInt(amountIn) * share) / one).toString();
+    }
 
     return {
         tokenIn: assets[Number(first.assetInIndex)],
         tokenOut: assets[Number(last.assetOutIndex)],
         tokenInAmount,
         tokenOutAmount,
-        share,
+        share: Number(formatFixed(share.toString(), 18)),
         hops: swaps.map((swap, i) => {
             return {
                 tokenIn: assets[Number(swap.assetInIndex)],
@@ -70,7 +81,9 @@ export function splitPaths(
     let path: BatchSwapStep[];
     let paths: BatchSwapStep[][] = [];
     swapsCopy.forEach((swap) => {
-        if (swap.assetInIndex === assetInIndex) {
+        if (swap.assetInIndex === assetInIndex && swap.assetOutIndex === assetOutIndex) {
+            paths.push([swap]);
+        } else if (swap.assetInIndex === assetInIndex) {
             path = [swap];
         } else if (swap.assetOutIndex === assetOutIndex) {
             path.push(swap);

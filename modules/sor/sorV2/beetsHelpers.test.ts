@@ -89,13 +89,13 @@ describe('sorV2 Service - Routes', () => {
         });
     });
     describe('BatchSwap', () => {
-        describe('Single Path, Exact In', () => {
+        describe('ExactIn', () => {
             let pools: GqlPoolMinimal[];
             let paths: BatchSwapStep[][];
             const assetIn = '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4';
             const assetOut = '0x8159462d255C1D24915CB51ec361F700174cD994';
-            const amountIn = '123456789112345678';
-            const amountOut = '876543210987654321';
+            const amountIn = '111111111111111111';
+            const amountOut = '222222222222222222';
             const batchSwap: BatchSwapStep[] = [
                 {
                     poolId: '0x216690738aac4aa0c4770253ca26a28f0115c595000000000000000000000b2c',
@@ -144,7 +144,6 @@ describe('sorV2 Service - Routes', () => {
                     tokenOutAmount: amountOut,
                 },
             ];
-
             beforeAll(async () => {
                 pools = await poolService.getGqlPools({
                     where: {
@@ -161,36 +160,111 @@ describe('sorV2 Service - Routes', () => {
                     (p) => p.id === '0x8159462d255c1d24915cb51ec361f700174cd99400000000000000000000075d',
                 ) as GqlPoolMinimal;
             });
-            test('splitPaths', () => {
-                paths = splitPaths(batchSwap, assetIn, assetOut, assets, SwapKind.GivenIn);
-                expect(paths.length).toEqual(1);
-                expect(paths[0].length).toEqual(2);
+            describe('Single Path', () => {
+                test('splitPaths', () => {
+                    paths = splitPaths(batchSwap, assetIn, assetOut, assets, SwapKind.GivenIn);
+                    expect(paths.length).toEqual(1);
+                    expect(paths[0].length).toEqual(2);
+                });
+                test('mapBatchSwap', () => {
+                    const route = mapBatchSwap(paths[0], amountIn, amountOut, SwapKind.GivenIn, assets, pools);
+                    expect(route).toEqual(expectedRoute[0]);
+                });
+                test('GivenIn', () => {
+                    const mappedRoute = mapRoutes(
+                        batchSwap,
+                        amountIn,
+                        amountOut,
+                        pools,
+                        assetIn,
+                        assetOut,
+                        assets,
+                        SwapKind.GivenIn,
+                    );
+                    expect(mappedRoute).toEqual(expectedRoute);
+                });
             });
-            test('mapBatchSwap', () => {
-                const route = mapBatchSwap(paths[0], amountIn, amountOut, SwapKind.GivenIn, assets, pools);
-                expect(route).toEqual(expectedRoute[0]);
-            });
-            test('GivenIn', () => {
-                const mappedRoute = mapRoutes(
-                    batchSwap,
-                    amountIn,
-                    amountOut,
-                    pools,
-                    assetIn,
-                    assetOut,
-                    assets,
-                    SwapKind.GivenIn,
-                );
-                expect(mappedRoute).toEqual(expectedRoute);
+            describe('Multiple Paths', () => {
+                beforeAll(() => {
+                    batchSwap.push({
+                        poolId: '0x8159462d255c1d24915cb51ec361f700174cd99400000000000000000000075d',
+                        assetInIndex: BigInt(0),
+                        assetOutIndex: BigInt(2),
+                        amount: BigInt(amountIn),
+                        userData: '0x',
+                    });
+                    expectedRoute[0].share = 0.5;
+                    expectedRoute.push({
+                        hops: [
+                            {
+                                pool: pools.find(
+                                    (p) =>
+                                        p.id === '0x8159462d255c1d24915cb51ec361f700174cd99400000000000000000000075d',
+                                ) as GqlPoolMinimal,
+                                poolId: '0x8159462d255c1d24915cb51ec361f700174cd99400000000000000000000075d',
+                                tokenIn: '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4',
+                                tokenInAmount: amountIn,
+                                tokenOut: '0x8159462d255C1D24915CB51ec361F700174cD994',
+                                tokenOutAmount: amountOut,
+                            },
+                        ],
+                        share: 0.5,
+                        tokenIn: '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4',
+                        tokenInAmount: amountIn,
+                        tokenOut: '0x8159462d255C1D24915CB51ec361F700174cD994',
+                        tokenOutAmount: amountOut,
+                    });
+                });
+                test('splitPaths', () => {
+                    paths = splitPaths(batchSwap, assetIn, assetOut, assets, SwapKind.GivenIn);
+                    expect(paths.length).toEqual(2);
+                    expect(paths[0].length).toEqual(2);
+                    expect(paths[1].length).toEqual(1);
+                });
+                test('mapBatchSwap', () => {
+                    const route = mapBatchSwap(
+                        paths[0],
+                        (BigInt(amountIn) * BigInt(2)).toString(),
+                        (BigInt(amountOut) * BigInt(2)).toString(),
+                        SwapKind.GivenIn,
+                        assets,
+                        pools,
+                    );
+                    expect(route).toEqual(expectedRoute[0]);
+                });
+                test('mapBatchSwap', () => {
+                    const route = mapBatchSwap(
+                        paths[1],
+                        (BigInt(amountIn) * BigInt(2)).toString(),
+                        (BigInt(amountOut) * BigInt(2)).toString(),
+                        SwapKind.GivenIn,
+                        assets,
+                        pools,
+                    );
+                    expect(route).toEqual(expectedRoute[1]);
+                });
+                test('GivenIn', () => {
+                    const mappedRoute = mapRoutes(
+                        batchSwap,
+                        (BigInt(amountIn) * BigInt(2)).toString(),
+                        (BigInt(amountOut) * BigInt(2)).toString(),
+                        pools,
+                        assetIn,
+                        assetOut,
+                        assets,
+                        SwapKind.GivenIn,
+                    );
+                    expect(mappedRoute).toEqual(expectedRoute);
+                });
             });
         });
-        describe('Single Path, Exact Out', () => {
+        describe('ExactOut', () => {
             let pools: GqlPoolMinimal[];
             let paths: BatchSwapStep[][];
             const assetIn = '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4';
             const assetOut = '0x8159462d255C1D24915CB51ec361F700174cD994';
-            const amountIn = '123456789112345678';
-            const amountOut = '876543210987654321';
+            const amountIn = '111111111111111111';
+            const amountOut = '222222222222222222';
             const batchSwap: BatchSwapStep[] = [
                 {
                     poolId: '0x8159462d255c1d24915cb51ec361f700174cd99400000000000000000000075d',
@@ -256,27 +330,102 @@ describe('sorV2 Service - Routes', () => {
                     (p) => p.id === '0x8159462d255c1d24915cb51ec361f700174cd99400000000000000000000075d',
                 ) as GqlPoolMinimal;
             });
-            test('split paths', () => {
-                paths = splitPaths(batchSwap, assetIn, assetOut, assets, SwapKind.GivenOut);
-                expect(paths.length).toEqual(1);
-                expect(paths[0].length).toEqual(2);
+            describe('Single Path', () => {
+                test('split paths', () => {
+                    paths = splitPaths(batchSwap, assetIn, assetOut, assets, SwapKind.GivenOut);
+                    expect(paths.length).toEqual(1);
+                    expect(paths[0].length).toEqual(2);
+                });
+                test('mapBatchSwap', () => {
+                    const route = mapBatchSwap(paths[0], amountIn, amountOut, SwapKind.GivenOut, assets, pools);
+                    expect(route).toEqual(expectedRoute[0]);
+                });
+                test('GivenOut', () => {
+                    const mappedRoute = mapRoutes(
+                        batchSwap,
+                        amountIn,
+                        amountOut,
+                        pools,
+                        assetIn,
+                        assetOut,
+                        assets,
+                        SwapKind.GivenOut,
+                    );
+                    expect(mappedRoute).toEqual(expectedRoute);
+                });
             });
-            test('mapBatchSwap', () => {
-                const route = mapBatchSwap(paths[0], amountIn, amountOut, SwapKind.GivenOut, assets, pools);
-                expect(route).toEqual(expectedRoute[0]);
-            });
-            test('GivenOut', () => {
-                const mappedRoute = mapRoutes(
-                    batchSwap,
-                    amountIn,
-                    amountOut,
-                    pools,
-                    assetIn,
-                    assetOut,
-                    assets,
-                    SwapKind.GivenOut,
-                );
-                expect(mappedRoute).toEqual(expectedRoute);
+            describe('Multi Paths', () => {
+                beforeAll(() => {
+                    batchSwap.push({
+                        poolId: '0x8159462d255c1d24915cb51ec361f700174cd99400000000000000000000075d',
+                        assetInIndex: BigInt(0),
+                        assetOutIndex: BigInt(2),
+                        amount: BigInt(amountOut),
+                        userData: '0x',
+                    });
+                    expectedRoute[0].share = 0.5;
+                    expectedRoute.unshift({
+                        hops: [
+                            {
+                                pool: pools.find(
+                                    (p) =>
+                                        p.id === '0x8159462d255c1d24915cb51ec361f700174cd99400000000000000000000075d',
+                                ) as GqlPoolMinimal,
+                                poolId: '0x8159462d255c1d24915cb51ec361f700174cd99400000000000000000000075d',
+                                tokenIn: '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4',
+                                tokenInAmount: amountIn,
+                                tokenOut: '0x8159462d255C1D24915CB51ec361F700174cD994',
+                                tokenOutAmount: amountOut,
+                            },
+                        ],
+                        share: 0.5,
+                        tokenIn: '0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4',
+                        tokenInAmount: amountIn,
+                        tokenOut: '0x8159462d255C1D24915CB51ec361F700174cD994',
+                        tokenOutAmount: amountOut,
+                    });
+                });
+                test('splitPaths', () => {
+                    paths = splitPaths(batchSwap, assetIn, assetOut, assets, SwapKind.GivenOut);
+                    expect(paths.length).toEqual(2);
+                    expect(paths[0].length).toEqual(1);
+                    expect(paths[1].length).toEqual(2);
+                });
+                test('mapBatchSwap', () => {
+                    const route = mapBatchSwap(
+                        paths[0],
+                        (BigInt(amountIn) * BigInt(2)).toString(),
+                        (BigInt(amountOut) * BigInt(2)).toString(),
+                        SwapKind.GivenOut,
+                        assets,
+                        pools,
+                    );
+                    expect(route).toEqual(expectedRoute[0]);
+                });
+                test('mapBatchSwap', () => {
+                    const route = mapBatchSwap(
+                        paths[1],
+                        (BigInt(amountIn) * BigInt(2)).toString(),
+                        (BigInt(amountOut) * BigInt(2)).toString(),
+                        SwapKind.GivenOut,
+                        assets,
+                        pools,
+                    );
+                    expect(route).toEqual(expectedRoute[1]);
+                });
+                test('GivenOut', () => {
+                    const mappedRoute = mapRoutes(
+                        batchSwap,
+                        (BigInt(amountIn) * BigInt(2)).toString(),
+                        (BigInt(amountOut) * BigInt(2)).toString(),
+                        pools,
+                        assetIn,
+                        assetOut,
+                        assets,
+                        SwapKind.GivenOut,
+                    );
+                    expect(mappedRoute).toEqual(expectedRoute);
+                });
             });
         });
     });
