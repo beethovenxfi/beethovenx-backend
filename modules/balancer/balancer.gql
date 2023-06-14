@@ -2,15 +2,13 @@ extend type Mutation {
     balancerMutationTest: String!
 }
 
-union SorResponse = GqlSorGetSwapsResponse | GqlCowSwapApiResponse
-
 extend type Query {
     sorGetSwaps(
         tokenIn: String!
         tokenOut: String!
         swapType: GqlSorSwapType!
         swapAmount: BigDecimal! #expected in raw amount
-    ): SorResponse!
+    ): GqlCowSwapApiResponse!
 }
 
 enum GqlSorSwapType {
@@ -24,7 +22,7 @@ type GqlCowSwapApiResponse {
     swapAmount: String!
     swapAmountForSwaps: String!
     returnAmount: String!
-    returnAmountFromSwaps: String! 
+    returnAmountFromSwaps: String!
     returnAmountConsideringFees: String!
     tokenIn: String!
     tokenOut: String!

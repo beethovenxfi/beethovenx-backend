@@ -1,5 +1,3 @@
-union SorResponse = GqlSorGetSwapsResponse | GqlCowSwapApiResponse
-
 extend type Query {
     sorGetSwaps(
         tokenIn: String!
@@ -7,7 +5,7 @@ extend type Query {
         swapType: GqlSorSwapType!
         swapAmount: BigDecimal! #expected in human readable form
         swapOptions: GqlSorSwapOptionsInput!
-    ): SorResponse!
+    ): GqlSorGetSwapsResponse!
     sorGetBatchSwapForTokensIn(
         tokensIn: [GqlTokenAmountHumanReadable!]!
         tokenOut: String!
@@ -86,7 +84,7 @@ type GqlCowSwapApiResponse {
     swapAmount: String!
     swapAmountForSwaps: String!
     returnAmount: String!
-    returnAmountFromSwaps: String! 
+    returnAmountFromSwaps: String!
     returnAmountConsideringFees: String!
     tokenIn: String!
     tokenOut: String!
