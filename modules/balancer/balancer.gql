@@ -5,7 +5,6 @@ extend type Mutation {
 union SorResponse = GqlSorGetSwapsResponse | GqlCowSwapApiResponse
 
 extend type Query {
-    balancerQueryTest: String!
     sorGetSwaps(
         tokenIn: String!
         tokenOut: String!
