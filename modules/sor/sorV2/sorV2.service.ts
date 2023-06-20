@@ -125,7 +125,7 @@ class SwapResultV2 implements SwapResult {
                 swap.swapKind,
             ),
             pools,
-            marketSp: '', // TODO
+            marketSp: '0', // Daniel confirmed returning 0 should be fine here
             swaps: this.mapSwaps(swap.swaps, swap.assets),
             tokenAddresses: swap.assets,
         };
@@ -357,6 +357,7 @@ export class SorV2Service implements SwapService {
      * @param pools
      */
     private filterLinearPoolsWithZeroRate(pools: PrismaPoolWithDynamic[]): PrismaPoolWithDynamic[] {
+        // TODO Is this still an issue?
         // 0x3c640f0d3036ad85afa2d5a9e32be651657b874f00000000000000000000046b is a linear pool with priceRate = 0.0 for some tokens which causes issues with b-sdk
         return pools.filter((p) => {
             const isLinearPriceRateOk =
