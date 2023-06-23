@@ -24,6 +24,7 @@ model PrismaPool {
     dynamicData         PrismaPoolDynamicData?
     stableDynamicData   PrismaPoolStableDynamicData?
     linearDynamicData   PrismaPoolLinearDynamicData?
+    gyroDynamicData     PrismaPoolGyroDynamicData?
 
     snapshots           PrismaPoolSnapshot[]
     swaps               PrismaPoolSwap[]
@@ -178,6 +179,20 @@ model PrismaPoolLinearDynamicData {
 
     lowerTarget         String
     upperTarget         String
+}
+
+model PrismaPoolGyroDynamicData {
+    @@id([id, chain])
+    @@unique([poolId, chain])
+
+    id                  String
+    poolId              String
+    pool                PrismaPool          @relation(fields:[poolId, chain], references: [id, chain])
+    chain               Chain               
+    blockNumber         Int
+    updatedAt           DateTime            @updatedAt
+
+    tokenRates          String[]
 }
 
 model PrismaPoolToken {
