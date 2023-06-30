@@ -1,3 +1,5 @@
+import { Dictionary } from 'lodash'
+
 export interface YearnVault {
     inception: number;
     address: string;
@@ -69,3 +71,8 @@ interface YearnVaultTvl {
 }
 
 type YearnVaultType = 'v2';
+
+export type AprBreakdown = {
+    total: number;
+    breakdown: Dictionary<number> | undefined
+}
