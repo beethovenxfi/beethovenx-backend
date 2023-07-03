@@ -17,6 +17,8 @@ import { GithubContentService } from '../content/github-content.service';
 import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import { coingeckoService } from '../coingecko/coingecko.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
+import { NonReaperYieldTokensAprService } from "../pool/lib/apr-data-sources/non-reaper-yield-tokens-apr.service";
+import { networkContext } from "./network-context.service";
 
 const mainnetNetworkData: NetworkData = {
     chain: {
@@ -171,6 +173,7 @@ export const mainnetNetworkConfig: NetworkConfig = {
             mainnetNetworkData.beets.address,
             mainnetNetworkData.bal.address,
         ]),
+        new NonReaperYieldTokensAprService(mainnetNetworkData.balancer.swapProtocolFeePercentage)
     ],
     poolStakingServices: [new GaugeStakingService(gaugeSubgraphService)],
     tokenPriceHandlers: [
