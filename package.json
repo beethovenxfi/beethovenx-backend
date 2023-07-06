@@ -1,6 +1,9 @@
 {
     "name": "beethovenx-backend-v2",
     "version": "0.0.1",
+    "engines": {
+        "node": ">=18"
+    },
     "description": "Minimal backend service for Beethoven X",
     "repository": "https://github.com/beethovenxfi/beethovenx-backend",
     "author": "Beethoven X",
