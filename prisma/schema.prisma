@@ -509,6 +509,7 @@ model PrismaPoolStakingGauge {
     chain               Chain
 
     gaugeAddress        String
+    rootGauge           PrismaRootStakingGauge?
     rewards             PrismaPoolStakingGaugeReward[]
     status              PrismaPoolStakingGaugeStatus    @default(ACTIVE)
     version             Int                             @default(1)
