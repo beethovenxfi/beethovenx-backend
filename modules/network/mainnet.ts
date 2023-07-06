@@ -17,6 +17,7 @@ import { GithubContentService } from '../content/github-content.service';
 import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import { coingeckoService } from '../coingecko/coingecko.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
+import { createHttpClient } from './viem/clients';
 
 const mainnetNetworkData: NetworkData = {
     chain: {
@@ -71,6 +72,7 @@ const mainnetNetworkData: NetworkData = {
         address: '0xc128a9954e6c874ea3d62ce62b468ba073093f25',
         delegationProxy: '0x0000000000000000000000000000000000000000',
     },
+    gaugeControllerAddress: '0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD',
     balancer: {
         vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
         composableStablePoolFactories: [
@@ -156,6 +158,7 @@ export const mainnetNetworkConfig: NetworkConfig = {
     data: mainnetNetworkData,
     contentService: new GithubContentService(),
     provider: new ethers.providers.JsonRpcProvider(mainnetNetworkData.rpcUrl),
+    publicClient: createHttpClient(mainnetNetworkData.rpcUrl),
     poolAprServices: [
         new WstethAprService(tokenService, mainnetNetworkData.lido!.wstEthContract),
         new ReaperCryptAprService(
@@ -181,10 +184,10 @@ export const mainnetNetworkConfig: NetworkConfig = {
     ],
     userStakedBalanceServices: [new UserSyncGaugeBalanceService()],
     /*
-    For sub-minute jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3. 
+    For sub-minute jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3.
     This is needed because the minimum alarm period is 1 minute and we want the alarm to trigger already after 1 minute instead of 3.
 
-    For every 1 days jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3. 
+    For every 1 days jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3.
     This is needed because the maximum alarm evaluation period is 1 day (period * evaluationPeriod).
     */
     workerJobs: [
