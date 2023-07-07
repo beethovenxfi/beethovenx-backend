@@ -17,7 +17,7 @@ import { GithubContentService } from '../content/github-content.service';
 import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import { coingeckoService } from '../coingecko/coingecko.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
-import { NonReaperYieldTokensAprService } from "../pool/lib/apr-data-sources/non-reaper-yield-tokens-apr.service";
+import { IbTokensAprService } from "../pool/lib/apr-data-sources/ib-tokens-apr.service";
 import { networkContext } from "./network-context.service";
 
 const mainnetNetworkData: NetworkData = {
@@ -159,6 +159,7 @@ export const mainnetNetworkConfig: NetworkConfig = {
     contentService: new GithubContentService(),
     provider: new ethers.providers.JsonRpcProvider(mainnetNetworkData.rpcUrl),
     poolAprServices: [
+        new IbTokensAprService(),
         new WstethAprService(tokenService, mainnetNetworkData.lido!.wstEthContract),
         new ReaperCryptAprService(
             mainnetNetworkData.reaper.linearPoolFactories,
@@ -173,7 +174,6 @@ export const mainnetNetworkConfig: NetworkConfig = {
             mainnetNetworkData.beets.address,
             mainnetNetworkData.bal.address,
         ]),
-        new NonReaperYieldTokensAprService(mainnetNetworkData.balancer.swapProtocolFeePercentage)
     ],
     poolStakingServices: [new GaugeStakingService(gaugeSubgraphService)],
     tokenPriceHandlers: [

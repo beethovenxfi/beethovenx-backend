@@ -71,8 +71,3 @@ interface YearnVaultTvl {
 }
 
 type YearnVaultType = 'v2';
-
-export type AprBreakdown = {
-    total: number;
-    breakdown: Dictionary<number> | undefined
-}
