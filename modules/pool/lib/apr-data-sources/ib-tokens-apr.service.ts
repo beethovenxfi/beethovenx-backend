@@ -32,7 +32,7 @@ export class IbTokensAprService implements PoolAprService {
               title: `${ token.token.symbol || token.address } APR`,
               apr: aprs.get(token.address) ?? 0,
               group: null,
-              type: 'IB_YIELD',
+              type: pool.type==='LINEAR'? 'LINEAR_BOOSTED':'IB_YIELD',
             }, update: { title: `${ token.token.symbol || token.address } APR`, apr: aprs.get(token.address) },
           }));
         }
