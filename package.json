@@ -37,6 +37,7 @@
         "decimal.js": "^10.3.1",
         "dotenv": "^10.0.0",
         "ethers": "^5.5.1",
+        "ethers-multicall-provider": "^3.0.4",
         "express": "^4.17.1",
         "express-promise-router": "^4.1.0",
         "googleapis": "^108.0.0",

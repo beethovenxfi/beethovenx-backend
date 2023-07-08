@@ -1,13 +1,16 @@
 import { abi } from './abis/reaperStrategy'
 import { ContractFunctionConfig, createPublicClient, http, Narrow } from 'viem'
-import { arbitrum } from 'viem/chains'
-import { MulticallContracts } from "viem/src/types/multicall";
+import { JsonRpcProvider } from "@ethersproject/providers";
+import { MulticallWrapper } from "ethers-multicall-provider";
 import { Contract } from "ethers";
 
-const client = createPublicClient({
-  chain: arbitrum,
-  transport: http('https://arb1.arbitrum.io/rpc'),
-})
+// const client = createPublicClient({
+//   chain: arbitrum,
+//   transport: http('https://arb1.arbitrum.io/rpc'),
+// })
+
+const jsonRpcProvider = new JsonRpcProvider('https://arb1.arbitrum.io/rpc', 42161 /*ARBITRUM*/)
+const provider = MulticallWrapper.wrap(jsonRpcProvider)
 
 export const yieldTokens = {
   DAI: '0x12f256109e744081f633a827be80e06d97ff7447',
@@ -27,14 +30,12 @@ const noRates = Object.fromEntries(
 
 const getAprs = () => {
 
-  const contracts: ContractFunctionConfig[] = Object.keys(strategiesMap).map((coin) => ({
-    address: strategiesMap[coin],
-    abi,
-    functionName: 'averageAPRAcrossLastNHarvests',
-    args: [3] as never,
-  }))
+  const calls = Object.keys(strategiesMap).map(async (coin) => {
+    const contract = new Contract(strategiesMap[coin], abi, provider)
+    return contract.averageAPRAcrossLastNHarvests(3)
+  })
 
-  return client.multicall({ contracts })
+  return Promise.all(calls)
 }
 
 export const reaper = async () => {

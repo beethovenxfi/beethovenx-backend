@@ -1,19 +1,11 @@
 import { abi } from './abis/oErc20'
-import { ContractFunctionConfig, createPublicClient, http } from 'viem'
-import { polygonZkEvm } from 'viem/chains'
+import { Contract } from "ethers";
+import { ethers } from "ethers";
+import { MulticallWrapper } from "ethers-multicall-provider";
+import { JsonRpcProvider } from "@ethersproject/providers";
 
-const client = createPublicClient({
-  chain: {
-    ...polygonZkEvm,
-    contracts: {
-      multicall3: {
-        address: '0xca11bde05977b3631167028862be2a173976ca11',
-        blockCreated: 57_746,
-      },
-    }
-  },
-  transport: http('https://zkevm-rpc.com'),
-})
+const jsonRpcProvider = new JsonRpcProvider('https://zkevm-rpc.com', 1101 /*ARBITRUM*/)
+const provider = MulticallWrapper.wrap(jsonRpcProvider)
 
 export const yieldTokens = {
   USDT: '0xad41c77d99e282267c1492cdefe528d7d5044253',
@@ -30,14 +22,13 @@ const noRates = Object.fromEntries(
 )
 
 const getBorrowRates = () => {
-  const contracts: ContractFunctionConfig[] = Object.keys(yieldTokens).map((coin) => ({
-    address: yieldTokens[coin],
-    abi,
-    functionName: 'borrowRatePerTimestamp',
-    args: []
-  }))
+  
+  const calls = Object.keys(yieldTokens).map(async (coin) => {
+    const contract = new Contract(yieldTokens[coin], abi, provider)
+    return contract.borrowRatePerTimestamp()
+  })
 
-  return client.multicall({ contracts })
+  return Promise.all(calls)
 }
 
 export const ovix = async () => {

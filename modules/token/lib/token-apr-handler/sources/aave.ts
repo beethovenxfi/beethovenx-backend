@@ -3,7 +3,7 @@
 // or directly from RPC:
 // wrappedAaveToken.LENDING_POOL.getReserveCurrentLiquidityRate(mainTokenAddress)
 
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 const wrappedTokensMap = {
   v2: {
@@ -212,20 +212,7 @@ const endpoints = [
   { version: 'v3', network: 42161, subgraph: 'https://api.thegraph.com/subgraphs/name/aave/protocol-v3-arbitrum' },
 ]
 
-const query = `
-  query getReserves($aTokens: [String!], $underlyingAssets: [Bytes!]) {
-    reserves(
-      where: {
-        aToken_in: $aTokens
-        underlyingAsset_in: $underlyingAssets
-        isActive: true
-      }
-    ) {
-      underlyingAsset
-      liquidityRate
-    }
-  }
-`
+const query = `\nquery getReserves($aTokens: [String!], $underlyingAssets: [Bytes!]) {\nreserves(where: {\naToken_in: $aTokens\nunderlyingAsset_in: $underlyingAssets\nisActive: true\n}\n) {\nunderlyingAsset\nliquidityRate\n}\n}\n`
 
 interface ReserveResponse {
   data: {
@@ -296,7 +283,7 @@ export const aave = async (network: number, version: keyof (typeof wrappedTokens
 
     return Object.fromEntries(aprEntries)
   } catch (error) {
-    console.log(error)
+    console.log((error as AxiosError).response?.data)
 
     return noRates
   }
