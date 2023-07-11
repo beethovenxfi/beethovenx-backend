@@ -39,6 +39,7 @@ async function startServer() {
             new Sentry.Integrations.Http({ tracing: true }),
         ],
         beforeSend(event, hint) {
+            return null;
             const error = hint.originalException;
             if (error?.toString().includes('Unknown token:')) {
                 console.log(`The following error occurred but was not sent to Sentry: ${error}`);
