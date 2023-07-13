@@ -28,8 +28,8 @@ export const tessera = async () => {
     const poolsUI  = await contract.getPoolsUI()
 
     const apePool = poolsUI[0]
-    const staked = apePool.stakedAmount
-    const reward = apePool.currentTimeRange.rewardsPerHour * BigInt(24 * 365)
+    const staked = BigInt(apePool.stakedAmount)
+    const reward = BigInt(apePool.currentTimeRange.rewardsPerHour) * BigInt(24 * 365)
 
     apr = Number(reward * BigInt(1e4) / staked)
   } catch (error) {

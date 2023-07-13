@@ -4,7 +4,7 @@ import { ethers } from "ethers";
 import { MulticallWrapper } from "ethers-multicall-provider";
 import { JsonRpcProvider } from "@ethersproject/providers";
 
-const jsonRpcProvider = new JsonRpcProvider('https://zkevm-rpc.com', 1101 /*ARBITRUM*/)
+const jsonRpcProvider = new JsonRpcProvider('https://zkevm-rpc.com', 1101)
 const provider = MulticallWrapper.wrap(jsonRpcProvider)
 
 export const yieldTokens = {

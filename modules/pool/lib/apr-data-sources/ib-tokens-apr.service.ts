@@ -4,6 +4,8 @@ import { prisma } from "../../../../prisma/prisma-client";
 import { networkContext } from "../../../network/network-context.service";
 import { prismaBulkExecuteOperations } from "../../../../prisma/prisma-util";
 import { fetchAllAprs } from "../../../token/lib/token-apr-handler/fetch-all";
+import { TokenApr } from "../../../token/lib/token-apr-handler/types";
+import { PrismaPoolAprItemGroup } from "@prisma/client";
 
 export class IbTokensAprService implements PoolAprService {
 
@@ -22,18 +24,25 @@ export class IbTokensAprService implements PoolAprService {
     );
     for (const pool of tokenYieldPools) {
       for (const token of pool.tokens) {
-        if (Array.from(aprs.keys()).includes(token.address)) {
-          const itemId = `${ pool.id }-token-${token.token.symbol || token.address}-yield-apr`
+        if ((aprs.get(token.address) !== undefined)) {
+          const tokenSymbol = token.token.symbol ?? (<TokenApr>aprs.get(token.address)).name
+          const itemId = `${ pool.id }-${ tokenSymbol }-yield-apr`
+          
           operations.push(prisma.prismaPoolAprItem.upsert({
-            where: { id_chain: { id: itemId, chain: networkContext.chain } }, create: {
+            where: { id_chain: { id: itemId, chain: networkContext.chain } },
+            create: {
               id: itemId,
               chain: networkContext.chain,
               poolId: pool.id,
-              title: `${ token.token.symbol || token.address } APR`,
-              apr: aprs.get(token.address) ?? 0,
-              group: null,
-              type: pool.type==='LINEAR'? 'LINEAR_BOOSTED':'IB_YIELD',
-            }, update: { title: `${ token.token.symbol || token.address } APR`, apr: aprs.get(token.address) },
+              title: `${ tokenSymbol} APR`,
+              apr: aprs.get(token.address)?.val ?? 0,
+              group: (aprs.get(token.address)?.group as PrismaPoolAprItemGroup) ?? null,
+              type: pool.type === 'LINEAR' ? 'LINEAR_BOOSTED' : 'IB_YIELD',
+            },
+            update: {
+              title: `${ tokenSymbol } APR`,
+              apr: aprs.get(token.address)?.val
+            },
           }));
         }
       }
@@ -42,12 +51,9 @@ export class IbTokensAprService implements PoolAprService {
     await prismaBulkExecuteOperations(operations);
   }
 
-  private async fetchYieldTokensApr(): Promise<Map<string, number>> {
+  private async fetchYieldTokensApr(): Promise<Map<string, TokenApr>> {
     const data = await fetchAllAprs()
-    const aprs = new Map<string, number>(Object.entries(data as {
-      [key: string]: number
-    }).map(([key, apr]) => [key, apr * 0.0001]));
-    return aprs;
+    return new Map<string, TokenApr>(data.map((apr) => [apr.address, apr]));
   }
-  
+
 }

@@ -1,13 +1,8 @@
 import { abi } from './abis/reaperStrategy'
-import { ContractFunctionConfig, createPublicClient, http, Narrow } from 'viem'
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { MulticallWrapper } from "ethers-multicall-provider";
 import { Contract } from "ethers";
 
-// const client = createPublicClient({
-//   chain: arbitrum,
-//   transport: http('https://arb1.arbitrum.io/rpc'),
-// })
 
 const jsonRpcProvider = new JsonRpcProvider('https://arb1.arbitrum.io/rpc', 42161 /*ARBITRUM*/)
 const provider = MulticallWrapper.wrap(jsonRpcProvider)

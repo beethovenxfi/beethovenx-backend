@@ -4,6 +4,7 @@
 // wrappedAaveToken.LENDING_POOL.getReserveCurrentLiquidityRate(mainTokenAddress)
 
 import axios, { AxiosError } from "axios";
+import { gql } from "apollo-server-express";
 
 const wrappedTokensMap = {
   v2: {
@@ -164,42 +165,52 @@ const underlyingAssets = {
 }
 
 const underlyingsToWrapped = [
-  { version: 'v2', network: 1, tokens: Object.fromEntries(
+  {
+    version: 'v2', network: 1, tokens: Object.fromEntries(
       Object.keys(wrappedTokensMap.v2[1]).map((wrapped) => [
         wrappedTokensMap.v2[1][wrapped as keyof (typeof wrappedTokensMap)['v2'][1]].underlying,
         wrapped,
       ])
-    ) },
-  { version: 'v2', network: 137, tokens: Object.fromEntries(
+    )
+  },
+  {
+    version: 'v2', network: 137, tokens: Object.fromEntries(
       Object.keys(wrappedTokensMap.v2[137]).map((wrapped) => [
         wrappedTokensMap.v2[137][
           wrapped as keyof (typeof wrappedTokensMap)['v2'][137]
-        ].underlying,
+          ].underlying,
         wrapped,
       ])
-    ) },
-  { version: 'v3', network: 1, tokens: Object.fromEntries(
+    )
+  },
+  {
+    version: 'v3', network: 1, tokens: Object.fromEntries(
       Object.keys(wrappedTokensMap.v3[1]).map((wrapped) => [
         wrappedTokensMap.v3[1][wrapped as keyof (typeof wrappedTokensMap)['v3'][1]].underlying,
         wrapped,
       ])
-    ) },
-  { version: 'v3', network: 137, tokens: Object.fromEntries(
+    )
+  },
+  {
+    version: 'v3', network: 137, tokens: Object.fromEntries(
       Object.keys(wrappedTokensMap.v3[137]).map((wrapped) => [
         wrappedTokensMap.v3[137][
           wrapped as keyof (typeof wrappedTokensMap)['v3'][137]
-        ].underlying,
+          ].underlying,
         wrapped,
       ])
-    ) },
-  { version: 'v3', network: 42161, tokens: Object.fromEntries(
+    )
+  },
+  {
+    version: 'v3', network: 42161, tokens: Object.fromEntries(
       Object.keys(wrappedTokensMap.v3[42161]).map((wrapped) => [
         wrappedTokensMap.v3[42161][
           wrapped as keyof (typeof wrappedTokensMap)['v3'][42161]
-        ].underlying,
+          ].underlying,
         wrapped,
       ])
-    ) },
+    )
+  },
 ]
 
 // Subgraph
@@ -212,7 +223,18 @@ const endpoints = [
   { version: 'v3', network: 42161, subgraph: 'https://api.thegraph.com/subgraphs/name/aave/protocol-v3-arbitrum' },
 ]
 
-const query = `\nquery getReserves($aTokens: [String!], $underlyingAssets: [Bytes!]) {\nreserves(where: {\naToken_in: $aTokens\nunderlyingAsset_in: $underlyingAssets\nisActive: true\n}\n) {\nunderlyingAsset\nliquidityRate\n}\n}\n`
+const query = `query getReserves($aTokens: [String!], $underlyingAssets: [Bytes!]) {
+    reserves(
+      where: {
+        aToken_in: $aTokens
+        underlyingAsset_in: $underlyingAssets
+        isActive: true
+      }
+    ) {
+      underlyingAsset
+      liquidityRate
+    }
+  }`
 
 interface ReserveResponse {
   data: {
@@ -263,9 +285,11 @@ export const aave = async (network: number, version: keyof (typeof wrappedTokens
     if (!underlyingToWrapped) {
       throw 'no underlyingToWrapped found'
     }
-
-    const { data } = await axios.post(endpoint, {
-      body: JSON.stringify(requestQuery)
+    const { data } = await axios({
+      url: endpoint,
+      method: "post",
+      data: requestQuery,
+      headers: { "Content-Type": "application/json" }
     })
 
     const {
@@ -284,7 +308,6 @@ export const aave = async (network: number, version: keyof (typeof wrappedTokens
     return Object.fromEntries(aprEntries)
   } catch (error) {
     console.log((error as AxiosError).response?.data)
-
     return noRates
   }
 }
