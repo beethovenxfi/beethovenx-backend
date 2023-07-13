@@ -1,5 +1,5 @@
 import { abi } from './abis/oErc20'
-import { Contract } from "ethers";
+import { BigNumber, Contract } from "ethers";
 import { ethers } from "ethers";
 import { MulticallWrapper } from "ethers-multicall-provider";
 import { JsonRpcProvider } from "@ethersproject/providers";
@@ -34,12 +34,10 @@ const getBorrowRates = () => {
 export const ovix = async () => {
   try {
     const borrowRates = await getBorrowRates()
-
     const aprs = Object.keys(wrappedTokens).map((coin, i) => [
       wrappedTokens[coin],
-      Math.round(10000 * (Math.pow(1 + Number(borrowRates[i].result) / 1e18, 365 * 24 * 60 * 60) - 1))
+      Math.round(10000 * (Math.pow(1 + (borrowRates[i] as BigNumber).toNumber() / 1e18, 365 * 24 * 60 * 60) - 1))
     ])
-
     return Object.fromEntries(aprs)
   } catch (error) {
     console.log(error)
