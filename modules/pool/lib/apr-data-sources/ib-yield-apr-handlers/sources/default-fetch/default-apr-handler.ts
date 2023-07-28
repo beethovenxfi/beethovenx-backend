@@ -9,8 +9,9 @@ import {
   wstETHPolygon,
   wstETHZkEVM
 } from "./tokens";
+import { AprHandler } from "../../types";
 
-class DefaultAprHandler {
+class DefaultAprHandler implements AprHandler{
   
   tokens: string[];
   url: string;

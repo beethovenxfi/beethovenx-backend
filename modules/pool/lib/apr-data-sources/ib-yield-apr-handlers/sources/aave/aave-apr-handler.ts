@@ -14,8 +14,9 @@ import {
   wrappedAaveTokensV3Mainnet,
   wrappedAaveTokensV3Polygon
 } from "./tokens";
+import { AprHandler } from "../../types";
 
-class AaveAprHandler {
+class AaveAprHandler implements AprHandler {
 
   wrappedTokens: Map<string, string>
   aaveTokens: Map<string, string>

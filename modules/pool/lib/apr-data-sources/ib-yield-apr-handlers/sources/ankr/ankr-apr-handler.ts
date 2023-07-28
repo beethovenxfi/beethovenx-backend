@@ -1,8 +1,9 @@
 import axios from "axios";
+import { AprHandler } from "../../types";
 
 const ankrEthMainnet = '0xe95a203b1a91a908f9b9ce46459d101078c2c3cb'
 
-class AnkrAprHandler {
+class AnkrAprHandler implements AprHandler{
   serviceName: string
   tokenAddress: string
   readonly url: string = 'https://api.staking.ankr.com/v1alpha/metrics';
