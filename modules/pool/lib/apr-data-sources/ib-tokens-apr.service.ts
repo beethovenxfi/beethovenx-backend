@@ -3,11 +3,13 @@ import { PrismaPoolWithExpandedNesting } from "../../../../prisma/prisma-types";
 import { prisma } from "../../../../prisma/prisma-client";
 import { networkContext } from "../../../network/network-context.service";
 import { prismaBulkExecuteOperations } from "../../../../prisma/prisma-util";
-import { fetchAllAprs } from "../../../token/lib/token-apr-handler/fetch-all";
-import { TokenApr } from "../../../token/lib/token-apr-handler/types";
 import { PrismaPoolAprItemGroup } from "@prisma/client";
+import { TokenApr } from "./ib-yield-apr-handlers/types";
+import { IbYieldAprHandlers } from "./ib-yield-apr-handlers/ib-yield-apr-handlers";
 
 export class IbTokensAprService implements PoolAprService {
+
+  constructor(private readonly ibYieldAprHandlers: IbYieldAprHandlers) {}
 
   getAprServiceName(): string {
     return "IbTokensAprService";
@@ -25,16 +27,16 @@ export class IbTokensAprService implements PoolAprService {
     for (const pool of tokenYieldPools) {
       for (const token of pool.tokens) {
         if ((aprs.get(token.address) !== undefined)) {
-          const tokenSymbol = token.token.symbol ?? (<TokenApr>aprs.get(token.address)).name
+          const tokenSymbol = token.token.symbol;
           const itemId = `${ pool.id }-${ tokenSymbol }-yield-apr`
-          
+
           operations.push(prisma.prismaPoolAprItem.upsert({
             where: { id_chain: { id: itemId, chain: networkContext.chain } },
             create: {
               id: itemId,
               chain: networkContext.chain,
               poolId: pool.id,
-              title: `${ tokenSymbol} APR`,
+              title: `${ tokenSymbol } APR`,
               apr: aprs.get(token.address)?.val ?? 0,
               group: (aprs.get(token.address)?.group as PrismaPoolAprItemGroup) ?? null,
               type: pool.type === 'LINEAR' ? 'LINEAR_BOOSTED' : 'IB_YIELD',
@@ -52,8 +54,10 @@ export class IbTokensAprService implements PoolAprService {
   }
 
   private async fetchYieldTokensApr(): Promise<Map<string, TokenApr>> {
-    const data = await fetchAllAprs()
-    return new Map<string, TokenApr>(data.filter((apr)=>!isNaN(apr.val)).map((apr) => [apr.address, apr]));
+    const data = await this.ibYieldAprHandlers.getHandlersAprs()
+    return new Map<string, TokenApr>(
+      data.filter((apr) => !isNaN(apr.val)).map((apr) => [apr.address, apr])
+    );
   }
 
 }
