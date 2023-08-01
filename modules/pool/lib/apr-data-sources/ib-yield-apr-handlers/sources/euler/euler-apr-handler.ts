@@ -1,11 +1,12 @@
 import axios from "axios";
-import { EulerResponse } from "./types";
+import { EulerAprHandlerConfig, EulerResponse } from "./types";
 import { eulerTokensMainnet } from "./tokens";
 import { AprHandler } from "../../types";
 
 class EulerAprHandler implements AprHandler {
-  tokens: Map<string, string>
+  tokens: { [key: string]: string }
   subgraphUrl: string
+  network: number;
   readonly group = 'EULER';
 
   readonly query = `
@@ -21,9 +22,10 @@ class EulerAprHandler implements AprHandler {
   }
 `
 
-  constructor(tokens: Map<string, string>, subgraphUrl: string) {
-    this.tokens = tokens
-    this.subgraphUrl = subgraphUrl
+  constructor(aprHandlerConfig: EulerAprHandlerConfig) {
+    this.tokens = aprHandlerConfig.tokens
+    this.subgraphUrl = aprHandlerConfig.subgraphUrl
+    this.network = aprHandlerConfig.network;
   }
 
   async getAprs() {
@@ -31,7 +33,7 @@ class EulerAprHandler implements AprHandler {
       operationName: 'getAssetsAPY',
       query: this.query,
       variables: {
-        eTokenAddress_in: Array.from(this.tokens.values()),
+        eTokenAddress_in: Object.values(this.tokens),
       },
     }
 
@@ -55,4 +57,10 @@ class EulerAprHandler implements AprHandler {
   }
 }
 
-export const eulerMainnetAprHandler = new EulerAprHandler(eulerTokensMainnet, 'https://api.thegraph.com/subgraphs/name/euler-xyz/euler-mainnet');
+const eulerMainnetAprHandler = new EulerAprHandler({
+  tokens: eulerTokensMainnet,
+  subgraphUrl: 'https://api.thegraph.com/subgraphs/name/euler-xyz/euler-mainnet',
+  network: 1,
+});
+
+export const eulerHandlers = [eulerMainnetAprHandler];

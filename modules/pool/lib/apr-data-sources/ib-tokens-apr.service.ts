@@ -8,8 +8,12 @@ import { TokenApr } from "./ib-yield-apr-handlers/types";
 import { IbYieldAprHandlers } from "./ib-yield-apr-handlers/ib-yield-apr-handlers";
 
 export class IbTokensAprService implements PoolAprService {
-
-  constructor(private readonly ibYieldAprHandlers: IbYieldAprHandlers) {}
+  
+  private ibYieldAprHandlers: IbYieldAprHandlers;
+  
+  constructor(chainId: number) {
+    this.ibYieldAprHandlers = new IbYieldAprHandlers(chainId);
+  }
 
   getAprServiceName(): string {
     return "IbTokensAprService";
@@ -54,7 +58,8 @@ export class IbTokensAprService implements PoolAprService {
   }
 
   private async fetchYieldTokensApr(): Promise<Map<string, TokenApr>> {
-    const data = await this.ibYieldAprHandlers.getHandlersAprs()
+    const data = await this.ibYieldAprHandlers.getHandlersAprs();
+    console.log(data);
     return new Map<string, TokenApr>(
       data.filter((apr) => !isNaN(apr.val)).map((apr) => [apr.address, apr])
     );

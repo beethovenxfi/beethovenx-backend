@@ -4,11 +4,11 @@ import { aprHandlers } from "./sources";
 export class IbYieldAprHandlers {
   
   private handlers: AprHandler[] = [];
-  constructor(handlers: AprHandler[]) {
-    this.handlers = handlers;
+  constructor(network: number) {
+    this.handlers = aprHandlers.filter((handler) => handler.network === network);
   }
   
-  getHandlersAprs = async (): Promise<TokenApr[]> => {
+   async getHandlersAprs (): Promise<TokenApr[]>  {
     const aprPromises = this.handlers.map(async (handler) => {
       const fetchedResponse: { [key: string]: number } = await handler.getAprs()
       return Object.entries(fetchedResponse).map(([address, aprValue]) => ({
@@ -24,5 +24,3 @@ export class IbYieldAprHandlers {
     return res.flat();
   }
 }
-
-export const ibYieldAprHandlers = new IbYieldAprHandlers(aprHandlers);

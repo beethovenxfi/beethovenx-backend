@@ -3,19 +3,20 @@ import { BigNumber, Contract } from "ethers";
 import { abi } from "../abis/reaperStrategy";
 import { reaperStrategiesMapArbitrum, reaperYieldTokensArbitrum } from "./tokens";
 import { AprHandler } from "../../types";
+import { ReaperAprHandlerConfig } from "./types";
 
 class ReaperAprHandler implements AprHandler {
+  network: number;
   provider: JsonRpcProvider;
   yieldTokens: { [key: string]: `0x${ string }` };
   strategiesMap: { [key: string]: `0x${ string }` };
   readonly group = 'REAPER';
 
-  constructor(network: number, rpcUrl: string, yieldTokens: { [key: string]: `0x${ string }` }, strategiesMap: {
-    [key: string]: `0x${ string }`
-  }) {
-    this.provider = new JsonRpcProvider(rpcUrl, network);
-    this.yieldTokens = yieldTokens;
-    this.strategiesMap = strategiesMap;
+  constructor(aprHandlerConfig: ReaperAprHandlerConfig) {
+    this.network = aprHandlerConfig.network;
+    this.provider = new JsonRpcProvider(aprHandlerConfig.rpcUrl, aprHandlerConfig.network);
+    this.yieldTokens = aprHandlerConfig.yieldTokens;
+    this.strategiesMap = aprHandlerConfig.strategiesMap;
   }
 
   async getAprs() {
@@ -44,4 +45,11 @@ class ReaperAprHandler implements AprHandler {
   }
 }
 
-export const reaperArbitrumAprHandler = new ReaperAprHandler(42161, 'https://arb1.arbitrum.io/rpc', reaperYieldTokensArbitrum, reaperStrategiesMapArbitrum)
+const reaperArbitrumAprHandler = new ReaperAprHandler({
+  network: 42161,
+  rpcUrl: 'https://arb1.arbitrum.io/rpc',
+  yieldTokens: reaperYieldTokensArbitrum,
+  strategiesMap: reaperStrategiesMapArbitrum,
+})
+
+export const reaperHandlers = [reaperArbitrumAprHandler]

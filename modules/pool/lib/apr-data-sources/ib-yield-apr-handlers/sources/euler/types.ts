@@ -8,3 +8,10 @@ export interface EulerResponse {
     ]
   }
 }
+
+export type EulerAprHandlerConfig = {
+  tokens: {[key: string]: string};
+  subgraphUrl: string;
+  network: number;
+  
+}

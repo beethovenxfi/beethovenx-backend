@@ -1,15 +1,18 @@
 import axios from "axios";
 import { gearboxTokensMainnet } from "./tokens";
 import { AprHandler } from "../../types";
+import { GearboxAprHandlerConfig } from "./types";
 
 class GearboxAprHandler implements AprHandler {
   url: string;
-  tokens: Map<string, string>;
+  tokens: { [key: string]: string}
+  network: number;
   readonly group = 'GEARBOX';
 
-  constructor(tokens: Map<string, string>, url: string,) {
-    this.tokens = tokens;
-    this.url = url;
+  constructor(aprHandlerConfig: GearboxAprHandlerConfig) {
+    this.tokens = aprHandlerConfig.tokens;
+    this.url = aprHandlerConfig.url;
+    this.network = aprHandlerConfig.network;
   }
 
   async getAprs() {
@@ -19,7 +22,7 @@ class GearboxAprHandler implements AprHandler {
       const json = data as { data: { dieselToken: string; depositAPY_RAY: string }[] }
 
       const aprEntries = json.data
-        .filter((t) => Array.from(this.tokens.values()).includes(t.dieselToken.toLowerCase()))
+        .filter((t) => Object.values(this.tokens).includes(t.dieselToken.toLowerCase()))
         .map((({ dieselToken, depositAPY_RAY }) => {
           return [dieselToken, Number(depositAPY_RAY.slice(0, 27)) / 1e27]
         }))
@@ -31,7 +34,10 @@ class GearboxAprHandler implements AprHandler {
   }
 }
 
-export const gearboxMainnetAprHandler = new GearboxAprHandler(
-  gearboxTokensMainnet,
-  'https://mainnet.gearbox.foundation/api/pools'
-)
+const gearboxMainnetAprHandler = new GearboxAprHandler({
+    tokens: gearboxTokensMainnet,
+    url: 'https://mainnet.gearbox.foundation/api/pools',
+    network: 1
+  })
+
+export const gearboxHandlers = [gearboxMainnetAprHandler]

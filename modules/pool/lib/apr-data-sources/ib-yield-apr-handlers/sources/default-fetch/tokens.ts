@@ -10,7 +10,7 @@ const cbETHMainnet = '0xbe9895146f7af43049ca1c1ae358b0541ea49704';
 const sfrxETHMainnet = '0xac3e018457b222d93114458476f3e3416abbe38f';
 const rETHMainnet = '0x9559aaa82d9649c7a7b220e7c461d2e74c9a3593';
 const USDRMainnet = '0xaf0d9d65fc54de245cda37af3d18cbec860a4d4b';
-const MATICXMainnet = '0xfa68fb4628dff1028cfec22b4162fccd0d45efb6';
+const MATICXPolygon = '0xfa68fb4628dff1028cfec22b4162fccd0d45efb6';
 const wbETHMainnet = '0xa2e3356610840701bdf5611a53974510ae27e2e1';
 const swETHMainnet = '0xf951e335afb289353dc249e82926178eac7ded78';
 const wjAURAMainnet = '0x198d7387fa97a73f05b8578cdeff8f2a1f34cd1f';
@@ -28,7 +28,7 @@ export {
   sfrxETHMainnet,
   rETHMainnet,
   USDRMainnet,
-  MATICXMainnet,
+  MATICXPolygon,
   wbETHMainnet,
   swETHMainnet,
   wjAURAMainnet

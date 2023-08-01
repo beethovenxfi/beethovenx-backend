@@ -1,17 +1,20 @@
 import axios from "axios";
 import { AprHandler } from "../../types";
+import { AnkrAprHandlerConfig } from "./types";
 
 const ankrEthMainnet = '0xe95a203b1a91a908f9b9ce46459d101078c2c3cb'
 
-class AnkrAprHandler implements AprHandler{
+class AnkrAprHandler implements AprHandler {
   serviceName: string
   tokenAddress: string
+  network: number
   readonly url: string = 'https://api.staking.ankr.com/v1alpha/metrics';
   readonly group = 'ANKR';
 
-  constructor(serviceName: string, tokenAddress: string) {
-    this.serviceName = serviceName
-    this.tokenAddress = tokenAddress
+  constructor(aprHandlerConfig: AnkrAprHandlerConfig) {
+    this.serviceName = aprHandlerConfig.serviceName
+    this.tokenAddress = aprHandlerConfig.tokenAddress
+    this.network = aprHandlerConfig.network
   }
 
   async getAprs() {
@@ -34,4 +37,11 @@ class AnkrAprHandler implements AprHandler{
   }
 }
 
-export const ankrEthMainnetAprHandler = new AnkrAprHandler('eth', ankrEthMainnet);
+const ankrEthMainnetAprHandler = new AnkrAprHandler(
+  {
+    serviceName: 'eth',
+    tokenAddress: ankrEthMainnet,
+    network: 1
+  });
+
+export const ankrHandlers = [ankrEthMainnetAprHandler];

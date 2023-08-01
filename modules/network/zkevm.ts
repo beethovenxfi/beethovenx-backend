@@ -16,6 +16,7 @@ import { GithubContentService } from '../content/github-content.service';
 import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
 import { coingeckoService } from '../coingecko/coingecko.service';
+import { IbTokensAprService } from "../pool/lib/apr-data-sources/ib-tokens-apr.service";
 
 const zkevmNetworkData: NetworkData = {
     chain: {
@@ -146,6 +147,7 @@ export const zkevmNetworkConfig: NetworkConfig = {
     contentService: new GithubContentService(),
     provider: new ethers.providers.JsonRpcProvider(zkevmNetworkData.rpcUrl),
     poolAprServices: [
+        new IbTokensAprService(zkevmNetworkData.chain.id),
         new WstethAprService(tokenService, zkevmNetworkData.lido!.wstEthContract),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),

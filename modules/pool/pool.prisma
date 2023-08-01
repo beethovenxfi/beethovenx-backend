@@ -308,6 +308,7 @@ enum PrismaPoolAprItemGroup {
     TETU
     OVIX
     EULER
+    DEFAULT
 }
 
 model PrismaPoolCategory {

@@ -1,41 +1,42 @@
 import axios from "axios";
 import { idleTokensMainnet, wrapped4626IdleTokensMainnet } from "./tokens";
 import { AprHandler } from "../../types";
+import { IdleAprHandlerConfig } from "./types";
 
 class IdleAprHandler implements AprHandler {
-  wrappedIdleTokens: Map<string, string>;
-  idleTokens: Map<string, string>
+  wrappedIdleTokens: { [key: string]: string };
+  idleTokens: { [key: string]: string };
   baseIdleApiUrl: string;
   authorizationHeader: string;
+  network: number;
   readonly group = 'IDLE';
 
-  constructor(wrappedIdleTokens: Map<string, string>,
-              idleTokens: Map<string, string>,
-              baseIdleApiUrl: string,
-              authorizationHeader: string) {
-    this.wrappedIdleTokens = wrappedIdleTokens;
-    this.idleTokens = idleTokens;
-    this.baseIdleApiUrl = baseIdleApiUrl;
-    this.authorizationHeader = authorizationHeader;
+  constructor(aprHandlerConfig: IdleAprHandlerConfig) {
+    this.wrappedIdleTokens = aprHandlerConfig.wrappedIdleTokens;
+    this.idleTokens = aprHandlerConfig.idleTokens;
+    this.baseIdleApiUrl = aprHandlerConfig.baseIdleApiUrl;
+    this.authorizationHeader = aprHandlerConfig.authorizationHeader;
+    this.network = aprHandlerConfig.network;
   }
 
   async getAprs() {
     try {
 
-      const aprPromises = Array.from(this.idleTokens.entries()).map(async ([tokenName, idleTokenAddress]) => {
-        const { data } = await axios.get([this.baseIdleApiUrl, idleTokenAddress, "?isRisk=false&order=desc&limit=1"].join(''), {
-          headers: {
-            Authorization: this.authorizationHeader,
-          },
+      const aprPromises = Object.entries(this.idleTokens)
+        .map(async ([tokenName, idleTokenAddress]) => {
+          const { data } = await axios.get([this.baseIdleApiUrl, idleTokenAddress, "?isRisk=false&order=desc&limit=1"].join(''), {
+            headers: {
+              Authorization: this.authorizationHeader,
+            },
+          })
+          const [json] = data as { idleRate: string }[]
+          const value = Number(json.idleRate) / 1e20
+          return [
+            this.wrappedIdleTokens[tokenName],
+            value,
+          ]
         })
-        const [json] = data as { idleRate: string }[]
-        const value = Number(json.idleRate) / 1e20
-        return [
-          this.wrappedIdleTokens.get(tokenName),
-          value,
-        ]
-      })
-      const res = Array(this.idleTokens.size)
+      const res = Array(Object.keys(this.idleTokens).length)
       for (const [index, aprPromise] of aprPromises.entries()) {
         res[index] = await aprPromise
       }
@@ -47,9 +48,13 @@ class IdleAprHandler implements AprHandler {
   }
 }
 
-export const idleMainnetAprHandler = new IdleAprHandler(
-  wrapped4626IdleTokensMainnet,
-  idleTokensMainnet,
-  'https://api.idle.finance/junior-rates/',
-  'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRJZCI6IkFwcDciLCJpYXQiOjE2NzAyMzc1Mjd9.L12KJEt8fW1Cvy3o7Nl4OJ2wtEjzlObaAYJ9aC_CY6M'
-);
+const idleMainnetAprHandler = new IdleAprHandler(
+  {
+    wrappedIdleTokens: wrapped4626IdleTokensMainnet,
+    idleTokens: idleTokensMainnet,
+    baseIdleApiUrl: 'https://api.idle.finance/junior-rates/',
+    authorizationHeader: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRJZCI6IkFwcDciLCJpYXQiOjE2NzAyMzc1Mjd9.L12KJEt8fW1Cvy3o7Nl4OJ2wtEjzlObaAYJ9aC_CY6M',
+    network: 1
+  });
+
+export const idleAprHandlers = [idleMainnetAprHandler]

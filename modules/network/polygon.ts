@@ -16,6 +16,7 @@ import { GithubContentService } from '../content/github-content.service';
 import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import { coingeckoService } from '../coingecko/coingecko.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
+import { IbTokensAprService } from "../pool/lib/apr-data-sources/ib-tokens-apr.service";
 
 const polygonNetworkData: NetworkData = {
     chain: {
@@ -151,6 +152,7 @@ export const polygonNetworkConfig: NetworkConfig = {
     contentService: new GithubContentService(),
     provider: new ethers.providers.JsonRpcProvider(polygonNetworkData.rpcUrl),
     poolAprServices: [
+        new IbTokensAprService(polygonNetworkData.chain.id),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(polygonNetworkData.balancer.swapProtocolFeePercentage),
