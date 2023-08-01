@@ -48,6 +48,7 @@ const gnosisNetworkData: NetworkData = {
     coingecko: {
         nativeAssetId: 'xdai',
         platformId: 'xdai',
+        excludedTokenAddresses: [],
     },
     tokenPrices: {
         maxHourlyPriceHistoryNumDays: 100,
@@ -72,7 +73,10 @@ const gnosisNetworkData: NetworkData = {
     },
     balancer: {
         vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
-        composableStablePoolFactories: ['0xf23b4DB826DbA14c0e857029dfF076b1c0264843'],
+        composableStablePoolFactories: [
+            '0xf23b4DB826DbA14c0e857029dfF076b1c0264843',
+            '0x4bdCc2fb18AEb9e2d281b0278D946445070EAda7',
+        ],
         weightedPoolV2Factories: ['0x6CaD2ea22BFA7F4C14Aae92E47F510Cd5C509bc7'],
         swapProtocolFeePercentage: 0.5,
         yieldProtocolFeePercentage: 0.5,
@@ -105,8 +109,10 @@ const gnosisNetworkData: NetworkData = {
         vaultsEndpoint: 'https://#/',
     },
     reaper: {
-        linearPoolFactories: [''],
+        linearPoolFactories: [],
+        linearPoolIdsFromErc4626Factory: [],
         averageAPRAcrossLastNHarvests: 2,
+        multistratAprSubgraphUrl: '',
     },
     lido: {
         wstEthAprEndpoint: '',

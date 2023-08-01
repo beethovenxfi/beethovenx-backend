@@ -51,6 +51,7 @@ const mainnetNetworkData: NetworkData = {
     coingecko: {
         nativeAssetId: 'ethereum',
         platformId: 'ethereum',
+        excludedTokenAddresses: [],
     },
     tokenPrices: {
         maxHourlyPriceHistoryNumDays: 100,
@@ -73,6 +74,7 @@ const mainnetNetworkData: NetworkData = {
         address: '0xc128a9954e6c874ea3d62ce62b468ba073093f25',
         delegationProxy: '0x0000000000000000000000000000000000000000',
     },
+    gaugeControllerAddress: '0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD',
     balancer: {
         vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
         composableStablePoolFactories: [
@@ -80,6 +82,7 @@ const mainnetNetworkData: NetworkData = {
             '0x85a80afee867aDf27B50BdB7b76DA70f1E853062',
             '0xdba127fBc23fb20F5929C546af220A991b5C6e01',
             '0xfADa0f4547AB2de89D1304A668C39B3E09Aa7c76',
+            '0xDB8d758BCb971e482B2C45f7F8a7740283A1bd3A',
         ],
         weightedPoolV2Factories: [
             '0xcC508a455F5b0073973107Db6a878DdBDab957bC',
@@ -118,8 +121,10 @@ const mainnetNetworkData: NetworkData = {
         vaultsEndpoint: 'https://#/',
     },
     reaper: {
-        linearPoolFactories: ['0x1b986138a4F2aA538E79fdEC222dad93F8d66703'],
+        linearPoolFactories: [],
+        linearPoolIdsFromErc4626Factory: [],
         averageAPRAcrossLastNHarvests: 2,
+        multistratAprSubgraphUrl: '',
     },
     beefy: {
         linearPools: [''],
@@ -161,12 +166,6 @@ export const mainnetNetworkConfig: NetworkConfig = {
     poolAprServices: [
         new IbTokensAprService(mainnetNetworkData.chain.id),
         new WstethAprService(tokenService, mainnetNetworkData.lido!.wstEthContract),
-        new ReaperCryptAprService(
-            mainnetNetworkData.reaper.linearPoolFactories,
-            mainnetNetworkData.reaper.averageAPRAcrossLastNHarvests,
-            mainnetNetworkData.stader ? mainnetNetworkData.stader.sFtmxContract : undefined,
-            mainnetNetworkData.lido ? mainnetNetworkData.lido.wstEthContract : undefined,
-        ),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(mainnetNetworkData.balancer.swapProtocolFeePercentage),
@@ -184,10 +183,10 @@ export const mainnetNetworkConfig: NetworkConfig = {
     ],
     userStakedBalanceServices: [new UserSyncGaugeBalanceService()],
     /*
-    For sub-minute jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3. 
+    For sub-minute jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3.
     This is needed because the minimum alarm period is 1 minute and we want the alarm to trigger already after 1 minute instead of 3.
 
-    For every 1 days jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3. 
+    For every 1 days jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3.
     This is needed because the maximum alarm evaluation period is 1 day (period * evaluationPeriod).
     */
     workerJobs: [
@@ -283,6 +282,10 @@ export const mainnetNetworkConfig: NetworkConfig = {
         },
         {
             name: 'sync-vebal-totalSupply',
+            interval: every(5, 'minutes'),
+        },
+        {
+            name: 'sync-vebal-voting-gauges',
             interval: every(5, 'minutes'),
         },
         // The following are multichain jobs and should only run once for all chains.

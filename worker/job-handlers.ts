@@ -11,7 +11,7 @@ import { initRequestScopedContext, setRequestScopedContextValue } from '../modul
 import { AllNetworkConfigs } from '../modules/network/network-config';
 import { networkContext } from '../modules/network/network-context.service';
 import { veBalService } from '../modules/vebal/vebal.service';
-import { liquidityGenerationEventService } from '../modules/lge/liquidity-generation-event.service';
+import { veBalVotingListService } from '../modules/vebal/vebal-voting-list.service';
 
 export type WorkerJob = {
     name: string;
@@ -59,18 +59,18 @@ async function runIfNotAlreadyRunning(id: string, chainId: string, fn: () => any
         console.time(jobId);
         console.log(`Start job ${jobId}`);
 
-        sentryCheckInId = Sentry.captureCheckIn({
-            monitorSlug: `${monitorSlug}`,
-            status: 'in_progress',
-        });
+        // sentryCheckInId = Sentry.captureCheckIn({
+        //     monitorSlug: `${monitorSlug}`,
+        //     status: 'in_progress',
+        // });
 
         await fn();
 
-        Sentry.captureCheckIn({
-            checkInId: sentryCheckInId,
-            monitorSlug: `${monitorSlug}`,
-            status: 'ok',
-        });
+        // Sentry.captureCheckIn({
+        //     checkInId: sentryCheckInId,
+        //     monitorSlug: `${monitorSlug}`,
+        //     status: 'ok',
+        // });
 
         if (process.env.AWS_ALERTS === 'true') {
             const cronsMetricPublisher = getCronMetricsPublisher(chainId);
@@ -90,11 +90,11 @@ async function runIfNotAlreadyRunning(id: string, chainId: string, fn: () => any
             scope.setTag('error', jobId);
         });
 
-        Sentry.captureCheckIn({
-            checkInId: sentryCheckInId,
-            monitorSlug: `${monitorSlug}`,
-            status: 'error',
-        });
+        // Sentry.captureCheckIn({
+        //     checkInId: sentryCheckInId,
+        //     monitorSlug: `${monitorSlug}`,
+        //     status: 'error',
+        // });
 
         console.log(`Error job ${jobId}`, error);
     } finally {
@@ -286,13 +286,8 @@ export async function scheduleJob(job: WorkerJob, chainId: string) {
         case 'sync-vebal-totalSupply':
             await runIfNotAlreadyRunning(job.name, chainId, () => veBalService.syncVeBalTotalSupply(), 0.01);
             break;
-        case 'sync-lge-price-data':
-            await runIfNotAlreadyRunning(
-                job.name,
-                chainId,
-                () => liquidityGenerationEventService.syncRunningLgeRealPriceData(),
-                0.01,
-            );
+        case 'sync-vebal-voting-gauges':
+            await runIfNotAlreadyRunning(job.name, chainId, () => veBalVotingListService.syncVotingGauges(), 0.01);
             break;
         default:
             throw new Error(`Unhandled job type ${job.name}`);

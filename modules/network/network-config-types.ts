@@ -46,6 +46,7 @@ export interface NetworkData {
     coingecko: {
         nativeAssetId: string;
         platformId: string;
+        excludedTokenAddresses: string[];
     };
     tokenPrices: {
         maxHourlyPriceHistoryNumDays: number;
@@ -82,6 +83,7 @@ export interface NetworkData {
         address: string;
         delegationProxy: string;
     };
+    gaugeControllerAddress?: string;
     balancer: {
         vault: string;
         weightedPoolV2Factories: string[];
@@ -107,7 +109,9 @@ export interface NetworkData {
     };
     reaper: {
         linearPoolFactories: string[];
+        linearPoolIdsFromErc4626Factory: string[];
         averageAPRAcrossLastNHarvests: number;
+        multistratAprSubgraphUrl: string;
     };
     beefy: {
         linearPools: string[];
