@@ -19,7 +19,7 @@ class DefaultAprHandler implements AprHandler {
   path: string;
   scale: number;
   network: number;
-  readonly group = undefined;
+  readonly group = "DEFAULT";
 
   constructor(aprHandlerConfig: DefaultAprHandlerConfig) {
     this.tokens = aprHandlerConfig.tokens;
@@ -41,7 +41,7 @@ class DefaultAprHandler implements AprHandler {
         return acc
       }, {} as { [key: string]: number })
     } catch (error) {
-      console.error(`Failed to fetch APRs in url ${ this.url }}:`, error)
+      console.error(`Failed to fetch APRs in url ${ this.url }:`, error)
       return {}
     }
   }

@@ -352,6 +352,8 @@ enum PrismaPoolAprItemGroup {
     TESSERA
     TETU
     OVIX
+    EULER
+    DEFAULT
 }
 
 model PrismaPoolCategory {
