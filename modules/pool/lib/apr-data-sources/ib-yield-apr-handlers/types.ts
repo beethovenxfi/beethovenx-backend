@@ -5,6 +5,6 @@ export type TokenApr = {
 }
 
 export interface AprHandler {
-  readonly group: string | undefined;
+  readonly group: string;
   getAprs(): Promise<{ [key: string]: number }>;
 }
