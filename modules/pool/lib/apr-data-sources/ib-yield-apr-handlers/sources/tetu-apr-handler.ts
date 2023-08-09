@@ -1,6 +1,5 @@
 import axios from "axios";
-import { AprHandler } from "../../types";
-import { TetuAprHandlerConfig } from "./types";
+import { AprHandler } from "../types";
 
 class TetuAprHandler implements AprHandler {
   network: number;
@@ -27,6 +26,12 @@ class TetuAprHandler implements AprHandler {
       return {}
     }
   }
+}
+
+type TetuAprHandlerConfig = {
+  network: number;
+  baseUrl: string;
+  networkName: string;
 }
 
 const tetuPolygonAprHandler = new TetuAprHandler({

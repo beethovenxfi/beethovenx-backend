@@ -1,7 +1,5 @@
 import axios from "axios";
-import { idleTokensMainnet, wrapped4626IdleTokensMainnet } from "./tokens";
-import { AprHandler } from "../../types";
-import { IdleAprHandlerConfig } from "./types";
+import { AprHandler } from "../types";
 
 class IdleAprHandler implements AprHandler {
   wrappedIdleTokens: { [key: string]: string };
@@ -48,8 +46,27 @@ class IdleAprHandler implements AprHandler {
   }
 }
 
-const idleMainnetAprHandler = new IdleAprHandler(
-  {
+const wrapped4626IdleTokensMainnet = {
+  idleDAI: '0x0c80f31b840c6564e6c5e18f386fad96b63514ca',
+  idleUSDC: '0xc3da79e0de523eef7ac1e4ca9abfe3aac9973133',
+  idleUSDT: '0x544897a3b944fdeb1f94a0ed973ea31a80ae18e1',
+}
+
+const idleTokensMainnet = {
+  idleDAI: '0xec9482040e6483b7459cc0db05d51dfa3d3068e1',
+  idleUSDC: '0xdc7777c771a6e4b3a82830781bdde4dbc78f320e',
+  idleUSDT: '0xfa3afc9a194babd56e743fa3b7aa2ccbed3eaaad',
+}
+
+type IdleAprHandlerConfig = {
+  wrappedIdleTokens: {[key: string]: string};
+  idleTokens: {[key: string]: string};
+  baseIdleApiUrl: string;
+  authorizationHeader: string;
+  network: number;
+}
+
+const idleMainnetAprHandler = new IdleAprHandler({
     wrappedIdleTokens: wrapped4626IdleTokensMainnet,
     idleTokens: idleTokensMainnet,
     baseIdleApiUrl: 'https://api.idle.finance/junior-rates/',

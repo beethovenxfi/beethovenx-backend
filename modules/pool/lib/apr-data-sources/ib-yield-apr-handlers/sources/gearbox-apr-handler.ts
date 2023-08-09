@@ -1,7 +1,5 @@
 import axios from "axios";
-import { gearboxTokensMainnet } from "./tokens";
-import { AprHandler } from "../../types";
-import { GearboxAprHandlerConfig } from "./types";
+import { AprHandler } from "../types";
 
 class GearboxAprHandler implements AprHandler {
   url: string;
@@ -33,6 +31,17 @@ class GearboxAprHandler implements AprHandler {
     }
   }
 }
+
+type GearboxAprHandlerConfig = {
+  tokens: {[key: string]: string};
+  url: string;
+  network: number;
+}
+
+const gearboxTokensMainnet = {
+  dDAI: '0x6cfaf95457d7688022fc53e7abe052ef8dfbbdba',
+  dUSDC: '0xc411db5f5eb3f7d552f9b8454b2d74097ccde6e3',
+};
 
 const gearboxMainnetAprHandler = new GearboxAprHandler({
     tokens: gearboxTokensMainnet,

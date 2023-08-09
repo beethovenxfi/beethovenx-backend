@@ -1,6 +1,5 @@
 import axios from "axios";
-import { AprHandler } from "../../types";
-import { TranchessAprHandlerConfig } from "./types";
+import { AprHandler } from "../types";
 
 const qETHMainnet = '0x93ef1ea305d11a9b2a3ebb9bb4fcc34695292e7d'
 
@@ -30,6 +29,12 @@ class TranchessAprHandler implements AprHandler {
       return {}
     }
   }
+}
+
+type TranchessAprHandlerConfig = {
+  network: number;
+  token: string;
+  url: string;
 }
 
 const tranchessMainnetAprHandler = new TranchessAprHandler({

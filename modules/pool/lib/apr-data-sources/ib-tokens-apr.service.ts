@@ -58,7 +58,7 @@ export class IbTokensAprService implements PoolAprService {
   }
 
   private async fetchYieldTokensApr(): Promise<Map<string, TokenApr>> {
-    const data = await this.ibYieldAprHandlers.getHandlersAprs();
+    const data = await this.ibYieldAprHandlers.fetchAprsFromAllHandlers();
     console.log(data);
     return new Map<string, TokenApr>(
       data.filter((apr) => !isNaN(apr.val)).map((apr) => [apr.address, apr])

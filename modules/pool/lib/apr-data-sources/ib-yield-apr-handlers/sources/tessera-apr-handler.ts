@@ -1,9 +1,7 @@
 import { Contract } from "ethers";
-import { abi } from "../abis/tesseraPool";
+import { abi } from "./abis/tesseraPool";
 import { JsonRpcProvider } from "@ethersproject/providers";
-import { tesseraYieldTokensMainnet } from "./tokens";
-import { AprHandler } from "../../types";
-import { TesseraAprHandlerConfig } from "./types";
+import { AprHandler } from "../types";
 
 class TesseraAprHandler implements AprHandler {
   network: number;
@@ -43,6 +41,17 @@ class TesseraAprHandler implements AprHandler {
     }
   }
 }
+
+type TesseraAprHandlerConfig = {
+  network: number;
+  rpcUrl: string;
+  yieldTokens: { [key: string]: `0x${ string }` };
+  contractAddress: `0x${ string }`;
+}
+
+const tesseraYieldTokensMainnet = {
+  sApe: '0x7966c5bae631294d7cffcea5430b78c2f76db6fa',
+} as { [key: string]: `0x${ string }` }
 
 const tesseraMainnetAprHandler = new TesseraAprHandler({
     network: 1,

@@ -1,8 +1,13 @@
 import axios from "axios";
-import { AprHandler } from "../../types";
-import { AnkrAprHandlerConfig } from "./types";
+import { AprHandler } from "../types";
 
 const ankrEthMainnet = '0xe95a203b1a91a908f9b9ce46459d101078c2c3cb'
+
+type AnkrAprHandlerConfig = {
+  serviceName: string;
+  tokenAddress: string;
+  network: number;
+}
 
 class AnkrAprHandler implements AprHandler {
   serviceName: string
