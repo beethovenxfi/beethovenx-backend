@@ -15,7 +15,7 @@ import { GithubContentService } from '../content/github-content.service';
 import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import { coingeckoService } from '../coingecko/coingecko.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
-import { IbTokensAprService } from "../pool/lib/apr-data-sources/ib-tokens-apr.service";
+import { IbTokensAprService } from '../pool/lib/apr-data-sources/ib-tokens-apr.service';
 
 const gnosisNetworkData: NetworkData = {
     chain: {
@@ -152,7 +152,7 @@ export const gnosisNetworkConfig: NetworkConfig = {
     contentService: new GithubContentService(),
     provider: new ethers.providers.JsonRpcProvider(gnosisNetworkData.rpcUrl),
     poolAprServices: [
-        new IbTokensAprService(gnosisNetworkData.chain.id),
+        new IbTokensAprService(gnosisNetworkData.chain.prismaId),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(gnosisNetworkData.balancer.swapProtocolFeePercentage),

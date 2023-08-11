@@ -17,8 +17,7 @@ import { GithubContentService } from '../content/github-content.service';
 import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
 import { coingeckoService } from '../coingecko/coingecko.service';
-import { IbTokensAprService } from "../pool/lib/apr-data-sources/ib-tokens-apr.service";
-import { IbYieldAprHandlers } from "../pool/lib/apr-data-sources/ib-yield-apr-handlers/ib-yield-apr-handlers";
+import { IbTokensAprService } from '../pool/lib/apr-data-sources/ib-tokens-apr.service';
 
 const arbitrumNetworkData: NetworkData = {
     chain: {
@@ -162,7 +161,7 @@ export const arbitrumNetworkConfig: NetworkConfig = {
     contentService: new GithubContentService(),
     provider: new ethers.providers.JsonRpcProvider(arbitrumNetworkData.rpcUrl),
     poolAprServices: [
-        new IbTokensAprService(arbitrumNetworkData.chain.id),
+        new IbTokensAprService(arbitrumNetworkData.chain.prismaId),
         new WstethAprService(tokenService, arbitrumNetworkData.lido!.wstEthContract),
         new ReaperCryptAprService(
             arbitrumNetworkData.reaper.linearPoolFactories,

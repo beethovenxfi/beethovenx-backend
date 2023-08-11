@@ -16,7 +16,7 @@ import { GithubContentService } from '../content/github-content.service';
 import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
 import { coingeckoService } from '../coingecko/coingecko.service';
-import { IbTokensAprService } from "../pool/lib/apr-data-sources/ib-tokens-apr.service";
+import { IbTokensAprService } from '../pool/lib/apr-data-sources/ib-tokens-apr.service';
 
 const zkevmNetworkData: NetworkData = {
     chain: {
@@ -153,7 +153,7 @@ export const zkevmNetworkConfig: NetworkConfig = {
     contentService: new GithubContentService(),
     provider: new ethers.providers.JsonRpcProvider(zkevmNetworkData.rpcUrl),
     poolAprServices: [
-        new IbTokensAprService(zkevmNetworkData.chain.id),
+        new IbTokensAprService(zkevmNetworkData.chain.prismaId),
         new WstethAprService(tokenService, zkevmNetworkData.lido!.wstEthContract),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
@@ -172,12 +172,12 @@ export const zkevmNetworkConfig: NetworkConfig = {
     ],
     userStakedBalanceServices: [new UserSyncGaugeBalanceService()],
     /*
-    For sub-minute jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3. 
-    This is needed because the minimum alarm period is 1 minute and we want the alarm to trigger already after 1 minute instead of 3.
+  For sub-minute jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3. 
+  This is needed because the minimum alarm period is 1 minute and we want the alarm to trigger already after 1 minute instead of 3.
 
-    For every 1 days jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3. 
-    This is needed because the maximum alarm evaluation period is 1 day (period * evaluationPeriod).
-    */
+  For every 1 days jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3. 
+  This is needed because the maximum alarm evaluation period is 1 day (period * evaluationPeriod).
+  */
     workerJobs: [
         {
             name: 'update-token-prices',
