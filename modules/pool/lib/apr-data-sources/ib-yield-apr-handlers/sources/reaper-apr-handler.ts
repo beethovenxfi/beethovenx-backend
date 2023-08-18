@@ -12,8 +12,8 @@ class ReaperAprHandler implements AprHandler {
     readonly group = 'REAPER';
 
     constructor(aprHandlerConfig: ReaperAprHandlerConfig) {
-        this.networkPrismaId = aprHandlerConfig.network;
-        this.provider = new JsonRpcProvider(aprHandlerConfig.rpcUrl, aprHandlerConfig.network);
+        this.networkPrismaId = aprHandlerConfig.networkPrismaId;
+        this.provider = new JsonRpcProvider(aprHandlerConfig.rpcUrl, aprHandlerConfig.networkChainId);
         this.yieldTokens = aprHandlerConfig.yieldTokens;
         this.strategiesMap = aprHandlerConfig.strategiesMap;
     }
@@ -41,7 +41,8 @@ class ReaperAprHandler implements AprHandler {
 }
 
 type ReaperAprHandlerConfig = {
-    network: string;
+    networkPrismaId: string;
+    networkChainId: number;
     rpcUrl: string;
     yieldTokens: { [key: string]: `0x${string}` };
     strategiesMap: {
@@ -49,7 +50,7 @@ type ReaperAprHandlerConfig = {
     };
 };
 
-const reaperYieldTokensArbitrum = {
+export const reaperYieldTokensArbitrum = {
     DAI: '0x12f256109e744081f633a827be80e06d97ff7447',
     USDT: '0x0179bac7493a92ac812730a4c64a0b41b7ea0ecf',
     USDC: '0xaeacf641a0342330ec681b57c0a6af0b71d5cbff',
@@ -62,7 +63,8 @@ const reaperStrategiesMapArbitrum = {
 } as { [key: string]: `0x${string}` };
 
 const reaperArbitrumAprHandler = new ReaperAprHandler({
-    network: 'ARBITRUM',
+    networkPrismaId: 'ARBITRUM',
+    networkChainId: 42161,
     rpcUrl: 'https://arb1.arbitrum.io/rpc',
     yieldTokens: reaperYieldTokensArbitrum,
     strategiesMap: reaperStrategiesMapArbitrum,

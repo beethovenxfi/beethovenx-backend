@@ -33,7 +33,7 @@ class AnkrAprHandler implements AprHandler {
     }
 }
 
-const ankrEthMainnet = '0xe95a203b1a91a908f9b9ce46459d101078c2c3cb';
+export const ankrEthMainnet = '0xe95a203b1a91a908f9b9ce46459d101078c2c3cb';
 
 type AnkrAprHandlerConfig = {
     serviceName: string;

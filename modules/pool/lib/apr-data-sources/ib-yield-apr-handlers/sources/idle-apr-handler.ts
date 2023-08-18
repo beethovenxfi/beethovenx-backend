@@ -45,7 +45,7 @@ class IdleAprHandler implements AprHandler {
     }
 }
 
-const wrapped4626IdleTokensMainnet = {
+export const wrapped4626IdleTokensMainnet = {
     idleDAI: '0x0c80f31b840c6564e6c5e18f386fad96b63514ca',
     idleUSDC: '0xc3da79e0de523eef7ac1e4ca9abfe3aac9973133',
     idleUSDT: '0x544897a3b944fdeb1f94a0ed973ea31a80ae18e1',

@@ -12,8 +12,8 @@ class OvixAprHandler implements AprHandler {
     readonly group = 'OVIX';
 
     constructor(aprHandlerConfig: OvixAprHandlerConfig) {
-        this.networkPrismaId = aprHandlerConfig.network;
-        this.provider = new JsonRpcProvider(aprHandlerConfig.rpcUrl, aprHandlerConfig.network);
+        this.networkPrismaId = aprHandlerConfig.networkPrismaId;
+        this.provider = new JsonRpcProvider(aprHandlerConfig.rpcUrl, aprHandlerConfig.networkChainId);
         this.yieldTokens = aprHandlerConfig.yieldTokens;
         this.wrappedTokens = aprHandlerConfig.wrappedTokens;
     }
@@ -44,7 +44,8 @@ class OvixAprHandler implements AprHandler {
 }
 
 type OvixAprHandlerConfig = {
-    network: string;
+    networkPrismaId: string;
+    networkChainId: number;
     rpcUrl: string;
     yieldTokens: { [key: string]: `0x${string}` };
     wrappedTokens: {
@@ -57,13 +58,14 @@ const ovixYieldTokensZkEvm = {
     USDC: '0x68d9baa40394da2e2c1ca05d30bf33f52823ee7b',
 } as { [key: string]: `0x${string}` };
 
-const ovixWrappedTokensZkEvm = {
+export const ovixWrappedTokensZkEvm = {
     USDT: '0x550d3bb1f77f97e4debb45d4f817d7b9f9a1affb',
     USDC: '0x3a6789fc7c05a83cfdff5d2f9428ad9868b4ff85',
 } as { [key: string]: `0x${string}` };
 
 const ovixZkEVMAprHandler = new OvixAprHandler({
-    network: 'ZKEVM',
+    networkPrismaId: 'ZKEVM',
+    networkChainId: 1101,
     rpcUrl: 'https://zkevm-rpc.com',
     yieldTokens: ovixYieldTokensZkEvm,
     wrappedTokens: ovixWrappedTokensZkEvm,

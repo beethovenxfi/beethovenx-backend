@@ -12,8 +12,8 @@ class TesseraAprHandler implements AprHandler {
     readonly group = 'TESSERA';
 
     constructor(aprHandlerConfig: TesseraAprHandlerConfig) {
-        this.networkPrismaId = aprHandlerConfig.network;
-        this.provider = new JsonRpcProvider(aprHandlerConfig.rpcUrl, aprHandlerConfig.network);
+        this.networkPrismaId = aprHandlerConfig.networkPrismaId;
+        this.provider = new JsonRpcProvider(aprHandlerConfig.rpcUrl, aprHandlerConfig.networkChainId);
         this.yieldTokens = aprHandlerConfig.yieldTokens;
         this.stakingContractAddress = aprHandlerConfig.contractAddress;
     }
@@ -44,18 +44,20 @@ class TesseraAprHandler implements AprHandler {
 }
 
 type TesseraAprHandlerConfig = {
-    network: string;
+    networkPrismaId: string;
+    networkChainId: number;
     rpcUrl: string;
     yieldTokens: { [key: string]: `0x${string}` };
     contractAddress: `0x${string}`;
 };
 
-const tesseraYieldTokensMainnet = {
+export const tesseraYieldTokensMainnet = {
     sApe: '0x7966c5bae631294d7cffcea5430b78c2f76db6fa',
 } as { [key: string]: `0x${string}` };
 
 const tesseraMainnetAprHandler = new TesseraAprHandler({
-    network: 'MAINNET',
+    networkPrismaId: 'MAINNET',
+    networkChainId: 1,
     rpcUrl: 'https://rpc.ankr.com/eth',
     yieldTokens: tesseraYieldTokensMainnet,
     contractAddress: '0x5954aB967Bc958940b7EB73ee84797Dc8a2AFbb9' /*ApeCoinStaking*/,

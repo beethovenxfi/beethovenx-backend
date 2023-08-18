@@ -4,7 +4,7 @@ import { prisma } from '../../../../prisma/prisma-client';
 import { networkContext } from '../../../network/network-context.service';
 import { prismaBulkExecuteOperations } from '../../../../prisma/prisma-util';
 import { PrismaPoolAprItemGroup } from '@prisma/client';
-import { IbYieldAprHandlers, TokenApr } from './ib-yield-apr-handlers/ib-yield-apr-handlers';
+import { IbYieldAprHandlers, TokenApr, wrappedTokens } from './ib-yield-apr-handlers/ib-yield-apr-handlers';
 
 export class IbTokensAprService implements PoolAprService {
     private ibYieldAprHandlers: IbYieldAprHandlers;
@@ -32,7 +32,7 @@ export class IbTokensAprService implements PoolAprService {
                 if (aprs.get(token.address) !== undefined) {
                     const tokenSymbol = token.token.symbol;
                     const itemId = `${pool.id}-${tokenSymbol}-yield-apr`;
-
+                    const isBoosted = wrappedTokens.includes(token.address);
                     operations.push(
                         prisma.prismaPoolAprItem.upsert({
                             where: { id_chain: { id: itemId, chain: networkContext.chain } },
@@ -43,7 +43,7 @@ export class IbTokensAprService implements PoolAprService {
                                 title: `${tokenSymbol} APR`,
                                 apr: aprs.get(token.address)?.val ?? 0,
                                 group: (aprs.get(token.address)?.group as PrismaPoolAprItemGroup) ?? null,
-                                type: pool.type === 'LINEAR' ? 'LINEAR_BOOSTED' : 'IB_YIELD',
+                                type: pool.type === 'LINEAR' && isBoosted ? 'LINEAR_BOOSTED' : 'IB_YIELD',
                             },
                             update: {
                                 title: `${tokenSymbol} APR`,
@@ -60,7 +60,6 @@ export class IbTokensAprService implements PoolAprService {
 
     private async fetchYieldTokensApr(): Promise<Map<string, TokenApr>> {
         const data = await this.ibYieldAprHandlers.fetchAprsFromAllHandlers();
-        console.log(data);
         return new Map<string, TokenApr>(data.filter((apr) => !isNaN(apr.val)).map((apr) => [apr.address, apr]));
     }
 }

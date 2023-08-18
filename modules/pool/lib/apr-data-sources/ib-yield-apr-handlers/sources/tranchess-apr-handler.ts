@@ -2,7 +2,7 @@ import axios from 'axios';
 
 import { AprHandler } from '../ib-yield-apr-handlers';
 
-const qETHMainnet = '0x93ef1ea305d11a9b2a3ebb9bb4fcc34695292e7d';
+export const qETHMainnet = '0x93ef1ea305d11a9b2a3ebb9bb4fcc34695292e7d';
 
 class TranchessAprHandler implements AprHandler {
     networkPrismaId: string;
