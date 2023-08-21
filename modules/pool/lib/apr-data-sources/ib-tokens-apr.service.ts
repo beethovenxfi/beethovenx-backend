@@ -4,13 +4,15 @@ import { prisma } from '../../../../prisma/prisma-client';
 import { networkContext } from '../../../network/network-context.service';
 import { prismaBulkExecuteOperations } from '../../../../prisma/prisma-util';
 import { PrismaPoolAprItemGroup } from '@prisma/client';
-import { IbYieldAprHandlers, TokenApr, wrappedTokens } from './ib-yield-apr-handlers/ib-yield-apr-handlers';
+import { BaseAprHandlers, TokenApr, wrappedBoostedTokens } from './base-apr-handlers/base-apr-handlers';
+import { TokenService } from '../../../token/token.service';
+import { collectsYieldFee } from '../pool-utils';
 
 export class IbTokensAprService implements PoolAprService {
-    private ibYieldAprHandlers: IbYieldAprHandlers;
+    private baseAprHandlers: BaseAprHandlers;
 
-    constructor(networkPrismaId: string) {
-        this.ibYieldAprHandlers = new IbYieldAprHandlers(networkPrismaId);
+    constructor(networkPrismaId: string, private readonly tokenService: TokenService) {
+        this.baseAprHandlers = new BaseAprHandlers(networkPrismaId);
     }
 
     getAprServiceName(): string {
@@ -19,6 +21,7 @@ export class IbTokensAprService implements PoolAprService {
 
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
         const operations: any[] = [];
+        const tokenPrices = await this.tokenService.getTokenPrices();
         const aprs = await this.fetchYieldTokensApr();
         const tokenYieldPools = pools.filter((pool) => {
             return pool.tokens.find((token) => {
@@ -28,11 +31,24 @@ export class IbTokensAprService implements PoolAprService {
             });
         });
         for (const pool of tokenYieldPools) {
+            const totalLiquidity = pool.dynamicData?.totalLiquidity;
             for (const token of pool.tokens) {
-                if (aprs.get(token.address) !== undefined) {
+                const protocolYieldFeePercentage = pool.dynamicData?.protocolYieldFee
+                    ? parseFloat(pool.dynamicData.protocolYieldFee)
+                    : networkContext.data.balancer.yieldProtocolFeePercentage;
+                const tokenPrice = this.tokenService.getPriceForToken(tokenPrices, token.address);
+                const tokenBalance = token.dynamicData?.balance;
+                const tokenApr = aprs.get(token.address);
+                if (tokenPrice && tokenBalance && totalLiquidity !== undefined && tokenApr !== undefined) {
+                    const tokenPercentage = (parseFloat(tokenBalance) * tokenPrice) / totalLiquidity;
+                    const poolTokenApr = totalLiquidity > 0 ? tokenApr.val * tokenPercentage : 0;
+                    const aprAfterFees =
+                        pool.type === 'META_STABLE'
+                            ? poolTokenApr * (1 - networkContext.data.balancer.swapProtocolFeePercentage)
+                            : poolTokenApr * (1 - protocolYieldFeePercentage);
                     const tokenSymbol = token.token.symbol;
                     const itemId = `${pool.id}-${tokenSymbol}-yield-apr`;
-                    const isBoosted = wrappedTokens.includes(token.address);
+                    const isBoosted = wrappedBoostedTokens.includes(token.address);
                     operations.push(
                         prisma.prismaPoolAprItem.upsert({
                             where: { id_chain: { id: itemId, chain: networkContext.chain } },
@@ -41,13 +57,13 @@ export class IbTokensAprService implements PoolAprService {
                                 chain: networkContext.chain,
                                 poolId: pool.id,
                                 title: `${tokenSymbol} APR`,
-                                apr: aprs.get(token.address)?.val ?? 0,
-                                group: (aprs.get(token.address)?.group as PrismaPoolAprItemGroup) ?? null,
+                                apr: collectsYieldFee(pool) ? aprAfterFees : poolTokenApr,
+                                group: tokenApr.group as PrismaPoolAprItemGroup,
                                 type: pool.type === 'LINEAR' && isBoosted ? 'LINEAR_BOOSTED' : 'IB_YIELD',
                             },
                             update: {
                                 title: `${tokenSymbol} APR`,
-                                apr: aprs.get(token.address)?.val,
+                                apr: collectsYieldFee(pool) ? aprAfterFees : poolTokenApr,
                             },
                         }),
                     );
@@ -59,7 +75,7 @@ export class IbTokensAprService implements PoolAprService {
     }
 
     private async fetchYieldTokensApr(): Promise<Map<string, TokenApr>> {
-        const data = await this.ibYieldAprHandlers.fetchAprsFromAllHandlers();
+        const data = await this.baseAprHandlers.fetchAprsFromAllHandlers();
         return new Map<string, TokenApr>(data.filter((apr) => !isNaN(apr.val)).map((apr) => [apr.address, apr]));
     }
 }

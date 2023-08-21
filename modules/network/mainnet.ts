@@ -163,7 +163,7 @@ export const mainnetNetworkConfig: NetworkConfig = {
     contentService: new GithubContentService(),
     provider: new ethers.providers.JsonRpcProvider(mainnetNetworkData.rpcUrl),
     poolAprServices: [
-        new IbTokensAprService(mainnetNetworkData.chain.prismaId),
+        new IbTokensAprService(mainnetNetworkData.chain.prismaId, tokenService),
         new WstethAprService(tokenService, mainnetNetworkData.lido!.wstEthContract),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),

@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 export class LiquidStakedBaseAprService {
+    //TODO - remove this, i
     public async getWstEthBaseApr(): Promise<number> {
         const { data } = await axios.get<{
             data: { aprs: [{ timeUnix: number; apr: number }]; smaApr: number };
@@ -12,6 +13,7 @@ export class LiquidStakedBaseAprService {
         return 0.046;
     }
 
+    //TODO - Remove this, since it's already in base-apr-handlers
     public async getAnkrFtmBaseApr(): Promise<number> {
         const { data } = await axios.get<{ services: { serviceName: string; apy: string }[] }>(
             'https://api.staking.ankr.com/v1alpha/metrics',
@@ -21,7 +23,7 @@ export class LiquidStakedBaseAprService {
         const ankrFtmApy = data.services.find((service) => service.serviceName === 'ftm');
         return parseFloat(ankrFtmApy?.apy || '0') / 100;
     }
-
+    //TODO - Remove this, since it's already in base-apr-handlers
     public async getAnkrEthBaseApr(): Promise<number> {
         const { data } = await axios.get<{ services: { serviceName: string; apy: string }[] }>(
             'https://api.staking.ankr.com/v1alpha/metrics',

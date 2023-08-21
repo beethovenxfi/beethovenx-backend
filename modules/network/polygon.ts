@@ -156,7 +156,7 @@ export const polygonNetworkConfig: NetworkConfig = {
     contentService: new GithubContentService(),
     provider: new ethers.providers.JsonRpcProvider(polygonNetworkData.rpcUrl),
     poolAprServices: [
-        new IbTokensAprService(polygonNetworkData.chain.prismaId),
+        new IbTokensAprService(polygonNetworkData.chain.prismaId, tokenService),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(polygonNetworkData.balancer.swapProtocolFeePercentage),

@@ -153,7 +153,7 @@ export const zkevmNetworkConfig: NetworkConfig = {
     contentService: new GithubContentService(),
     provider: new ethers.providers.JsonRpcProvider(zkevmNetworkData.rpcUrl),
     poolAprServices: [
-        new IbTokensAprService(zkevmNetworkData.chain.prismaId),
+        new IbTokensAprService(zkevmNetworkData.chain.prismaId, tokenService),
         new WstethAprService(tokenService, zkevmNetworkData.lido!.wstEthContract),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
