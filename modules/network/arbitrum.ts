@@ -114,6 +114,57 @@ const arbitrumNetworkData: NetworkData = {
             swapGas: BigNumber.from('1000000'),
         },
     },
+    aprConfig: {
+        aave: {
+            v3: {
+                subgraphUrl: 'https://api.thegraph.com/subgraphs/name/aave/protocol-v3-arbitrum',
+                tokens: {
+                    USDC: {
+                        underlyingAssetAddress: '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
+                        aTokenAddress: '0x625e7708f30ca75bfd92586e17077590c60eb4cd',
+                        wrappedTokens: {
+                            waUSDC: '0xe719aef17468c7e10c0c205be62c990754dff7e5',
+                            stataArbUSDC: '0x3a301e7917689b8e8a19498b8a28fc912583490c',
+                            stataArbUSDCn: '0xbde67e089886ec0e615d6f054bc6f746189a3d56',
+                        },
+                    },
+                    USDT: {
+                        underlyingAssetAddress: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
+                        aTokenAddress: '0x6ab707aca953edaefbc4fd23ba73294241490620',
+                        wrappedTokens: {
+                            waUSDT: '0x3c7680dfe7f732ca0279c39ff30fe2eafdae49db',
+                            stataArbUSDT: '0x8b5541b773dd781852940490b0c3dc1a8cdb6a87',
+                        },
+                    },
+                    DAI: {
+                        underlyingAssetAddress: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
+                        aTokenAddress: '0x82e64f49ed5ec1bc6e43dad4fc8af9bb3a2312ee',
+                        wrappedTokens: {
+                            waDAI: '0x345a864ac644c82c2d649491c905c71f240700b2',
+                            stataArbDAI: '0x426e8778bf7f54b0e4fc703dcca6f26a4e5b71de',
+                        },
+                    },
+                    wETH: {
+                        underlyingAssetAddress: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
+                        aTokenAddress: '0xe50fa9b3c56ffb159cb0fca61f5c9d750e8128c8',
+                        wrappedTokens: {
+                            waWETH: '0x18c100415988bef4354effad1188d1c22041b046',
+                            stataArbWETH: '0x18468b6eba332285c6d9bb03fe7fb52e108c4596',
+                        },
+                    },
+                },
+            },
+        },
+        defaultHandlers: {
+            stETH: {
+                tokens: {
+                    wstETH: '0x5979d7b546e38e414f7e9822514be443a4800529',
+                },
+                sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
+                path: 'data.smaApr',
+            },
+        },
+    },
     yearn: {
         vaultsEndpoint: 'https://#/',
     },
@@ -161,7 +212,12 @@ export const arbitrumNetworkConfig: NetworkConfig = {
     contentService: new GithubContentService(),
     provider: new ethers.providers.JsonRpcProvider(arbitrumNetworkData.rpcUrl),
     poolAprServices: [
-        new IbTokensAprService(arbitrumNetworkData.chain.prismaId, tokenService),
+        new IbTokensAprService(
+            arbitrumNetworkData.aprConfig,
+            arbitrumNetworkData.chain.prismaId,
+            arbitrumNetworkData.chain.id,
+            tokenService,
+        ),
         new WstethAprService(tokenService, arbitrumNetworkData.lido!.wstEthContract),
         new ReaperCryptAprService(
             arbitrumNetworkData.reaper.linearPoolFactories,

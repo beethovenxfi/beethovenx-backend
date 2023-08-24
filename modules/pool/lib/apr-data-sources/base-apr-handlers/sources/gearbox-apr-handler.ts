@@ -2,7 +2,7 @@ import axios from 'axios';
 
 import { AprHandler } from '../base-apr-handlers';
 
-class GearboxAprHandler implements AprHandler {
+export class GearboxAprHandler implements AprHandler {
     url: string;
     tokens: { [key: string]: string };
     networkPrismaId: string;
@@ -10,8 +10,8 @@ class GearboxAprHandler implements AprHandler {
 
     constructor(aprHandlerConfig: GearboxAprHandlerConfig) {
         this.tokens = aprHandlerConfig.tokens;
-        this.url = aprHandlerConfig.url;
-        this.networkPrismaId = aprHandlerConfig.network;
+        this.url = aprHandlerConfig.sourceUrl;
+        this.networkPrismaId = aprHandlerConfig.networkPrismaId;
     }
 
     async getAprs() {
@@ -34,19 +34,6 @@ class GearboxAprHandler implements AprHandler {
 
 type GearboxAprHandlerConfig = {
     tokens: { [key: string]: string };
-    url: string;
-    network: string;
+    sourceUrl: string;
+    networkPrismaId: string;
 };
-
-export const gearboxTokensMainnet = {
-    dDAI: '0x6cfaf95457d7688022fc53e7abe052ef8dfbbdba',
-    dUSDC: '0xc411db5f5eb3f7d552f9b8454b2d74097ccde6e3',
-};
-
-const gearboxMainnetAprHandler = new GearboxAprHandler({
-    tokens: gearboxTokensMainnet,
-    url: 'https://mainnet.gearbox.foundation/api/pools',
-    network: 'MAINNET',
-});
-
-export const gearboxHandlers = [gearboxMainnetAprHandler];

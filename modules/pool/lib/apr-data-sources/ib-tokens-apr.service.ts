@@ -4,15 +4,21 @@ import { prisma } from '../../../../prisma/prisma-client';
 import { networkContext } from '../../../network/network-context.service';
 import { prismaBulkExecuteOperations } from '../../../../prisma/prisma-util';
 import { PrismaPoolAprItemGroup } from '@prisma/client';
-import { BaseAprHandlers, TokenApr, wrappedBoostedTokens } from './base-apr-handlers/base-apr-handlers';
+import { BaseAprHandlers, TokenApr } from './base-apr-handlers/base-apr-handlers';
 import { TokenService } from '../../../token/token.service';
 import { collectsYieldFee } from '../pool-utils';
+import { AprConfig } from '../../../network/network-config-types';
 
 export class IbTokensAprService implements PoolAprService {
     private baseAprHandlers: BaseAprHandlers;
 
-    constructor(networkPrismaId: string, private readonly tokenService: TokenService) {
-        this.baseAprHandlers = new BaseAprHandlers(networkPrismaId);
+    constructor(
+        aprConfig: AprConfig,
+        networkPrismaId: string,
+        networkChainId: number,
+        private readonly tokenService: TokenService,
+    ) {
+        this.baseAprHandlers = new BaseAprHandlers(aprConfig, networkPrismaId, networkChainId);
     }
 
     getAprServiceName(): string {
@@ -48,7 +54,6 @@ export class IbTokensAprService implements PoolAprService {
                             : poolTokenApr * (1 - protocolYieldFeePercentage);
                     const tokenSymbol = token.token.symbol;
                     const itemId = `${pool.id}-${tokenSymbol}-yield-apr`;
-                    const isBoosted = wrappedBoostedTokens.includes(token.address);
                     operations.push(
                         prisma.prismaPoolAprItem.upsert({
                             where: { id_chain: { id: itemId, chain: networkContext.chain } },
@@ -59,7 +64,7 @@ export class IbTokensAprService implements PoolAprService {
                                 title: `${tokenSymbol} APR`,
                                 apr: collectsYieldFee(pool) ? aprAfterFees : poolTokenApr,
                                 group: tokenApr.group as PrismaPoolAprItemGroup,
-                                type: pool.type === 'LINEAR' && isBoosted ? 'LINEAR_BOOSTED' : 'IB_YIELD',
+                                type: pool.type === 'LINEAR' ? 'LINEAR_BOOSTED' : 'IB_YIELD',
                             },
                             update: {
                                 title: `${tokenSymbol} APR`,
@@ -70,7 +75,6 @@ export class IbTokensAprService implements PoolAprService {
                 }
             }
         }
-
         await prismaBulkExecuteOperations(operations);
     }
 

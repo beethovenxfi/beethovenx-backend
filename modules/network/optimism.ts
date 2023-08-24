@@ -21,6 +21,7 @@ import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph
 import { coingeckoService } from '../coingecko/coingecko.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
 import { BeefyVaultAprService } from '../pool/lib/apr-data-sources/beefy-vault-apr.service copy';
+import { IbTokensAprService } from '../pool/lib/apr-data-sources/ib-tokens-apr.service';
 
 const optimismNetworkData: NetworkData = {
     chain: {
@@ -116,6 +117,33 @@ const optimismNetworkData: NetworkData = {
             swapGas: BigNumber.from('1000000'),
         },
     },
+    aprConfig: {
+        defaultHandlers: {
+            stEth: {
+                tokens: {
+                    wstETH: '0x1f32b1c2345538c0c6f582fcb0227',
+                },
+                sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
+                path: 'data.smaApr',
+            },
+            overnightDAIPlus: {
+                tokens: {
+                    DAIPlus: '0x0b8f31480249cc717081928b8af733f45f6915bb',
+                },
+                sourceUrl: 'https://api.overnight.fi/optimism/dai+/fin-data/avg-apr/week',
+                path: 'value',
+                group: 'OVERNIGHT',
+            },
+            overnightUSDPlus: {
+                tokens: {
+                    USDPlus: '0xa348700745d249c3b49d2c2acac9a5ae8155f826',
+                },
+                sourceUrl: 'https://api.overnight.fi/optimism/usd+/fin-data/avg-apr/week',
+                path: 'value',
+                group: 'OVERNIGHT',
+            },
+        },
+    },
     yearn: {
         vaultsEndpoint: 'https://#/',
     },
@@ -183,6 +211,12 @@ export const optimismNetworkConfig: NetworkConfig = {
     contentService: new SanityContentService(),
     provider: new ethers.providers.JsonRpcProvider(optimismNetworkData.rpcUrl),
     poolAprServices: [
+        new IbTokensAprService(
+            optimismNetworkData.aprConfig,
+            optimismNetworkData.chain.prismaId,
+            optimismNetworkData.chain.id,
+            tokenService,
+        ),
         new RocketPoolStakedEthAprService(tokenService, optimismNetworkData.rocket!.rEthContract),
         new WstethAprService(tokenService, optimismNetworkData.lido!.wstEthContract),
         new OvernightAprService(optimismNetworkData.overnight!.aprEndpoint, tokenService),

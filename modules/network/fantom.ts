@@ -28,6 +28,7 @@ import { AnkrStakedFtmAprService } from '../pool/lib/apr-data-sources/fantom/ank
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
 import { coingeckoService } from '../coingecko/coingecko.service';
 import { AnkrStakedEthAprService } from '../pool/lib/apr-data-sources/fantom/ankr-staked-eth-apr.service';
+import { IbTokensAprService } from '../pool/lib/apr-data-sources/ib-tokens-apr.service';
 
 const fantomNetworkData: NetworkData = {
     chain: {
@@ -152,6 +153,21 @@ const fantomNetworkData: NetworkData = {
             swapGas: BigNumber.from('1000000'),
         },
     },
+    aprConfig: {
+        ankr: {
+            sourceUrl: 'https://api.staking.ankr.com/v1alpha/metrics',
+            tokens: {
+                ankrETH: {
+                    address: '0x12d8ce035c5de3ce39b1fdd4c1d5a745eaba3b8c',
+                    serviceName: 'eth',
+                },
+                ankrFTM: {
+                    address: '0xcfc785741dc0e98ad4c9f6394bb9d43cd1ef5179',
+                    serviceName: 'ftm',
+                },
+            },
+        },
+    },
     yearn: {
         vaultsEndpoint: 'https://d28fcsszptni1s.cloudfront.net/v1/chains/250/vaults/all',
     },
@@ -222,6 +238,12 @@ export const fantomNetworkConfig: NetworkConfig = {
     contentService: new SanityContentService(),
     provider: new ethers.providers.JsonRpcProvider(fantomNetworkData.rpcUrl),
     poolAprServices: [
+        new IbTokensAprService(
+            fantomNetworkData.aprConfig,
+            fantomNetworkData.chain.prismaId,
+            fantomNetworkData.chain.id,
+            tokenService,
+        ),
         // new SpookySwapAprService(tokenService, fantomNetworkData.spooky!.xBooContract),
         new YearnVaultAprService(tokenService),
         new StaderStakedFtmAprService(tokenService, fantomNetworkData.stader!.sFtmxContract),

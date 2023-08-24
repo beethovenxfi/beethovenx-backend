@@ -105,6 +105,17 @@ const gnosisNetworkData: NetworkData = {
             swapGas: BigNumber.from('1000000'),
         },
     },
+    aprConfig: {
+        defaultHandlers: {
+            stETH: {
+                tokens: {
+                    wstETH: '0x6c76971f98945ae98dd7d4dfca8711ebea946ea6',
+                },
+                sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
+                path: 'data.smaApr',
+            },
+        },
+    },
     yearn: {
         vaultsEndpoint: 'https://#/',
     },
@@ -152,7 +163,12 @@ export const gnosisNetworkConfig: NetworkConfig = {
     contentService: new GithubContentService(),
     provider: new ethers.providers.JsonRpcProvider(gnosisNetworkData.rpcUrl),
     poolAprServices: [
-        new IbTokensAprService(gnosisNetworkData.chain.prismaId, tokenService),
+        new IbTokensAprService(
+            gnosisNetworkData.aprConfig,
+            gnosisNetworkData.chain.prismaId,
+            gnosisNetworkData.chain.id,
+            tokenService,
+        ),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(gnosisNetworkData.balancer.swapProtocolFeePercentage),

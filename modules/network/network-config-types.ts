@@ -100,6 +100,7 @@ export interface NetworkData {
         address: string;
         excludedFarmIds: string[];
     };
+    aprConfig: AprConfig;
     reliquary?: {
         address: string;
         excludedFarmIds: string[];
@@ -161,6 +162,98 @@ export interface NetworkData {
     monitoring: {
         [key in DeploymentEnv]: {
             alarmTopicArn: string;
+        };
+    };
+}
+
+export interface AprConfig {
+    aave?: {
+        [version: string]: {
+            subgraphUrl: string;
+            tokens: {
+                [underlyingAssetName: string]: {
+                    underlyingAssetAddress: string;
+                    aTokenAddress: string;
+                    wrappedTokens: {
+                        [wrappedTokenName: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    ankr?: {
+        sourceUrl: string;
+        tokens: {
+            [underlyingAssetName: string]: {
+                address: string;
+                serviceName: string;
+            };
+        };
+    };
+    euler?: {
+        subgraphUrl: string;
+        tokens: {
+            [tokenName: string]: string;
+        };
+    };
+    gearbox?: {
+        sourceUrl: string;
+        tokens: {
+            [tokenName: string]: string;
+        };
+    };
+    idle?: {
+        sourceUrl: string;
+        authorizationHeader?: string;
+        tokens: {
+            [tokenName: string]: {
+                address: string;
+                wrapped4626Address: string;
+            };
+        };
+    };
+    ovix?: {
+        rpcUrl: string;
+        tokens: {
+            [tokenName: string]: {
+                yieldAddress: string;
+                wrappedAddress: string;
+            };
+        };
+    };
+    tessera?: {
+        rpcUrl: string;
+        tokens: {
+            [tokenName: string]: {
+                tesseraPoolAddress: string;
+                tokenAddress: string;
+            };
+        };
+    };
+    tetu?: {
+        sourceUrl: string;
+        tokens: {
+            [tokenName: string]: string;
+        };
+    };
+    tranchess?: {
+        sourceUrl: string;
+        tokens: {
+            [tokenName: string]: {
+                address: string;
+                underlyingAssetName: string;
+            };
+        };
+    };
+    defaultHandlers?: {
+        [tokenName: string]: {
+            sourceUrl: string;
+            tokens: {
+                [tokenName: string]: string;
+            };
+            path?: string;
+            scale?: number;
+            group?: string;
         };
     };
 }
