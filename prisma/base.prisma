@@ -13,11 +13,14 @@ datasource db {
 
 enum Chain {
     ARBITRUM
+    AVALANCHE
+    BASE
     FANTOM
     GNOSIS
     MAINNET
     OPTIMISM
     POLYGON
+    ZKEVM
 }
 
 model PrismaLastBlockSynced {

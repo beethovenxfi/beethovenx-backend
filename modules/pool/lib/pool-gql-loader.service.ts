@@ -373,18 +373,24 @@ export class PoolGqlLoaderService {
                     __typename: 'GqlPoolGyro',
                     ...mappedData,
                     type: mappedData.type,
+                    alpha: pool.gyroData?.alpha || '',
+                    beta: pool.gyroData?.beta || '',
                 };
             case 'GYRO3':
                 return {
                     __typename: 'GqlPoolGyro',
                     ...mappedData,
                     type: mappedData.type,
+                    alpha: pool.gyroData?.alpha || '',
+                    beta: pool.gyroData?.beta || '',
                 };
             case 'GYROE':
                 return {
                     __typename: 'GqlPoolGyro',
                     ...mappedData,
                     type: mappedData.type,
+                    alpha: pool.gyroData?.alpha || '',
+                    beta: pool.gyroData?.beta || '',
                 };
         }
 
@@ -612,6 +618,7 @@ export class PoolGqlLoaderService {
                     case 'THIRD_PARTY_REWARD': {
                         currentThirdPartyAprRangeMin += minApr;
                         currentThirdPartyAprRangeMax += maxApr;
+                        break;
                     }
                     case 'SWAP_FEE': {
                         swapFeeApr += maxApr;

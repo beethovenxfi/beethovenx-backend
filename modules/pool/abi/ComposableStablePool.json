@@ -11,5 +11,50 @@
         ],
         "stateMutability": "view",
         "type": "function"
+    },
+    {
+        "inputs": [{
+            "internalType": "uint256",
+            "name": "feeType",
+            "type": "uint256"
+        }],
+        "name": "getProtocolFeePercentageCache",
+        "outputs": [{
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+        }],
+        "stateMutability": "view",
+        "type": "function"
+    },    
+    {
+    	"inputs": [],
+    	"name": "getPausedState",
+    	"outputs": [{
+    		"internalType": "bool",
+    		"name": "paused",
+    		"type": "bool"
+    	}, {
+    		"internalType": "uint256",
+    		"name": "pauseWindowEndTime",
+    		"type": "uint256"
+    	}, {
+    		"internalType": "uint256",
+    		"name": "bufferPeriodEndTime",
+    		"type": "uint256"
+    	}],
+    	"stateMutability": "view",
+    	"type": "function"
+    },
+    {
+    	"inputs": [],
+    	"name": "inRecoveryMode",
+    	"outputs": [{
+    		"internalType": "bool",
+    		"name": "",
+    		"type": "bool"
+    	}],
+    	"stateMutability": "view",
+    	"type": "function"
     }
 ]

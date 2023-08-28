@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from 'ethers';
-import { NetworkConfig, NetworkData } from './network-config-types';
+import { DeploymentEnv, NetworkConfig, NetworkData } from './network-config-types';
 import { tokenService } from '../token/token.service';
 import { WstethAprService } from '../pool/lib/apr-data-sources/optimism/wsteth-apr.service';
 import { ReaperCryptAprService } from '../pool/lib/apr-data-sources/reaper-crypt-apr.service';
@@ -17,6 +17,7 @@ import { GithubContentService } from '../content/github-content.service';
 import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
 import { coingeckoService } from '../coingecko/coingecko.service';
+import { env } from '../../app/env';
 
 const arbitrumNetworkData: NetworkData = {
     chain: {
@@ -49,21 +50,16 @@ const arbitrumNetworkData: NetworkData = {
     coingecko: {
         nativeAssetId: 'ethereum',
         platformId: 'arbitrum-one',
+        excludedTokenAddresses: [],
     },
     tokenPrices: {
         maxHourlyPriceHistoryNumDays: 100,
     },
-    rpcUrl: 'https://arb1.arbitrum.io/rpc',
+    rpcUrl: env.INFURA_API_KEY
+        ? `https://arbitrum-mainnet.infura.io/v3/${env.INFURA_API_KEY}`
+        : 'https://rpc.ankr.com/arbitrum',
     rpcMaxBlockRange: 2000,
-    beetsPriceProviderRpcUrl: 'https://rpc.ftm.tools',
-    sanity: {
-        projectId: '',
-        dataset: '',
-    },
     protocolToken: 'bal',
-    beets: {
-        address: '0x0000000000000000000000000000000000000000',
-    },
     bal: {
         address: '0x040d1EdC9569d4Bab2D15287Dc5A4F10F56a56B8',
     },
@@ -78,32 +74,19 @@ const arbitrumNetworkData: NetworkData = {
             '0x85a80afee867aDf27B50BdB7b76DA70f1E853062',
             '0x1c99324EDC771c82A0DCCB780CC7DDA0045E50e7',
             '0x2498A2B0d6462d2260EAC50aE1C3e03F4829BA95',
+            '0xA8920455934Da4D853faac1f94Fe7bEf72943eF1',
         ],
         weightedPoolV2Factories: [
             '0x8df6EfEc5547e31B0eb7d1291B511FF8a2bf987c',
             '0xf1665E19bc105BE4EDD3739F88315cC699cc5b65',
             '0xc7E5ED1054A24Ef31D827E6F86caA58B3Bc168d7',
         ],
-        poolsInRecoveryMode: [
-            '0x13f2f70a951fb99d48ede6e25b0bdf06914db33f00020000000000000000016b',
-            '0x178e029173417b1f9c8bc16dcec6f697bc323746000200000000000000000158',
-            '0x2d011adf89f0576c9b722c28269fcb5d50c2d179000200000000000000000157',
-            '0x373b347bc87998b151a5e9b6bb6ca692b766648a000000000000000000000239',
-            '0x3dd0843a028c86e0b760b1a76929d1c5ef93a2dd000200000000000000000130',
-            '0xcc98357eaf3e227bdef6b97780aae84bea9b02b00000000000000000000000fe',
-            '0xf93579002dbe8046c43fefe86ec78b1112247bb800020000000000000000021d',
-            '0xfb5e6d0c1dfed2ba000fbc040ab8df3615ac329c000000000000000000000159',
-        ],
         swapProtocolFeePercentage: 0.5,
         yieldProtocolFeePercentage: 0.5,
-        poolDataQueryContract: '0xC1Ff645400DD37989e77802326665cCf4fFDB352',
+        poolDataQueryContract: '0x7Ba29fE8E83dd6097A7298075C4AFfdBda3121cC',
     },
     multicall: '0x80C7DD17B01855a6D2347444a0FCC36136a314de',
     multicall3: '0xca11bde05977b3631167028862be2a173976ca11',
-    masterchef: {
-        address: '0x0000000000000000000000000000000000000000',
-        excludedFarmIds: [],
-    },
     avgBlockSpeed: 1,
     sor: {
         main: {
@@ -123,36 +106,15 @@ const arbitrumNetworkData: NetworkData = {
             poolIdsToExclude: [],
         },
     },
-    yearn: {
-        vaultsEndpoint: 'https://#/',
-    },
     reaper: {
         linearPoolFactories: ['0xC101dcA301a4011C1F925e9622e749e550a1B667'],
+        linearPoolIdsFromErc4626Factory: [],
         averageAPRAcrossLastNHarvests: 2,
-        multiStratLinearPoolIds: [],
-    },
-    beefy: {
-        linearPools: [''],
+        multistratAprSubgraphUrl: '',
     },
     lido: {
         wstEthAprEndpoint: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
         wstEthContract: '0x5979d7b546e38e414f7e9822514be443a4800529',
-    },
-    datastudio: {
-        main: {
-            user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
-            sheetId: '11anHUEb9snGwvB-errb5HvO8TvoLTRJhkDdD80Gxw1Q',
-            databaseTabName: 'Database v2',
-            compositionTabName: 'Pool Composition v2',
-            emissionDataTabName: 'EmissionData',
-        },
-        canary: {
-            user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
-            sheetId: '1HnJOuRQXGy06tNgqjYMzQNIsaCSCC01Yxe_lZhXBDpY',
-            databaseTabName: 'Database v2',
-            compositionTabName: 'Pool Composition v2',
-            emissionDataTabName: 'EmissionData',
-        },
     },
     monitoring: {
         main: {
@@ -167,25 +129,23 @@ const arbitrumNetworkData: NetworkData = {
 export const arbitrumNetworkConfig: NetworkConfig = {
     data: arbitrumNetworkData,
     contentService: new GithubContentService(),
-    provider: new ethers.providers.JsonRpcProvider(arbitrumNetworkData.rpcUrl),
+    provider: new ethers.providers.JsonRpcProvider({ url: arbitrumNetworkData.rpcUrl, timeout: 60000 }),
     poolAprServices: [
         new WstethAprService(tokenService, arbitrumNetworkData.lido!.wstEthContract),
         new ReaperCryptAprService(
-            arbitrumNetworkData.reaper.linearPoolFactories,
-            arbitrumNetworkData.reaper.averageAPRAcrossLastNHarvests,
-            tokenService,
+            arbitrumNetworkData.reaper!.multistratAprSubgraphUrl,
+            arbitrumNetworkData.reaper!.linearPoolFactories,
+            arbitrumNetworkData.reaper!.linearPoolIdsFromErc4626Factory,
+            arbitrumNetworkData.reaper!.averageAPRAcrossLastNHarvests,
             arbitrumNetworkData.stader ? arbitrumNetworkData.stader.sFtmxContract : undefined,
             arbitrumNetworkData.lido ? arbitrumNetworkData.lido.wstEthContract : undefined,
         ),
-        new PhantomStableAprService(arbitrumNetworkData.balancer.yieldProtocolFeePercentage),
-        new BoostedPoolAprService(arbitrumNetworkData.balancer.yieldProtocolFeePercentage),
+        new PhantomStableAprService(),
+        new BoostedPoolAprService(),
         new SwapFeeAprService(arbitrumNetworkData.balancer.swapProtocolFeePercentage),
-        new GaugeAprService(gaugeSubgraphService, tokenService, [
-            arbitrumNetworkData.beets.address,
-            arbitrumNetworkData.bal.address,
-        ]),
+        new GaugeAprService(gaugeSubgraphService, tokenService, [arbitrumNetworkData.bal!.address]),
     ],
-    poolStakingServices: [new GaugeStakingService(gaugeSubgraphService)],
+    poolStakingServices: [new GaugeStakingService(gaugeSubgraphService, arbitrumNetworkData.bal!.address)],
     tokenPriceHandlers: [
         new CoingeckoPriceHandlerService(coingeckoService),
         new BptPriceHandlerService(),
@@ -203,7 +163,7 @@ export const arbitrumNetworkConfig: NetworkConfig = {
     workerJobs: [
         {
             name: 'update-token-prices',
-            interval: every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'update-liquidity-for-inactive-pools',
@@ -213,19 +173,19 @@ export const arbitrumNetworkConfig: NetworkConfig = {
         },
         {
             name: 'update-liquidity-for-active-pools',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'update-pool-apr',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'load-on-chain-data-for-pools-with-active-updates',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(1, 'minutes'),
         },
         {
             name: 'sync-new-pools-from-subgraph',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'sync-tokens-from-pool-tokens',
@@ -253,19 +213,19 @@ export const arbitrumNetworkConfig: NetworkConfig = {
         },
         {
             name: 'sync-changed-pools',
-            interval: every(15, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(40, 'seconds') : every(20, 'seconds'),
             alarmEvaluationPeriod: 1,
             alarmDatapointsToAlarm: 1,
         },
         {
             name: 'user-sync-wallet-balances-for-all-pools',
-            interval: every(10, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'seconds') : every(15, 'seconds'),
             alarmEvaluationPeriod: 1,
             alarmDatapointsToAlarm: 1,
         },
         {
             name: 'user-sync-staked-balances',
-            interval: every(10, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'seconds') : every(15, 'seconds'),
             alarmEvaluationPeriod: 1,
             alarmDatapointsToAlarm: 1,
         },
@@ -284,12 +244,12 @@ export const arbitrumNetworkConfig: NetworkConfig = {
             alarmDatapointsToAlarm: 1,
         },
         {
-            name: 'update-yield-capture',
+            name: 'update-fee-volume-yield-all-pools',
             interval: every(1, 'hours'),
         },
         {
             name: 'sync-vebal-balances',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(1, 'minutes'),
         },
         {
             name: 'sync-vebal-totalSupply',

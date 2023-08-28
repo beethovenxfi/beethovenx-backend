@@ -1,11 +1,14 @@
-import { PrismaPoolType } from '@prisma/client';
+import { PrismaPoolDynamicData, PrismaPoolType } from '@prisma/client';
 import { isSameAddress } from '@balancer-labs/sdk';
 import { networkContext } from '../../network/network-context.service';
+import { prisma } from '../../../prisma/prisma-client';
 
 type PoolWithTypeAndFactory = {
     address: string;
     type: PrismaPoolType;
     factory?: string | null;
+    dynamicData?: PrismaPoolDynamicData | null;
+    version: number;
 };
 
 export function isStablePool(poolType: PrismaPoolType) {
@@ -31,19 +34,17 @@ export function isComposableStablePool(pool: PoolWithTypeAndFactory) {
 }
 
 export function collectsYieldFee(pool: PoolWithTypeAndFactory) {
-    return (
-        !networkContext.data.balancer.poolsInRecoveryMode.includes(pool.address) &&
-        (isWeightedPoolV2(pool) || isComposableStablePool(pool) || pool.type === 'META_STABLE')
-    );
+    return !pool.dynamicData?.isInRecoveryMode && capturesYield(pool);
 }
 
 export function capturesYield(pool: PoolWithTypeAndFactory) {
-    return isWeightedPoolV2(pool) || isComposableStablePool(pool) || pool.type === 'META_STABLE';
+    return isWeightedPoolV2(pool) || isComposableStablePool(pool) || pool.type === 'META_STABLE' || isGyroEV2(pool);
 }
 
-export function collectsFee(pool: PoolWithTypeAndFactory) {
-    return (
-        !networkContext.data.balancer.poolsInRecoveryMode.includes(pool.address) &&
-        pool.type !== 'LIQUIDITY_BOOTSTRAPPING'
-    );
+export function isGyroPool(pool: PoolWithTypeAndFactory) {
+    return pool.type.includes('GYRO');
+}
+
+export function isGyroEV2(pool: PoolWithTypeAndFactory) {
+    return pool.type === 'GYROE' && pool.version === 2;
 }

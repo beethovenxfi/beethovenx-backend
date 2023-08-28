@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from 'ethers';
-import { NetworkConfig, NetworkData } from './network-config-types';
+import { DeploymentEnv, NetworkConfig, NetworkData } from './network-config-types';
 import { RocketPoolStakedEthAprService } from '../pool/lib/apr-data-sources/optimism/rocket-pool-staked-eth-apr.service';
 import { tokenService } from '../token/token.service';
 import { WstethAprService } from '../pool/lib/apr-data-sources/optimism/wsteth-apr.service';
@@ -21,7 +21,7 @@ import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph
 import { coingeckoService } from '../coingecko/coingecko.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
 import { BeefyVaultAprService } from '../pool/lib/apr-data-sources/beefy-vault-apr.service copy';
-import { ReaperMultistratAprService } from '../pool/lib/apr-data-sources/reaper-multistrat-apr.service';
+import { env } from '../../app/env';
 
 const optimismNetworkData: NetworkData = {
     chain: {
@@ -34,7 +34,7 @@ const optimismNetworkData: NetworkData = {
     },
     subgraphs: {
         startDate: '2022-01-01',
-        balancer: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx-v2-optimism',
+        balancer: 'https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx-optimism',
         beetsBar: 'https://',
         blocks: 'https://api.thegraph.com/subgraphs/name/danielmkm/optimism-blocks',
         gauge: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-gauges-optimism',
@@ -54,13 +54,15 @@ const optimismNetworkData: NetworkData = {
     coingecko: {
         nativeAssetId: 'ethereum',
         platformId: 'optimistic-ethereum',
+        excludedTokenAddresses: [],
     },
     tokenPrices: {
         maxHourlyPriceHistoryNumDays: 100,
     },
-    rpcUrl: 'https://rpc.ankr.com/optimism',
+    rpcUrl: env.INFURA_API_KEY
+        ? `https://optimism-mainnet.infura.io/v3/${env.INFURA_API_KEY}`
+        : 'https://mainnet.optimism.io',
     rpcMaxBlockRange: 2000,
-    beetsPriceProviderRpcUrl: 'https://rpc.ftm.tools',
     sanity: {
         projectId: '1g2ag2hb',
         dataset: 'production',
@@ -68,6 +70,7 @@ const optimismNetworkData: NetworkData = {
     protocolToken: 'beets',
     beets: {
         address: '0x97513e975a7fa9072c72c92d8000b0db90b163c5',
+        beetsPriceProviderRpcUrl: 'https://rpc.ftm.tools',
     },
     bal: {
         address: '0xfe8b128ba8c78aabc59d4c64cee7ff28e9379921',
@@ -82,42 +85,16 @@ const optimismNetworkData: NetworkData = {
             '0xf145caFB67081895EE80eB7c04A30Cf87f07b745',
             '0xe2E901AB09f37884BA31622dF3Ca7FC19AA443Be',
             '0x1802953277FD955f9a254B80Aa0582f193cF1d77',
+            '0x043A2daD730d585C44FB79D2614F295D2d625412',
         ],
         weightedPoolV2Factories: [
             '0xad901309d9e9DbC5Df19c84f729f429F0189a633',
             '0xA0DAbEBAAd1b243BBb243f933013d560819eB66f',
             '0x230a59F4d9ADc147480f03B0D3fFfeCd56c3289a',
         ],
-        poolsInRecoveryMode: [
-            '0x05e7732bf9ae5592e6aa05afe8cd80f7ab0a7bea',
-            '0x359ea8618c405023fc4b98dab1b01f373792a126',
-            '0x3fdb6fb126521a28f06893f9629da12f7b7266eb',
-            '0x435272180a4125f3b47c92826f482fc6cc165958',
-            '0x785f08fb77ec934c01736e30546f87b4daccbe50',
-            '0x899f737750db562b88c1e412ee1902980d3a4844',
-            '0x981fb05b738e981ac532a99e77170ecb4bc27aef',
-            '0xb0de49429fbb80c635432bbad0b3965b28560177',
-            '0xc77e5645dbe48d54afc06655e39d3fe17eb76c1c',
-            '0xe0b50b0635b90f7021d2618f76ab9a31b92d0094',
-            '0xf30db0ca4605e5115df91b56bd299564dca02666',
-            '0x1f131ec1175f023ee1534b16fa8ab237c00e2381',
-            '0x428e1cc3099cf461b87d124957a0d48273f334b1',
-            '0x479a7d1fcdd71ce0c2ed3184bfbe9d23b92e8337',
-            '0x593acbfb1eaf3b6ec86fa60325d816996fdcbc0d',
-            '0x6222ae1d2a9f6894da50aa25cb7b303497f9bebd',
-            '0x62de5ca16a618e22f6dfe5315ebd31acb10c44b6',
-            '0x7d6bff131b359da66d92f215fd4e186003bfaa42',
-            '0x96a78983932b8739d1117b16d30c15607926b0c5',
-            '0x9964b1bd3cc530e5c58ba564e45d45290f677be2',
-            '0xb0f2c34b9cd5c377c5efbba3b31e67114810cbc8',
-            '0xb1c9ac57594e9b1ec0f3787d9f6744ef4cb0a024',
-            '0xde45f101250f2ca1c0f8adfc172576d10c12072d',
-            '0xf572649606db4743d217a2fa6e8b8eb79742c24a',
-            '0x373b347bc87998b151a5e9b6bb6ca692b766648a',
-        ],
         swapProtocolFeePercentage: 0.5,
         yieldProtocolFeePercentage: 0.5,
-        poolDataQueryContract: '0xB79C16EfD530e46b7A1499c1854f13f4Bd10f4DF',
+        poolDataQueryContract: '0x6B5dA774890Db7B7b96C6f44e6a4b0F657399E2e',
     },
     multicall: '0x2DC0E2aa608532Da689e89e237dF582B783E552C',
     multicall3: '0xca11bde05977b3631167028862be2a173976ca11',
@@ -144,16 +121,22 @@ const optimismNetworkData: NetworkData = {
             poolIdsToExclude: [],
         },
     },
-    yearn: {
-        vaultsEndpoint: 'https://#/',
-    },
     reaper: {
         linearPoolFactories: [
             '0x19968d4b7126904fd665ed25417599df9604df83',
             '0xe4b88e745dce9084b9fc2439f85a9a4c5cd6f361',
         ],
-        multiStratLinearPoolIds: [],
+        linearPoolIdsFromErc4626Factory: [
+            '0x20715545c15c76461861cb0d6ba96929766d05a50000000000000000000000e8',
+            '0xf970659221bb9d01b615321b63a26e857ffc030b0000000000000000000000e9',
+            '0xa5d4802b4ce6b745b0c9e1b4a79c093d197869c80000000000000000000000ea',
+            '0x2e2b8b82123789d895fd79913f6dfa51f5b5a0e60000000000000000000000eb',
+            '0x48ace81c09382bfc08ed102e7eadd37e3b0497520000000000000000000000ec',
+            '0x8025586ac5fb265a23b9492e7414beccc2059ec30000000000000000000000ed',
+            '0x3e9cbffd270ae67abb09d28988e7e785498c73730000000000000000000000ee',
+        ],
         averageAPRAcrossLastNHarvests: 2,
+        multistratAprSubgraphUrl: 'https://api.thegraph.com/subgraphs/name/byte-masons/multi-strategy-vaults-optimism',
     },
     beefy: {
         linearPools: [
@@ -200,31 +183,34 @@ const optimismNetworkData: NetworkData = {
 export const optimismNetworkConfig: NetworkConfig = {
     data: optimismNetworkData,
     contentService: new SanityContentService(),
-    provider: new ethers.providers.JsonRpcProvider(optimismNetworkData.rpcUrl),
+    provider: new ethers.providers.JsonRpcProvider({ url: optimismNetworkData.rpcUrl, timeout: 60000 }),
     poolAprServices: [
         new RocketPoolStakedEthAprService(tokenService, optimismNetworkData.rocket!.rEthContract),
         new WstethAprService(tokenService, optimismNetworkData.lido!.wstEthContract),
         new OvernightAprService(optimismNetworkData.overnight!.aprEndpoint, tokenService),
         new ReaperCryptAprService(
-            optimismNetworkData.reaper.linearPoolFactories,
-            optimismNetworkData.reaper.averageAPRAcrossLastNHarvests,
-            tokenService,
+            optimismNetworkData.reaper!.multistratAprSubgraphUrl,
+            optimismNetworkData.reaper!.linearPoolFactories,
+            optimismNetworkData.reaper!.linearPoolIdsFromErc4626Factory,
+            optimismNetworkData.reaper!.averageAPRAcrossLastNHarvests,
             optimismNetworkData.stader ? optimismNetworkData.stader.sFtmxContract : undefined,
             optimismNetworkData.lido ? optimismNetworkData.lido.wstEthContract : undefined,
         ),
-        new ReaperMultistratAprService(optimismNetworkData.reaper.multiStratLinearPoolIds, tokenService),
-        new BeefyVaultAprService(optimismNetworkData.beefy.linearPools, tokenService),
-        new PhantomStableAprService(optimismNetworkData.balancer.yieldProtocolFeePercentage),
-        new BoostedPoolAprService(optimismNetworkData.balancer.yieldProtocolFeePercentage),
+        new BeefyVaultAprService(optimismNetworkData.beefy!.linearPools, tokenService),
+        new PhantomStableAprService(),
+        new BoostedPoolAprService(),
         new SwapFeeAprService(optimismNetworkData.balancer.swapProtocolFeePercentage),
         new GaugeAprService(gaugeSubgraphService, tokenService, [
-            optimismNetworkData.beets.address,
-            optimismNetworkData.bal.address,
+            optimismNetworkData.beets!.address,
+            optimismNetworkData.bal!.address,
         ]),
     ],
-    poolStakingServices: [new GaugeStakingService(gaugeSubgraphService)],
+    poolStakingServices: [new GaugeStakingService(gaugeSubgraphService, optimismNetworkData.bal!.address)],
     tokenPriceHandlers: [
-        new BeetsPriceHandlerService(),
+        new BeetsPriceHandlerService(
+            optimismNetworkData.beets!.address,
+            optimismNetworkData.beets!.beetsPriceProviderRpcUrl,
+        ),
         new CoingeckoPriceHandlerService(coingeckoService),
         new BptPriceHandlerService(),
         new LinearWrappedTokenPriceHandlerService(),
@@ -241,7 +227,7 @@ export const optimismNetworkConfig: NetworkConfig = {
     workerJobs: [
         {
             name: 'update-token-prices',
-            interval: every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'update-liquidity-for-inactive-pools',
@@ -251,19 +237,19 @@ export const optimismNetworkConfig: NetworkConfig = {
         },
         {
             name: 'update-liquidity-for-active-pools',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'update-pool-apr',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'load-on-chain-data-for-pools-with-active-updates',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(1, 'minutes'),
         },
         {
             name: 'sync-new-pools-from-subgraph',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'sync-sanity-pool-data',
@@ -295,19 +281,19 @@ export const optimismNetworkConfig: NetworkConfig = {
         },
         {
             name: 'sync-changed-pools',
-            interval: every(15, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(40, 'seconds') : every(20, 'seconds'),
             alarmEvaluationPeriod: 1,
             alarmDatapointsToAlarm: 1,
         },
         {
             name: 'user-sync-wallet-balances-for-all-pools',
-            interval: every(10, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'seconds') : every(15, 'seconds'),
             alarmEvaluationPeriod: 1,
             alarmDatapointsToAlarm: 1,
         },
         {
             name: 'user-sync-staked-balances',
-            interval: every(10, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'seconds') : every(15, 'seconds'),
             alarmEvaluationPeriod: 1,
             alarmDatapointsToAlarm: 1,
         },
@@ -326,16 +312,20 @@ export const optimismNetworkConfig: NetworkConfig = {
             alarmDatapointsToAlarm: 1,
         },
         {
-            name: 'update-yield-capture',
+            name: 'update-fee-volume-yield-all-pools',
             interval: every(1, 'hours'),
         },
         {
             name: 'sync-vebal-balances',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(1, 'minutes'),
         },
         {
             name: 'sync-vebal-totalSupply',
             interval: every(5, 'minutes'),
+        },
+        {
+            name: 'feed-data-to-datastudio',
+            interval: every(1, 'minutes'),
         },
     ],
 };

@@ -11,12 +11,18 @@ export const schema = {
     ADMIN_API_KEY: String,
     SANITY_API_TOKEN: String,
     SENTRY_DSN: String,
+    SENTRY_AUTH_TOKEN: String,
     AWS_REGION: String,
     PROTOCOL: String,
+    INFURA_API_KEY: {
+        optional: true,
+        type: String,
+    },
     COINGECKO_API_KEY: {
         optional: true,
         type: String,
     },
+    WORKER_QUEUE_URL: String,
 };
 
 export const env: Env = load(schema, {

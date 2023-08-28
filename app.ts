@@ -18,28 +18,27 @@ import { balancerResolvers, beethovenResolvers } from './app/gql/resolvers';
 import helmet from 'helmet';
 import GraphQLJSON from 'graphql-type-json';
 import * as Sentry from '@sentry/node';
-import * as Tracing from '@sentry/tracing';
-import { prisma } from './prisma/prisma-client';
 import { sentryPlugin } from './app/gql/sentry-apollo-plugin';
 import { startWorker } from './worker/worker';
+import { startScheduler } from './worker/scheduler';
 
 async function startServer() {
     const app = createExpressApp();
 
     Sentry.init({
         dsn: env.SENTRY_DSN,
-        tracesSampleRate: 0.005,
+        // tracesSampleRate: 0.005,
         environment: `multichain-${env.DEPLOYMENT_ENV}`,
         enabled: env.NODE_ENV === 'production',
         integrations: [
-            new Tracing.Integrations.Apollo(),
+            // new Tracing.Integrations.Apollo(),
             // new Tracing.Integrations.GraphQL(),
-            new Tracing.Integrations.Prisma({ client: prisma }),
+            // new Tracing.Integrations.Prisma({ client: prisma }),
             // new Tracing.Integrations.Express({ app }),
-            new Sentry.Integrations.Http({ tracing: true }),
+            // new Sentry.Integrations.Http({ tracing: true }),
         ],
         beforeSend(event, hint) {
-            const error = hint.originalException;
+            const error = hint.originalException as string;
             if (error?.toString().includes('Unknown token:')) {
                 console.log(`The following error occurred but was not sent to Sentry: ${error}`);
                 return null;
@@ -76,7 +75,6 @@ async function startServer() {
     app.use(contextMiddleware);
     app.use(sessionMiddleware);
 
-    //startWorker(app);
     if (env.PROTOCOL === 'beethoven') {
         loadRestRoutesBeethoven(app);
     } else if (env.PROTOCOL === 'balancer') {
@@ -119,6 +117,8 @@ async function startServer() {
 
 if (process.env.WORKER === 'true') {
     startWorker();
+} else if (process.env.SCHEDULER === 'true') {
+    startScheduler();
 } else {
     startServer();
 }

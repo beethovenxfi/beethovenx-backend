@@ -9,36 +9,36 @@ import { blocksSubgraphService } from '../subgraphs/blocks-subgraph/blocks-subgr
 import { tokenService } from '../token/token.service';
 import { beetsService } from '../beets/beets.service';
 import { oneDayInSeconds, secondsPerDay } from '../common/time';
-import { collectsFee, isComposableStablePool, isWeightedPoolV2 } from '../pool/lib/pool-utils';
+import { isComposableStablePool, isWeightedPoolV2 } from '../pool/lib/pool-utils';
 import { networkContext } from '../network/network-context.service';
 import { DeploymentEnv } from '../network/network-config-types';
 
 export class DatastudioService {
-    constructor(
-        private readonly secretsManager: SecretsManager,
-        private readonly jwtClientHelper: GoogleJwtClient,
-        private readonly databaseTabName: string,
-        private readonly sheetId: string,
-        private readonly compositionTabName: string,
-        private readonly emissionDataTabName: string,
-        private readonly swapProtocolFeePercentage: number,
-        private readonly chainSlug: string,
-    ) {}
+    constructor(private readonly secretsManager: SecretsManager, private readonly jwtClientHelper: GoogleJwtClient) {}
 
     public async feedPoolData() {
-        const privateKey = await this.secretsManager.getSecret('backend-v2-datafeed-privatekey');
+        const privateKey = await this.secretsManager.getSecret('backend-v3-datafeed-privatekey');
         const jwtClient = await this.jwtClientHelper.getAuthorizedSheetsClient(privateKey);
+
+        const databaseTabName = networkContext.data.datastudio![env.DEPLOYMENT_ENV as DeploymentEnv].databaseTabName;
+        const sheetId = networkContext.data.datastudio![env.DEPLOYMENT_ENV as DeploymentEnv].sheetId;
+        const compositionTabName =
+            networkContext.data.datastudio![env.DEPLOYMENT_ENV as DeploymentEnv].compositionTabName;
+        const emissionDataTabName =
+            networkContext.data.datastudio![env.DEPLOYMENT_ENV as DeploymentEnv].emissionDataTabName;
+        const swapProtocolFeePercentage = networkContext.data.balancer.swapProtocolFeePercentage;
+        const chainSlug = networkContext.data.chain.slug;
 
         const sheets = google.sheets({ version: 'v4' });
 
-        const timestampRange = `${this.databaseTabName}!B:B`;
-        const poolAddressRange = `${this.databaseTabName}!D:D`;
-        const totalSwapRange = `${this.databaseTabName}!J:J`;
-        const chainRange = `${this.databaseTabName}!Y:Y`;
+        const timestampRange = `${databaseTabName}!B:B`;
+        const poolAddressRange = `${databaseTabName}!D:D`;
+        const totalSwapRange = `${databaseTabName}!J:J`;
+        const chainRange = `${databaseTabName}!Y:Y`;
         let currentSheetValues;
         currentSheetValues = await sheets.spreadsheets.values.batchGet({
             auth: jwtClient,
-            spreadsheetId: this.sheetId,
+            spreadsheetId: sheetId,
             ranges: [timestampRange, poolAddressRange, totalSwapRange, chainRange],
             valueRenderOption: 'UNFORMATTED_VALUE',
         });
@@ -69,7 +69,7 @@ export class DatastudioService {
         }
 
         for (let i = timestampValues.length - 1; i >= 0; i--) {
-            if (chainValues[i][0] === this.chainSlug) {
+            if (chainValues[i][0] === chainSlug) {
                 lastRun = timestampValues[i][0];
                 break;
             }
@@ -129,23 +129,22 @@ export class DatastudioService {
             let yesterdaySwapsCount = `0`;
             //find last entry of pool in currentSheet for the correct chain and get total swaps. If no previous value present, set previous value to 0
             for (let i = poolAddressValues.length - 1; i >= 0; i--) {
-                if (
-                    chainValues[i][0] === this.chainSlug &&
-                    poolAddressValues[i][0] === pool.address &&
-                    timestampValues[i][0] === endOfDayBeforeYesterday
-                ) {
+                if (chainValues[i][0] === chainSlug && poolAddressValues[i][0] === pool.address) {
                     yesterdaySwapsCount = totalSwapValues[i][0];
                     break;
                 }
             }
 
             if (pool.dynamicData) {
+                const protocolYieldFeePercentage = pool.dynamicData.protocolYieldFee
+                    ? parseFloat(pool.dynamicData.protocolYieldFee)
+                    : networkContext.data.balancer.yieldProtocolFeePercentage;
                 sharesChange = `${
                     parseFloat(pool.dynamicData.totalShares) - parseFloat(pool.dynamicData.totalShares24hAgo)
                 }`;
                 tvlChange = `${pool.dynamicData.totalLiquidity - pool.dynamicData.totalLiquidity24hAgo}`;
-                lpSwapFee = `${pool.dynamicData.fees24h * (1 - this.swapProtocolFeePercentage)}`;
-                protocolSwapFee = `${pool.dynamicData.fees24h * this.swapProtocolFeePercentage}`;
+                lpSwapFee = `${pool.dynamicData.fees24h * (1 - swapProtocolFeePercentage)}`;
+                protocolSwapFee = `${pool.dynamicData.fees24h * swapProtocolFeePercentage}`;
 
                 lpYieldCapture =
                     pool.type === 'META_STABLE'
@@ -153,19 +152,15 @@ export class DatastudioService {
                               pool.dynamicData.yieldCapture24h *
                               (1 - networkContext.data.balancer.swapProtocolFeePercentage)
                           }`
-                        : `${
-                              pool.dynamicData.yieldCapture24h *
-                              (1 - networkContext.data.balancer.yieldProtocolFeePercentage)
-                          }`;
+                        : `${pool.dynamicData.yieldCapture24h * (1 - protocolYieldFeePercentage)}`;
 
                 protocolYieldCapture =
                     pool.type === 'META_STABLE'
                         ? `${pool.dynamicData.yieldCapture24h * networkContext.data.balancer.swapProtocolFeePercentage}`
-                        : `${
-                              pool.dynamicData.yieldCapture24h * networkContext.data.balancer.yieldProtocolFeePercentage
-                          }`;
+                        : `${pool.dynamicData.yieldCapture24h * protocolYieldFeePercentage}`;
 
-                if (!collectsFee(pool)) {
+                if (pool.dynamicData.isInRecoveryMode || pool.type === 'LIQUIDITY_BOOTSTRAPPING') {
+                    //pool does not collect any protocol fees
                     lpSwapFee = `${pool.dynamicData.fees24h}`;
                     protocolSwapFee = `0`;
 
@@ -213,7 +208,7 @@ export class DatastudioService {
                 lpYieldCapture,
                 protocolYieldCapture,
                 blacklisted ? 'yes' : 'no',
-                this.chainSlug,
+                chainSlug,
                 `1`,
             ]);
 
@@ -241,7 +236,7 @@ export class DatastudioService {
                     token.symbol,
                     token.weight ? token.weight : `0`,
                     `${token.balance}`,
-                    this.chainSlug,
+                    chainSlug,
                 ]);
             }
 
@@ -261,10 +256,10 @@ export class DatastudioService {
                             pool.address,
                             pool.name,
                             'BEETS',
-                            networkContext.data.beets.address,
+                            networkContext.data.beets!.address,
                             `${beetsPerDay}`,
                             `${beetsValuePerDay}`,
-                            this.chainSlug,
+                            chainSlug,
                         ]);
                     }
                     if (stake.farm.rewarders) {
@@ -287,7 +282,7 @@ export class DatastudioService {
                                     rewardToken.address,
                                     `${rewardsPerDay}`,
                                     `${rewardsValuePerDay}`,
-                                    this.chainSlug,
+                                    chainSlug,
                                 ]);
                             }
                         }
@@ -313,7 +308,7 @@ export class DatastudioService {
                                 rewardToken.address,
                                 `${rewardsPerDay}`,
                                 `${rewardsValuePerDay}`,
-                                this.chainSlug,
+                                chainSlug,
                             ]);
                         }
                     }
@@ -321,25 +316,31 @@ export class DatastudioService {
             }
         }
 
-        console.log(`Appending ${allPoolDataRows.length} rows to ${this.databaseTabName}.`);
+        console.log(`Appending ${allPoolDataRows.length} rows to ${databaseTabName}.`);
 
-        this.appendDataInSheet(this.databaseTabName, 'A1:Z1', allPoolDataRows, jwtClient);
+        this.appendDataInSheet(databaseTabName, sheetId, 'A1:Z1', allPoolDataRows, jwtClient);
 
-        console.log(`Appending ${allPoolCompositionRows.length} rows to ${this.compositionTabName}.`);
+        console.log(`Appending ${allPoolCompositionRows.length} rows to ${compositionTabName}.`);
 
-        this.appendDataInSheet(this.compositionTabName, `A1:L1`, allPoolCompositionRows, jwtClient);
+        this.appendDataInSheet(compositionTabName, sheetId, `A1:L1`, allPoolCompositionRows, jwtClient);
 
-        console.log(`Appending ${allEmissionDataRows.length} rows to ${this.emissionDataTabName}.`);
+        console.log(`Appending ${allEmissionDataRows.length} rows to ${emissionDataTabName}.`);
 
-        this.appendDataInSheet(this.emissionDataTabName, 'A1:J1', allEmissionDataRows, jwtClient);
+        this.appendDataInSheet(emissionDataTabName, sheetId, 'A1:J1', allEmissionDataRows, jwtClient);
     }
 
-    private async updateDataInSheet(tabName: string, rowRange: string, rows: string[][], jwtClient: JWT) {
+    private async updateDataInSheet(
+        tabName: string,
+        sheetId: string,
+        rowRange: string,
+        rows: string[][],
+        jwtClient: JWT,
+    ) {
         const sheets = google.sheets({ version: 'v4' });
 
         await sheets.spreadsheets.values.update({
             auth: jwtClient,
-            spreadsheetId: this.sheetId,
+            spreadsheetId: sheetId,
             range: `${tabName}!${rowRange}`,
             valueInputOption: 'USER_ENTERED',
             requestBody: {
@@ -350,12 +351,18 @@ export class DatastudioService {
         });
     }
 
-    private async appendDataInSheet(tabName: string, rowRange: string, rows: string[][], jwtClient: JWT) {
+    private async appendDataInSheet(
+        tabName: string,
+        sheetId: string,
+        rowRange: string,
+        rows: string[][],
+        jwtClient: JWT,
+    ) {
         const sheets = google.sheets({ version: 'v4' });
 
         await sheets.spreadsheets.values.append({
             auth: jwtClient,
-            spreadsheetId: this.sheetId,
+            spreadsheetId: sheetId,
             range: `${tabName}!${rowRange}`,
             valueInputOption: 'USER_ENTERED',
             insertDataOption: 'INSERT_ROWS',
@@ -368,13 +375,4 @@ export class DatastudioService {
     }
 }
 
-export const datastudioService = new DatastudioService(
-    secretsManager,
-    googleJwtClient,
-    networkContext.data.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].databaseTabName,
-    networkContext.data.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].sheetId,
-    networkContext.data.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].compositionTabName,
-    networkContext.data.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].emissionDataTabName,
-    networkContext.data.balancer.swapProtocolFeePercentage,
-    networkContext.data.chain.slug,
-);
+export const datastudioService = new DatastudioService(secretsManager, googleJwtClient);

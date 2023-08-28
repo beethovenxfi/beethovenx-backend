@@ -3,9 +3,12 @@ type Mutation
 
 enum GqlChain {
     ARBITRUM
+    AVALANCHE
+    BASE
     FANTOM
     GNOSIS
     MAINNET
     OPTIMISM
     POLYGON
+    ZKEVM
 }

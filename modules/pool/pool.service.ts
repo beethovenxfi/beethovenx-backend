@@ -196,7 +196,16 @@ export class PoolService {
         const chunks = _.chunk(poolIds, 100);
 
         for (const chunk of chunks) {
-            await this.poolOnChainDataService.updateOnChainData(chunk, networkContext.provider, blockNumber);
+            await this.poolOnChainDataService.updateOnChainStatus(chunk);
+            await this.poolOnChainDataService.updateOnChainData(chunk, blockNumber);
+        }
+    }
+
+    public async updateOnChainStatusForPools(poolIds: string[]) {
+        const chunks = _.chunk(poolIds, 1000);
+
+        for (const chunk of chunks) {
+            await this.poolOnChainDataService.updateOnChainStatus(chunk);
         }
     }
 
@@ -204,7 +213,7 @@ export class PoolService {
         const chunks = _.chunk(poolIds, 100);
 
         for (const chunk of chunks) {
-            await this.poolOnChainDataService.updateOnChainData(chunk, networkContext.provider, blockNumber);
+            await this.poolOnChainDataService.updateOnChainData(chunk, blockNumber);
         }
     }
 
@@ -213,11 +222,18 @@ export class PoolService {
         const timestamp = moment().subtract(5, 'minutes').unix();
         const poolIds = await balancerSubgraphService.getPoolsWithActiveUpdates(timestamp);
 
-        await this.poolOnChainDataService.updateOnChainData(poolIds, networkContext.provider, blockNumber);
+        await this.poolOnChainDataService.updateOnChainData(poolIds, blockNumber);
     }
 
     public async updateLiquidityValuesForPools(minShares?: number, maxShares?: number): Promise<void> {
         await this.poolUsdDataService.updateLiquidityValuesForPools(minShares, maxShares);
+    }
+
+    // It's needed to update the volume and fee for all pools from time to time to "reset" pools that don't have any changes and therefore aren't updated in the syncChangedPools job.
+    // We also update the yield capture in the same job, as these are very related metrics and have a similar timing requirement.
+    public async updateFeeVolumeYieldForAllPools() {
+        await this.updateVolumeAndFeeValuesForPools();
+        await this.updateYieldCaptureForAllPools();
     }
 
     public async updateVolumeAndFeeValuesForPools(poolIds?: string[]): Promise<void> {
@@ -308,6 +324,10 @@ export class PoolService {
 
     public async updateLifetimeValuesForAllPools() {
         await this.poolUsdDataService.updateLifetimeValuesForAllPools();
+    }
+
+    public async initOnChainDataForAllPools() {
+        await this.poolSyncService.initOnChainDataForAllPools();
     }
 
     public async createPoolSnapshotsForPoolsMissingSubgraphData(poolId: string) {
