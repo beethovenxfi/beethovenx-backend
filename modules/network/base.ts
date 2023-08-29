@@ -1,9 +1,6 @@
 import { BigNumber, ethers } from 'ethers';
 import { DeploymentEnv, NetworkConfig, NetworkData } from './network-config-types';
 import { tokenService } from '../token/token.service';
-import { WstethAprService } from '../pool/lib/apr-data-sources/optimism/wsteth-apr.service';
-import { ReaperCryptAprService } from '../pool/lib/apr-data-sources/reaper-crypt-apr.service';
-import { PhantomStableAprService } from '../pool/lib/apr-data-sources/phantom-stable-apr.service';
 import { BoostedPoolAprService } from '../pool/lib/apr-data-sources/boosted-pool-apr.service';
 import { SwapFeeAprService } from '../pool/lib/apr-data-sources/swap-fee-apr.service';
 import { GaugeAprService } from '../pool/lib/apr-data-sources/ve-bal-gauge-apr.service';
@@ -77,6 +74,17 @@ const baseNetworkData: NetworkData = {
         yieldProtocolFeePercentage: 0.5,
         poolDataQueryContract: '0x67af5D428d38C5176a286a2371Df691cDD914Fb8',
     },
+    ibAprConfig: {
+        defaultHandlers: {
+            stETH: {
+                tokens: {
+                    wstETH: '',
+                },
+                sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
+                path: 'data.smaApr',
+            },
+        },
+    },
     multicall: '0xca11bde05977b3631167028862be2a173976ca11',
     multicall3: '0xca11bde05977b3631167028862be2a173976ca11',
     avgBlockSpeed: 2,
@@ -115,7 +123,6 @@ export const baseNetworkConfig: NetworkConfig = {
     contentService: new GithubContentService(),
     provider: new ethers.providers.JsonRpcProvider({ url: baseNetworkData.rpcUrl, timeout: 60000 }),
     poolAprServices: [
-        new WstethAprService(tokenService, baseNetworkData.lido!.wstEthContract),
         new BoostedPoolAprService(),
         new SwapFeeAprService(baseNetworkData.balancer.swapProtocolFeePercentage),
         new GaugeAprService(gaugeSubgraphService, tokenService, [baseNetworkData.bal!.address]),
