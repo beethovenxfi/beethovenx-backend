@@ -1,7 +1,6 @@
 import { BigNumber, ethers } from 'ethers';
 import { NetworkConfig, NetworkData } from './network-config-types';
 import { tokenService } from '../token/token.service';
-import { StaderStakedFtmAprService } from '../pool/lib/apr-data-sources/fantom/stader-staked-ftm-apr.service';
 import { PhantomStableAprService } from '../pool/lib/apr-data-sources/phantom-stable-apr.service';
 import { BoostedPoolAprService } from '../pool/lib/apr-data-sources/boosted-pool-apr.service';
 import { SwapFeeAprService } from '../pool/lib/apr-data-sources/swap-fee-apr.service';
@@ -222,6 +221,12 @@ const fantomNetworkData: NetworkData = {
         yearn: {
             sourceUrl: 'https://d28fcsszptni1s.cloudfront.net/v1/chains/250/vaults/all',
         },
+        fixedAprTokens: {
+            sFTMx: {
+                address: '0xd7028092c830b5c8fce061af2e593413ebbc1fc1',
+                value: 0.046,
+            },
+        },
     },
     copper: {
         proxyAddress: '0xbC8a71C75ffbd2807c021F4F81a8832392dEF93c',
@@ -277,7 +282,6 @@ export const fantomNetworkConfig: NetworkConfig = {
             tokenService,
         ),
         // new SpookySwapAprService(tokenService, fantomNetworkData.spooky!.xBooContract),
-        new StaderStakedFtmAprService(tokenService, fantomNetworkData.stader!.sFtmxContract),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(fantomNetworkData.balancer.swapProtocolFeePercentage),

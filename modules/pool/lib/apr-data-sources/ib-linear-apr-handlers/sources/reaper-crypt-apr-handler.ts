@@ -46,7 +46,6 @@ export class ReaperCryptAprHandler implements AprHandler {
         [tokenName: string]: { address: string; isSftmX?: boolean; isWstETH?: boolean };
     }): Promise<{ [tokenAddress: string]: number }> {
         const aprs: { [tokenAddress: string]: number } = {};
-        console.log(networkContext.provider);
         for (const { address, isSftmX, isWstETH } of Object.values(tokens)) {
             const tokenContract = getContractAt(address, ReaperCryptAbi);
             const strategyAddress = await tokenContract.strategy();
@@ -86,7 +85,6 @@ export class ReaperCryptAprHandler implements AprHandler {
             data: JSON.stringify(requestQuery),
         });
         return data.vaults.reduce((acc, { id, apr }) => {
-            console.log(id);
             const token = Object.values(tokens).find((token) => token.address.toLowerCase() === id.toLowerCase());
             if (!token) {
                 return acc;

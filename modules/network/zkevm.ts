@@ -1,7 +1,6 @@
 import { BigNumber, ethers } from 'ethers';
 import { NetworkConfig, NetworkData } from './network-config-types';
 import { tokenService } from '../token/token.service';
-import { WstethAprService } from '../pool/lib/apr-data-sources/optimism/wsteth-apr.service';
 import { PhantomStableAprService } from '../pool/lib/apr-data-sources/phantom-stable-apr.service';
 import { BoostedPoolAprService } from '../pool/lib/apr-data-sources/boosted-pool-apr.service';
 import { SwapFeeAprService } from '../pool/lib/apr-data-sources/swap-fee-apr.service';
@@ -133,10 +132,6 @@ const zkevmNetworkData: NetworkData = {
     beefy: {
         linearPools: [''],
     },
-    lido: {
-        wstEthAprEndpoint: '',
-        wstEthContract: '',
-    },
     datastudio: {
         main: {
             user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
@@ -174,7 +169,6 @@ export const zkevmNetworkConfig: NetworkConfig = {
             zkevmNetworkData.chain.id,
             tokenService,
         ),
-        new WstethAprService(tokenService, zkevmNetworkData.lido!.wstEthContract),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(zkevmNetworkData.balancer.swapProtocolFeePercentage),

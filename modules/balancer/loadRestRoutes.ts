@@ -5,6 +5,7 @@ import { networkContext } from '../network/network-context.service';
 import { IbTokensAprService } from '../pool/lib/apr-data-sources/ib-tokens-apr.service';
 import { tokenService } from '../token/token.service';
 import { mainnetNetworkData } from '../network/mainnet';
+import { optimismNetworkData } from '../network/optimism';
 
 export function loadRestRoutesBalancer(app: Express) {
     app.use('/health', (req, res) => res.sendStatus(200));
@@ -14,9 +15,9 @@ export function loadRestRoutesBalancer(app: Express) {
             where: { chain: networkContext.chain },
         });
         const ibTokensAprService = new IbTokensAprService(
-            mainnetNetworkData.ibAprConfig,
-            mainnetNetworkData.chain.prismaId,
-            mainnetNetworkData.chain.id,
+            optimismNetworkData.ibAprConfig,
+            optimismNetworkData.chain.prismaId,
+            optimismNetworkData.chain.id,
             tokenService,
         );
         await ibTokensAprService.updateAprForPools(pools);

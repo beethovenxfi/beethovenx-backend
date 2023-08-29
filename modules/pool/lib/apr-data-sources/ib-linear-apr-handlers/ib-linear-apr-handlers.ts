@@ -11,15 +11,18 @@ import { TranchessAprHandler } from './sources/tranchess-apr-handler';
 import { AprConfig } from '../../../../network/network-config-types';
 import { YearnAprHandler } from './sources/yearn-apr-handler';
 import { ReaperCryptAprHandler } from './sources/reaper-crypt-apr-handler';
+import { BeefyAprHandler } from './sources/beefy-apr-handler';
 
 export class IbLinearAprHandlers {
     private handlers: AprHandler[] = [];
     //List of addresses of wrappedBoostedTokens, used to check what is LINEAR_BOOSTED APR and what is IB_YIELD APR
     wrappedBoostedTokens: string[] = [];
+    fixedAprTokens?: { [tokenName: string]: { address: string; value: number; group?: string } };
 
     constructor(aprConfig: AprConfig, networkPrismaId: string, networkChainId: number) {
         this.handlers = this.buildAprHandlers(aprConfig, networkPrismaId, networkChainId);
         this.wrappedBoostedTokens = this.buildWrappedBoostedTokens(aprConfig);
+        this.fixedAprTokens = aprConfig.fixedAprTokens;
     }
 
     buildAprHandlers(aprConfig: AprConfig, networkPrismaId: string, networkChainId: number) {
@@ -33,6 +36,10 @@ export class IbLinearAprHandlers {
         if (aprConfig.ankr) {
             const ankrHandler = new AnkrAprHandler(aprConfig.ankr);
             handlers.push(ankrHandler);
+        }
+        if (aprConfig.beefy) {
+            const beefyHandler = new BeefyAprHandler(aprConfig.beefy);
+            handlers.push(beefyHandler);
         }
         if (aprConfig.euler) {
             const eulerHandler = new EulerAprHandler(aprConfig.euler);
@@ -124,7 +131,15 @@ export class IbLinearAprHandlers {
                 });
             }
         }
-        console.log(aprs);
+        if (this.fixedAprTokens) {
+            for (const { address, value, group } of Object.values(this.fixedAprTokens)) {
+                aprs.push({
+                    val: value,
+                    group,
+                    address,
+                });
+            }
+        }
         return aprs;
     }
 }

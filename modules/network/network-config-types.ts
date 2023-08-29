@@ -181,6 +181,17 @@ export interface AprConfig {
             };
         };
     };
+    beefy?: {
+        sourceUrl: string;
+        tokens: {
+            [tokenName: string]: {
+                address: string;
+                // To get the vaultId, get the vault address from the token contract(token.vault()),
+                // and search for the vault address in the link: https://api.beefy.finance/vaults
+                vaultId: string;
+            };
+        };
+    };
     euler?: {
         subgraphUrl: string;
         tokens: {
@@ -269,6 +280,13 @@ export interface AprConfig {
             };
             path?: string;
             scale?: number;
+            group?: string;
+        };
+    };
+    fixedAprTokens?: {
+        [tokenName: string]: {
+            address: string;
+            value: number;
             group?: string;
         };
     };

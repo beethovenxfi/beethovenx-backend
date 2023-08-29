@@ -1,7 +1,6 @@
 import { BigNumber, ethers } from 'ethers';
 import { NetworkConfig, NetworkData } from './network-config-types';
 import { tokenService } from '../token/token.service';
-import { WstethAprService } from '../pool/lib/apr-data-sources/optimism/wsteth-apr.service';
 import { PhantomStableAprService } from '../pool/lib/apr-data-sources/phantom-stable-apr.service';
 import { BoostedPoolAprService } from '../pool/lib/apr-data-sources/boosted-pool-apr.service';
 import { SwapFeeAprService } from '../pool/lib/apr-data-sources/swap-fee-apr.service';
@@ -320,10 +319,6 @@ export const mainnetNetworkData: NetworkData = {
     beefy: {
         linearPools: [''],
     },
-    lido: {
-        wstEthAprEndpoint: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
-        wstEthContract: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0',
-    },
     datastudio: {
         main: {
             user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
@@ -361,7 +356,6 @@ export const mainnetNetworkConfig: NetworkConfig = {
             mainnetNetworkData.chain.id,
             tokenService,
         ),
-        new WstethAprService(tokenService, mainnetNetworkData.lido!.wstEthContract),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(mainnetNetworkData.balancer.swapProtocolFeePercentage),

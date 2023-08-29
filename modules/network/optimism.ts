@@ -19,7 +19,7 @@ import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/
 import { BeefyVaultAprService } from '../pool/lib/apr-data-sources/beefy-vault-apr.service copy';
 import { IbTokensAprService } from '../pool/lib/apr-data-sources/ib-tokens-apr.service';
 
-const optimismNetworkData: NetworkData = {
+export const optimismNetworkData: NetworkData = {
     chain: {
         slug: 'optimism',
         id: 10,
@@ -114,6 +114,21 @@ const optimismNetworkData: NetworkData = {
         },
     },
     ibAprConfig: {
+        beefy: {
+            sourceUrl: 'https://api.beefy.finance/apy/breakdown?_=',
+            tokens: {
+                wmooExactlySupplyUSDC: {
+                    address: '0xe5e9168b45a90c1e5730da6184cc5901c6e4353f',
+                    vaultId: 'exactly-supply-usdc',
+                },
+                wmooExactlySupplyETH: {
+                    address: '0x44b1cea4f597f493e2fd0833a9c04dfb1e479ef0',
+                    vaultId: 'exactly-supply-eth',
+                },
+                // To get the vaultId, get the vault address from the token contract(token.vault()),
+                // and search for the vault address in the link: https://api.beefy.finance/vaults
+            },
+        },
         reaper: {
             multiStrategy: {
                 subgraphUrl: 'https://api.thegraph.com/subgraphs/name/byte-masons/multi-strategy-vaults-optimism',
