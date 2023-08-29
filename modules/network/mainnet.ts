@@ -2,7 +2,6 @@ import { BigNumber, ethers } from 'ethers';
 import { NetworkConfig, NetworkData } from './network-config-types';
 import { tokenService } from '../token/token.service';
 import { WstethAprService } from '../pool/lib/apr-data-sources/optimism/wsteth-apr.service';
-import { ReaperCryptAprService } from '../pool/lib/apr-data-sources/reaper-crypt-apr.service';
 import { PhantomStableAprService } from '../pool/lib/apr-data-sources/phantom-stable-apr.service';
 import { BoostedPoolAprService } from '../pool/lib/apr-data-sources/boosted-pool-apr.service';
 import { SwapFeeAprService } from '../pool/lib/apr-data-sources/swap-fee-apr.service';
