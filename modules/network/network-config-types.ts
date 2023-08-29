@@ -114,7 +114,7 @@ export interface NetworkData {
     copper?: {
         proxyAddress: string;
     };
-    beefy: {
+    beefy?: {
         linearPools: string[];
     };
     lido?: {
