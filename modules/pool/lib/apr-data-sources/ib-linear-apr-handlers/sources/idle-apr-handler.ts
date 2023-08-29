@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { AprHandler } from '../base-apr-handlers';
+import { AprHandler } from '../ib-linear-apr-handlers';
 
 export class IdleAprHandler implements AprHandler {
     tokens: {
@@ -11,14 +11,12 @@ export class IdleAprHandler implements AprHandler {
     };
     url: string;
     authorizationHeader: string;
-    networkPrismaId: string;
     readonly group = 'IDLE';
 
     constructor(aprHandlerConfig: IdleAprHandlerConfig) {
         this.tokens = aprHandlerConfig.tokens;
         this.url = aprHandlerConfig.sourceUrl;
         this.authorizationHeader = aprHandlerConfig.authorizationHeader;
-        this.networkPrismaId = aprHandlerConfig.networkPrismaId;
     }
 
     async getAprs() {
@@ -54,5 +52,4 @@ type IdleAprHandlerConfig = {
     };
     sourceUrl: string;
     authorizationHeader: string;
-    networkPrismaId: string;
 };

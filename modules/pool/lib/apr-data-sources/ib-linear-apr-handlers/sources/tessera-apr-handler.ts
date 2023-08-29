@@ -2,10 +2,9 @@ import { Contract } from 'ethers';
 import { abi } from './abis/tesseraPool';
 import { JsonRpcProvider } from '@ethersproject/providers';
 
-import { AprHandler } from '../base-apr-handlers';
+import { AprHandler } from '../ib-linear-apr-handlers';
 
 export class TesseraAprHandler implements AprHandler {
-    networkPrismaId: string;
     provider: JsonRpcProvider;
     tokens: {
         [tokenName: string]: {
@@ -16,7 +15,6 @@ export class TesseraAprHandler implements AprHandler {
     readonly group = 'TESSERA';
 
     constructor(aprHandlerConfig: TesseraAprHandlerConfig) {
-        this.networkPrismaId = aprHandlerConfig.networkPrismaId;
         this.provider = new JsonRpcProvider(aprHandlerConfig.rpcUrl, aprHandlerConfig.networkChainId);
         this.tokens = aprHandlerConfig.tokens;
     }
@@ -48,7 +46,6 @@ export class TesseraAprHandler implements AprHandler {
 }
 
 type TesseraAprHandlerConfig = {
-    networkPrismaId: string;
     networkChainId: number;
     rpcUrl: string;
     tokens: {

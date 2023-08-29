@@ -114,7 +114,7 @@ const arbitrumNetworkData: NetworkData = {
             swapGas: BigNumber.from('1000000'),
         },
     },
-    aprConfig: {
+    ibAprConfig: {
         aave: {
             v3: {
                 subgraphUrl: 'https://api.thegraph.com/subgraphs/name/aave/protocol-v3-arbitrum',
@@ -165,21 +165,8 @@ const arbitrumNetworkData: NetworkData = {
             },
         },
     },
-    yearn: {
-        vaultsEndpoint: 'https://#/',
-    },
-    reaper: {
-        linearPoolFactories: ['0xC101dcA301a4011C1F925e9622e749e550a1B667'],
-        linearPoolIdsFromErc4626Factory: [],
-        averageAPRAcrossLastNHarvests: 2,
-        multistratAprSubgraphUrl: '',
-    },
     beefy: {
         linearPools: [''],
-    },
-    lido: {
-        wstEthAprEndpoint: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
-        wstEthContract: '0x5979d7b546e38e414f7e9822514be443a4800529',
     },
     datastudio: {
         main: {
@@ -213,18 +200,10 @@ export const arbitrumNetworkConfig: NetworkConfig = {
     provider: new ethers.providers.JsonRpcProvider(arbitrumNetworkData.rpcUrl),
     poolAprServices: [
         new IbTokensAprService(
-            arbitrumNetworkData.aprConfig,
+            arbitrumNetworkData.ibAprConfig,
             arbitrumNetworkData.chain.prismaId,
             arbitrumNetworkData.chain.id,
             tokenService,
-        ),
-        new WstethAprService(tokenService, arbitrumNetworkData.lido!.wstEthContract),
-        new ReaperCryptAprService(
-            arbitrumNetworkData.reaper.linearPoolFactories,
-            arbitrumNetworkData.reaper.linearPoolIdsFromErc4626Factory,
-            arbitrumNetworkData.reaper.averageAPRAcrossLastNHarvests,
-            arbitrumNetworkData.stader ? arbitrumNetworkData.stader.sFtmxContract : undefined,
-            arbitrumNetworkData.lido ? arbitrumNetworkData.lido.wstEthContract : undefined,
         ),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),

@@ -3,7 +3,6 @@ import { NetworkConfig, NetworkData } from './network-config-types';
 import { RocketPoolStakedEthAprService } from '../pool/lib/apr-data-sources/optimism/rocket-pool-staked-eth-apr.service';
 import { tokenService } from '../token/token.service';
 import { WstethAprService } from '../pool/lib/apr-data-sources/optimism/wsteth-apr.service';
-import { OvernightAprService } from '../pool/lib/apr-data-sources/optimism/overnight-apr.service';
 import { ReaperCryptAprService } from '../pool/lib/apr-data-sources/reaper-crypt-apr.service';
 import { PhantomStableAprService } from '../pool/lib/apr-data-sources/phantom-stable-apr.service';
 import { BoostedPoolAprService } from '../pool/lib/apr-data-sources/boosted-pool-apr.service';
@@ -117,14 +116,50 @@ const optimismNetworkData: NetworkData = {
             swapGas: BigNumber.from('1000000'),
         },
     },
-    aprConfig: {
+    ibAprConfig: {
+        reaper: {
+            multiStrategy: {
+                subgraphUrl: 'https://api.thegraph.com/subgraphs/name/byte-masons/multi-strategy-vaults-optimism',
+                tokens: {
+                    rfUSDT: {
+                        address: '0x51868bb8b71fb423b87129908fa039b880c8612d',
+                    },
+                    rfWETH: {
+                        address: '0x1bad45e92dce078cf68c2141cd34f54a02c92806',
+                    },
+                    rfOP: {
+                        address: '0xcecd29559a84e4d4f6467b36bbd4b9c3e6b89771',
+                    },
+                    rfwstETH: {
+                        address: '0xb19f4d65882f6c103c332f0bc012354548e9ce0e',
+                        isWstETH: true,
+                    },
+                    rfWBTC: {
+                        address: '0xf6533b6fcb3f42d2fc91da7c379858ae6ebc7448',
+                    },
+                    rfDAI: {
+                        address: '0xc0f5da4fb484ce6d8a6832819299f7cd0d15726e',
+                    },
+                    rfUSDC: {
+                        address: '0x508734b52ba7e04ba068a2d4f67720ac1f63df47',
+                    },
+                },
+            },
+        },
         defaultHandlers: {
             stEth: {
                 tokens: {
-                    wstETH: '0x1f32b1c2345538c0c6f582fcb0227',
+                    wstETH: '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
                 },
                 sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
                 path: 'data.smaApr',
+            },
+            rETH: {
+                tokens: {
+                    rETH: '0x9bcef72be871e61ed4fbbc7630889bee758eb81d',
+                },
+                sourceUrl: 'https://drop-api.stafi.io/reth/v1/poolData',
+                path: 'data.stakeApr',
             },
             overnightDAIPlus: {
                 tokens: {
@@ -144,35 +179,11 @@ const optimismNetworkData: NetworkData = {
             },
         },
     },
-    yearn: {
-        vaultsEndpoint: 'https://#/',
-    },
-    reaper: {
-        linearPoolFactories: [
-            '0x19968d4b7126904fd665ed25417599df9604df83',
-            '0xe4b88e745dce9084b9fc2439f85a9a4c5cd6f361',
-        ],
-        linearPoolIdsFromErc4626Factory: [
-            '0x20715545c15c76461861cb0d6ba96929766d05a50000000000000000000000e8',
-            '0xf970659221bb9d01b615321b63a26e857ffc030b0000000000000000000000e9',
-            '0xa5d4802b4ce6b745b0c9e1b4a79c093d197869c80000000000000000000000ea',
-            '0x2e2b8b82123789d895fd79913f6dfa51f5b5a0e60000000000000000000000eb',
-            '0x48ace81c09382bfc08ed102e7eadd37e3b0497520000000000000000000000ec',
-            '0x8025586ac5fb265a23b9492e7414beccc2059ec30000000000000000000000ed',
-            '0x3e9cbffd270ae67abb09d28988e7e785498c73730000000000000000000000ee',
-        ],
-        averageAPRAcrossLastNHarvests: 2,
-        multistratAprSubgraphUrl: 'https://api.thegraph.com/subgraphs/name/byte-masons/multi-strategy-vaults-optimism',
-    },
     beefy: {
         linearPools: [
             '0x5bdd8c19b44c3e4a15305601a2c9841bde9366f00000000000000000000000ca',
             '0x72d6df381cac8c2283c0b13fe5262a1f5e8e8d1b0000000000000000000000cb',
         ],
-    },
-    lido: {
-        wstEthAprEndpoint: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
-        wstEthContract: '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
     },
     rocket: {
         rEthContract: '0x9bcef72be871e61ed4fbbc7630889bee758eb81d',
@@ -212,20 +223,10 @@ export const optimismNetworkConfig: NetworkConfig = {
     provider: new ethers.providers.JsonRpcProvider(optimismNetworkData.rpcUrl),
     poolAprServices: [
         new IbTokensAprService(
-            optimismNetworkData.aprConfig,
+            optimismNetworkData.ibAprConfig,
             optimismNetworkData.chain.prismaId,
             optimismNetworkData.chain.id,
             tokenService,
-        ),
-        new RocketPoolStakedEthAprService(tokenService, optimismNetworkData.rocket!.rEthContract),
-        new WstethAprService(tokenService, optimismNetworkData.lido!.wstEthContract),
-        new OvernightAprService(optimismNetworkData.overnight!.aprEndpoint, tokenService),
-        new ReaperCryptAprService(
-            optimismNetworkData.reaper.linearPoolFactories,
-            optimismNetworkData.reaper.linearPoolIdsFromErc4626Factory,
-            optimismNetworkData.reaper.averageAPRAcrossLastNHarvests,
-            optimismNetworkData.stader ? optimismNetworkData.stader.sFtmxContract : undefined,
-            optimismNetworkData.lido ? optimismNetworkData.lido.wstEthContract : undefined,
         ),
         new BeefyVaultAprService(optimismNetworkData.beefy.linearPools, tokenService),
         new PhantomStableAprService(),

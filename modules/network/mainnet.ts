@@ -19,7 +19,14 @@ import { coingeckoService } from '../coingecko/coingecko.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
 import { IbTokensAprService } from '../pool/lib/apr-data-sources/ib-tokens-apr.service';
 
-const mainnetNetworkData: NetworkData = {
+const underlyingTokens = {
+    USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+    USDT: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    DAI: '0x6b175474e89094c44da98b954eedeac495271d0f',
+    wETH: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+};
+
+export const mainnetNetworkData: NetworkData = {
     chain: {
         slug: 'ethereum',
         id: 1,
@@ -116,27 +123,27 @@ const mainnetNetworkData: NetworkData = {
             swapGas: BigNumber.from('1000000'),
         },
     },
-    aprConfig: {
+    ibAprConfig: {
         aave: {
             v2: {
                 subgraphUrl: 'https://api.thegraph.com/subgraphs/name/aave/protocol-v2',
                 tokens: {
                     USDC: {
-                        underlyingAssetAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+                        underlyingAssetAddress: underlyingTokens.USDC,
                         aTokenAddress: '0xbcca60bb61934080951369a648fb03df4f96263c',
                         wrappedTokens: {
                             waUSDC: '0xd093fa4fb80d09bb30817fdcd442d4d02ed3e5de',
                         },
                     },
                     USDT: {
-                        underlyingAssetAddress: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+                        underlyingAssetAddress: underlyingTokens.USDT,
                         aTokenAddress: '0x3ed3b47dd13ec9a98b44e6204a523e766b225811',
                         wrappedTokens: {
                             waUSDT: '0xf8fd466f12e236f4c96f7cce6c79eadb819abf58',
                         },
                     },
                     DAI: {
-                        underlyingAssetAddress: '0x6b175474e89094c44da98b954eedeac495271d0f',
+                        underlyingAssetAddress: underlyingTokens.DAI,
                         aTokenAddress: '0x028171bca77440897b824ca71d1c56cac55b68a3',
                         wrappedTokens: {
                             waDAI: '0x02d60b84491589974263d922d9cc7a3152618ef6',
@@ -148,7 +155,7 @@ const mainnetNetworkData: NetworkData = {
                 subgraphUrl: 'https://api.thegraph.com/subgraphs/name/aave/protocol-v3',
                 tokens: {
                     USDC: {
-                        underlyingAssetAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+                        underlyingAssetAddress: underlyingTokens.USDC,
                         aTokenAddress: '0x98c23e9d8f34fefb1b7bd6a91b7ff122f4e16f5c',
                         wrappedTokens: {
                             waUSDC: '0x57d20c946a7a3812a7225b881cdcd8431d23431c',
@@ -156,7 +163,7 @@ const mainnetNetworkData: NetworkData = {
                         },
                     },
                     USDT: {
-                        underlyingAssetAddress: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+                        underlyingAssetAddress: underlyingTokens.USDT,
                         aTokenAddress: '0x23878914efe38d27c4d67ab83ed1b93a74d4086a',
                         wrappedTokens: {
                             waUSDT: '0xa7e0e66f38b8ad8343cff67118c1f33e827d1455',
@@ -164,7 +171,7 @@ const mainnetNetworkData: NetworkData = {
                         },
                     },
                     DAI: {
-                        underlyingAssetAddress: '0x6b175474e89094c44da98b954eedeac495271d0f',
+                        underlyingAssetAddress: underlyingTokens.DAI,
                         aTokenAddress: '0x018008bfb33d285247a21d44e50697654f754e63',
                         wrappedTokens: {
                             waDAI: '0x098256c06ab24f5655c5506a6488781bd711c14b',
@@ -172,7 +179,7 @@ const mainnetNetworkData: NetworkData = {
                         },
                     },
                     wETH: {
-                        underlyingAssetAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+                        underlyingAssetAddress: underlyingTokens.wETH,
                         aTokenAddress: '0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8',
                         wrappedTokens: {
                             waWETH: '0x59463bb67ddd04fe58ed291ba36c26d99a39fbc6',
@@ -210,7 +217,7 @@ const mainnetNetworkData: NetworkData = {
         idle: {
             sourceUrl: 'https://api.idle.finance/junior-rates/',
             authorizationHeader:
-                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRJZCI6IkFwcDciLCJpYXQiOjE2NzAyMzc1Mjd9.L12KJEt8fW1Cvy3o7Nl4OJ2wtEjzlObaAYJ9aC_CY6M',
+                'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRJZCI6IkFwcDciLCJpYXQiOjE2NzAyMzc1Mjd9.L12KJEt8fW1Cvy3o7Nl4OJ2wtEjzlObaAYJ9aC_CY6M',
             tokens: {
                 idleDAI: {
                     address: '0xec9482040e6483b7459cc0db05d51dfa3d3068e1',
@@ -311,15 +318,6 @@ const mainnetNetworkData: NetworkData = {
             },
         },
     },
-    yearn: {
-        vaultsEndpoint: 'https://#/',
-    },
-    reaper: {
-        linearPoolFactories: [],
-        linearPoolIdsFromErc4626Factory: [],
-        averageAPRAcrossLastNHarvests: 2,
-        multistratAprSubgraphUrl: '',
-    },
     beefy: {
         linearPools: [''],
     },
@@ -359,7 +357,7 @@ export const mainnetNetworkConfig: NetworkConfig = {
     provider: new ethers.providers.JsonRpcProvider(mainnetNetworkData.rpcUrl),
     poolAprServices: [
         new IbTokensAprService(
-            mainnetNetworkData.aprConfig,
+            mainnetNetworkData.ibAprConfig,
             mainnetNetworkData.chain.prismaId,
             mainnetNetworkData.chain.id,
             tokenService,

@@ -106,7 +106,7 @@ const zkevmNetworkData: NetworkData = {
             swapGas: BigNumber.from('1000000'),
         },
     },
-    aprConfig: {
+    ibAprConfig: {
         ovix: {
             rpcUrl: 'https://zkevm-rpc.com',
             tokens: {
@@ -129,15 +129,6 @@ const zkevmNetworkData: NetworkData = {
                 path: 'data.smaApr',
             },
         },
-    },
-    yearn: {
-        vaultsEndpoint: 'https://#/',
-    },
-    reaper: {
-        linearPoolFactories: [],
-        linearPoolIdsFromErc4626Factory: [],
-        averageAPRAcrossLastNHarvests: 2,
-        multistratAprSubgraphUrl: '',
     },
     beefy: {
         linearPools: [''],
@@ -178,7 +169,7 @@ export const zkevmNetworkConfig: NetworkConfig = {
     provider: new ethers.providers.JsonRpcProvider(zkevmNetworkData.rpcUrl),
     poolAprServices: [
         new IbTokensAprService(
-            zkevmNetworkData.aprConfig,
+            zkevmNetworkData.ibAprConfig,
             zkevmNetworkData.chain.prismaId,
             zkevmNetworkData.chain.id,
             tokenService,

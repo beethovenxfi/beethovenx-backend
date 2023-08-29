@@ -105,7 +105,7 @@ const gnosisNetworkData: NetworkData = {
             swapGas: BigNumber.from('1000000'),
         },
     },
-    aprConfig: {
+    ibAprConfig: {
         defaultHandlers: {
             stETH: {
                 tokens: {
@@ -115,15 +115,6 @@ const gnosisNetworkData: NetworkData = {
                 path: 'data.smaApr',
             },
         },
-    },
-    yearn: {
-        vaultsEndpoint: 'https://#/',
-    },
-    reaper: {
-        linearPoolFactories: [],
-        linearPoolIdsFromErc4626Factory: [],
-        averageAPRAcrossLastNHarvests: 2,
-        multistratAprSubgraphUrl: '',
     },
     lido: {
         wstEthAprEndpoint: '',
@@ -164,7 +155,7 @@ export const gnosisNetworkConfig: NetworkConfig = {
     provider: new ethers.providers.JsonRpcProvider(gnosisNetworkData.rpcUrl),
     poolAprServices: [
         new IbTokensAprService(
-            gnosisNetworkData.aprConfig,
+            gnosisNetworkData.ibAprConfig,
             gnosisNetworkData.chain.prismaId,
             gnosisNetworkData.chain.id,
             tokenService,

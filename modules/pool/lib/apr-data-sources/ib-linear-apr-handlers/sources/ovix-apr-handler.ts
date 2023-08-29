@@ -2,10 +2,9 @@ import { BigNumber, Contract } from 'ethers';
 import { abi } from './abis/oErc20';
 import { JsonRpcProvider } from '@ethersproject/providers';
 
-import { AprHandler } from '../base-apr-handlers';
+import { AprHandler } from '../ib-linear-apr-handlers';
 
 export class OvixAprHandler implements AprHandler {
-    networkPrismaId: string;
     provider: JsonRpcProvider;
     tokens: {
         [tokenName: string]: {
@@ -16,7 +15,6 @@ export class OvixAprHandler implements AprHandler {
     readonly group = 'OVIX';
 
     constructor(aprHandlerConfig: OvixAprHandlerConfig) {
-        this.networkPrismaId = aprHandlerConfig.networkPrismaId;
         this.provider = new JsonRpcProvider(aprHandlerConfig.rpcUrl, aprHandlerConfig.networkChainId);
         this.tokens = aprHandlerConfig.tokens;
     }
@@ -41,7 +39,6 @@ export class OvixAprHandler implements AprHandler {
 }
 
 type OvixAprHandlerConfig = {
-    networkPrismaId: string;
     networkChainId: number;
     rpcUrl: string;
     tokens: {

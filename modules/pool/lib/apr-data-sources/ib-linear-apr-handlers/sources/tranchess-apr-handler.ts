@@ -1,9 +1,8 @@
 import axios from 'axios';
 
-import { AprHandler } from '../base-apr-handlers';
+import { AprHandler } from '../ib-linear-apr-handlers';
 
 export class TranchessAprHandler implements AprHandler {
-    networkPrismaId: string;
     url: string;
     tokens: {
         [tokenName: string]: {
@@ -14,7 +13,6 @@ export class TranchessAprHandler implements AprHandler {
     readonly group = 'TRANCHESS';
 
     constructor(aprHandlerConfig: TranchessAprHandlerConfig) {
-        this.networkPrismaId = aprHandlerConfig.networkPrismaId;
         this.tokens = aprHandlerConfig.tokens;
         this.url = aprHandlerConfig.sourceUrl;
     }
@@ -39,7 +37,6 @@ export class TranchessAprHandler implements AprHandler {
 }
 
 type TranchessAprHandlerConfig = {
-    networkPrismaId: string;
     tokens: {
         [tokenName: string]: {
             address: string;

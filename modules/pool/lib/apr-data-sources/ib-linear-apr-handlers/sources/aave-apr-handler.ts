@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { AprHandler } from '../base-apr-handlers';
+import { AprHandler } from '../ib-linear-apr-handlers';
 
 export class AaveAprHandler implements AprHandler {
     tokens: {
@@ -12,7 +12,6 @@ export class AaveAprHandler implements AprHandler {
         };
     };
     subgraphUrl: string;
-    networkPrismaId: string;
 
     readonly group = 'AAVE';
 
@@ -33,7 +32,6 @@ export class AaveAprHandler implements AprHandler {
     constructor(aprHandlerConfig: AaveAprHandlerConfig) {
         this.tokens = aprHandlerConfig.tokens;
         this.subgraphUrl = aprHandlerConfig.subgraphUrl;
-        this.networkPrismaId = aprHandlerConfig.networkPrismaId;
     }
 
     async getAprs() {
@@ -94,5 +92,4 @@ interface ReserveResponse {
 type AaveAprHandlerConfig = {
     tokens: {};
     subgraphUrl: string;
-    networkPrismaId: string;
 };

@@ -105,7 +105,7 @@ const avalancheNetworkData: NetworkData = {
             swapGas: BigNumber.from('1000000'),
         },
     },
-    aprConfig: {
+    ibAprConfig: {
         aave: {
             v3: {
                 subgraphUrl: 'https://api.thegraph.com/subgraphs/name/aave/protocol-v3-avalanche',
@@ -165,15 +165,6 @@ const avalancheNetworkData: NetworkData = {
             },
         },
     },
-    yearn: {
-        vaultsEndpoint: 'https://#/',
-    },
-    reaper: {
-        linearPoolFactories: [],
-        linearPoolIdsFromErc4626Factory: [],
-        averageAPRAcrossLastNHarvests: 2,
-        multistratAprSubgraphUrl: '',
-    },
     beefy: {
         linearPools: [''],
     },
@@ -209,7 +200,7 @@ export const avalancheNetworkConfig: NetworkConfig = {
     provider: new ethers.providers.JsonRpcProvider(avalancheNetworkData.rpcUrl),
     poolAprServices: [
         new IbTokensAprService(
-            avalancheNetworkData.aprConfig,
+            avalancheNetworkData.ibAprConfig,
             avalancheNetworkData.chain.prismaId,
             avalancheNetworkData.chain.id,
             tokenService,

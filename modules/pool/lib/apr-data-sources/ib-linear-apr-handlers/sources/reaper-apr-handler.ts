@@ -2,7 +2,7 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 import { BigNumber, Contract } from 'ethers';
 import { abi } from './abis/reaperStrategy';
 
-import { AprHandler } from '../base-apr-handlers';
+import { AprHandler } from '../ib-linear-apr-handlers';
 
 class ReaperAprHandler implements AprHandler {
     networkPrismaId: string;

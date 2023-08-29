@@ -1,10 +1,9 @@
 import axios from 'axios';
-import { AprHandler } from '../base-apr-handlers';
+import { AprHandler } from '../ib-linear-apr-handlers';
 
 export class EulerAprHandler implements AprHandler {
     tokens: { [key: string]: string };
     subgraphUrl: string;
-    networkPrismaId: string;
     readonly group = 'EULER';
 
     readonly query = `
@@ -23,7 +22,6 @@ export class EulerAprHandler implements AprHandler {
     constructor(aprHandlerConfig: EulerAprHandlerConfig) {
         this.tokens = aprHandlerConfig.tokens;
         this.subgraphUrl = aprHandlerConfig.subgraphUrl;
-        this.networkPrismaId = aprHandlerConfig.networkPrismaId;
     }
 
     async getAprs() {
@@ -69,5 +67,4 @@ interface EulerResponse {
 type EulerAprHandlerConfig = {
     tokens: { [key: string]: string };
     subgraphUrl: string;
-    networkPrismaId: string;
 };

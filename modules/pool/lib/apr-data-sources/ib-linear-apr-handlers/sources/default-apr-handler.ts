@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { AprHandler } from '../base-apr-handlers';
+import { AprHandler } from '../ib-linear-apr-handlers';
 
 export class DefaultAprHandler implements AprHandler {
     tokens: {
@@ -9,16 +9,14 @@ export class DefaultAprHandler implements AprHandler {
     url: string;
     path: string;
     scale: number;
-    networkPrismaId: string;
-    group = 'DEFAULT';
+    group: string | undefined = undefined;
 
     constructor(aprHandlerConfig: DefaultAprHandlerConfig) {
         this.tokens = aprHandlerConfig.tokens;
         this.url = aprHandlerConfig.sourceUrl;
-        this.networkPrismaId = aprHandlerConfig.networkPrismaId;
         this.path = aprHandlerConfig.path ?? '';
         this.scale = aprHandlerConfig.scale ?? 100;
-        this.group = aprHandlerConfig.group ?? 'DEFAULT';
+        this.group = aprHandlerConfig.group;
     }
 
     async getAprs() {
@@ -55,7 +53,6 @@ export type DefaultAprHandlerConfig = {
         [tokenName: string]: string;
     };
     sourceUrl: string;
-    networkPrismaId: string;
     scale?: number;
     path?: string;
     group?: string;

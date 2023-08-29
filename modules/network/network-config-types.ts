@@ -100,7 +100,7 @@ export interface NetworkData {
         address: string;
         excludedFarmIds: string[];
     };
-    aprConfig: AprConfig;
+    ibAprConfig: AprConfig;
     reliquary?: {
         address: string;
         excludedFarmIds: string[];
@@ -108,17 +108,8 @@ export interface NetworkData {
     copper?: {
         proxyAddress: string;
     };
-    reaper: {
-        linearPoolFactories: string[];
-        linearPoolIdsFromErc4626Factory: string[];
-        averageAPRAcrossLastNHarvests: number;
-        multistratAprSubgraphUrl: string;
-    };
     beefy: {
         linearPools: string[];
-    };
-    yearn: {
-        vaultsEndpoint: string;
     };
     lido?: {
         wstEthContract: string;
@@ -204,7 +195,7 @@ export interface AprConfig {
     };
     idle?: {
         sourceUrl: string;
-        authorizationHeader?: string;
+        authorizationHeader: string;
         tokens: {
             [tokenName: string]: {
                 address: string;
@@ -218,6 +209,28 @@ export interface AprConfig {
             [tokenName: string]: {
                 yieldAddress: string;
                 wrappedAddress: string;
+            };
+        };
+    };
+    reaper?: {
+        multiStrategy?: {
+            subgraphUrl: string;
+            tokens: {
+                [tokenName: string]: {
+                    address: string;
+                    isSftmX?: boolean;
+                    isWstETH?: boolean;
+                };
+            };
+        };
+        singleStrategy?: {
+            averageAPRAcrossLastNHarvests: number;
+            tokens: {
+                [tokenName: string]: {
+                    address: string;
+                    isSftmX?: boolean;
+                    isWstETH?: boolean;
+                };
             };
         };
     };
@@ -244,6 +257,9 @@ export interface AprConfig {
                 underlyingAssetName: string;
             };
         };
+    };
+    yearn?: {
+        sourceUrl: string;
     };
     defaultHandlers?: {
         [tokenName: string]: {

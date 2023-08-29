@@ -113,7 +113,7 @@ const polygonNetworkData: NetworkData = {
             swapGas: BigNumber.from('1000000'),
         },
     },
-    aprConfig: {
+    ibAprConfig: {
         aave: {
             v2: {
                 subgraphUrl: 'https://api.thegraph.com/subgraphs/name/aave/aave-v2-matic',
@@ -228,15 +228,6 @@ const polygonNetworkData: NetworkData = {
             },
         },
     },
-    yearn: {
-        vaultsEndpoint: 'https://#/',
-    },
-    reaper: {
-        linearPoolFactories: [],
-        linearPoolIdsFromErc4626Factory: [],
-        averageAPRAcrossLastNHarvests: 2,
-        multistratAprSubgraphUrl: '',
-    },
     beefy: {
         linearPools: [''],
     },
@@ -272,7 +263,7 @@ export const polygonNetworkConfig: NetworkConfig = {
     provider: new ethers.providers.JsonRpcProvider(polygonNetworkData.rpcUrl),
     poolAprServices: [
         new IbTokensAprService(
-            polygonNetworkData.aprConfig,
+            polygonNetworkData.ibAprConfig,
             polygonNetworkData.chain.prismaId,
             polygonNetworkData.chain.id,
             tokenService,

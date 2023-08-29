@@ -1,17 +1,15 @@
 import axios from 'axios';
 
-import { AprHandler } from '../base-apr-handlers';
+import { AprHandler } from '../ib-linear-apr-handlers';
 
 export class GearboxAprHandler implements AprHandler {
     url: string;
     tokens: { [key: string]: string };
-    networkPrismaId: string;
     readonly group = 'GEARBOX';
 
     constructor(aprHandlerConfig: GearboxAprHandlerConfig) {
         this.tokens = aprHandlerConfig.tokens;
         this.url = aprHandlerConfig.sourceUrl;
-        this.networkPrismaId = aprHandlerConfig.networkPrismaId;
     }
 
     async getAprs() {
@@ -35,5 +33,4 @@ export class GearboxAprHandler implements AprHandler {
 type GearboxAprHandlerConfig = {
     tokens: { [key: string]: string };
     sourceUrl: string;
-    networkPrismaId: string;
 };
