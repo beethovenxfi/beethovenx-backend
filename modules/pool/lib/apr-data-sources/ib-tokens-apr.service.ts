@@ -7,13 +7,13 @@ import { PrismaPoolAprItemGroup, PrismaPoolLinearData } from '@prisma/client';
 import { IbLinearAprHandlers, TokenApr } from './ib-linear-apr-handlers/ib-linear-apr-handlers';
 import { TokenService } from '../../../token/token.service';
 import { collectsYieldFee } from '../pool-utils';
-import { AprConfig } from '../../../network/network-config-types';
+import { IbAprConfig } from '../../../network/network-config-types';
 
 export class IbTokensAprService implements PoolAprService {
     private baseAprHandlers: IbLinearAprHandlers;
 
     constructor(
-        aprConfig: AprConfig,
+        aprConfig: IbAprConfig,
         networkPrismaId: string,
         networkChainId: number,
         private readonly tokenService: TokenService,

@@ -106,7 +106,7 @@ export interface NetworkData {
         address: string;
         excludedFarmIds: string[];
     };
-    ibAprConfig: AprConfig;
+    ibAprConfig: IbAprConfig;
     reliquary?: {
         address: string;
         excludedFarmIds: string[];
@@ -163,7 +163,7 @@ export interface NetworkData {
     };
 }
 
-export interface AprConfig {
+export interface IbAprConfig {
     aave?: {
         [version: string]: {
             subgraphUrl: string;

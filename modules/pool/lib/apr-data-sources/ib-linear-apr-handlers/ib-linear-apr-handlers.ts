@@ -8,7 +8,7 @@ import { OvixAprHandler } from './sources/ovix-apr-handler';
 import { TesseraAprHandler } from './sources/tessera-apr-handler';
 import { TetuAprHandler } from './sources/tetu-apr-handler';
 import { TranchessAprHandler } from './sources/tranchess-apr-handler';
-import { AprConfig } from '../../../../network/network-config-types';
+import { IbAprConfig } from '../../../../network/network-config-types';
 import { YearnAprHandler } from './sources/yearn-apr-handler';
 import { ReaperCryptAprHandler } from './sources/reaper-crypt-apr-handler';
 import { BeefyAprHandler } from './sources/beefy-apr-handler';
@@ -19,13 +19,13 @@ export class IbLinearAprHandlers {
     wrappedBoostedTokens: string[] = [];
     fixedAprTokens?: { [tokenName: string]: { address: string; value: number; group?: string } };
 
-    constructor(aprConfig: AprConfig, networkPrismaId: string, networkChainId: number) {
+    constructor(aprConfig: IbAprConfig, networkPrismaId: string, networkChainId: number) {
         this.handlers = this.buildAprHandlers(aprConfig, networkPrismaId, networkChainId);
         this.wrappedBoostedTokens = this.buildWrappedBoostedTokens(aprConfig);
         this.fixedAprTokens = aprConfig.fixedAprTokens;
     }
 
-    buildAprHandlers(aprConfig: AprConfig, networkPrismaId: string, networkChainId: number) {
+    buildAprHandlers(aprConfig: IbAprConfig, networkPrismaId: string, networkChainId: number) {
         const handlers: AprHandler[] = [];
         if (aprConfig.aave) {
             for (const config of Object.values(aprConfig.aave)) {
@@ -92,7 +92,7 @@ export class IbLinearAprHandlers {
         return handlers;
     }
 
-    buildWrappedBoostedTokens(aprConfig: AprConfig): string[] {
+    buildWrappedBoostedTokens(aprConfig: IbAprConfig): string[] {
         return [
             ...Object.values(aprConfig?.aave?.v2?.tokens?.USDC?.wrappedTokens || {}),
             ...Object.values(aprConfig?.aave?.v3?.tokens?.USDC?.wrappedTokens || {}),
