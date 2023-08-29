@@ -9,9 +9,25 @@ const resolvers: Resolvers = {
             const accountAddress = getRequiredAccountAddress(context);
             return veBalService.getVeBalUserBalance(accountAddress);
         },
+        veBalGetUser: async (parent, {}, context) => {
+            const accountAddress = getRequiredAccountAddress(context);
+            return veBalService.getVeBalUserData(accountAddress);
+        },
         veBalGetTotalSupply: async (parent, {}, context) => {
             return veBalService.getVeBalTotalSupply();
         },
+
+        /*
+            This endpoint is consumed by some partners
+
+            - Aura (contact: ask solarcurve or alberto)
+            - Paladin (contact: ask solarcurve or alberto)
+            - DeFilytica and Aura analytics(contact: ask Xeonus)
+            - Maybe more (TBD)
+
+            Schema changes would affect those partners so, in case we need it, it would be better to keep the current schema and create a new endpoint with a
+            new schema that we consume from our FEs
+         */
         veBalGetVotingList: async (parent, {}, context) => {
             return veBalVotingListService.getVotingListWithHardcodedPools();
         },

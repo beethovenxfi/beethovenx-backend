@@ -6,7 +6,6 @@ import { TokenPriceHandler } from '../token/token-types';
 import { BaseProvider } from '@ethersproject/providers';
 import { GqlChain } from '../../schema';
 import { ContentService } from '../content/content-types';
-import { WorkerJob } from '../../worker/job-handlers';
 
 export interface NetworkConfig {
     data: NetworkData;
@@ -17,6 +16,12 @@ export interface NetworkConfig {
     tokenPriceHandlers: TokenPriceHandler[];
     provider: BaseProvider;
     workerJobs: WorkerJob[];
+}
+export interface WorkerJob {
+    name: string;
+    interval: number;
+    alarmEvaluationPeriod?: number;
+    alarmDatapointsToAlarm?: number;
 }
 
 export type DeploymentEnv = 'canary' | 'main';
@@ -42,7 +47,6 @@ export interface NetworkData {
     };
     rpcUrl: string;
     rpcMaxBlockRange: number;
-    beetsPriceProviderRpcUrl: string;
     coingecko: {
         nativeAssetId: string;
         platformId: string;
@@ -62,13 +66,14 @@ export interface NetworkData {
         veBalLocks?: string;
         userBalances: string;
     };
-    sanity: {
+    sanity?: {
         projectId: string;
         dataset: string;
     };
     protocolToken: 'beets' | 'bal';
-    beets: {
+    beets?: {
         address: string;
+        beetsPriceProviderRpcUrl: string;
     };
     fbeets?: {
         address: string;
@@ -76,7 +81,7 @@ export interface NetworkData {
         poolId: string;
         poolAddress: string;
     };
-    bal: {
+    bal?: {
         address: string;
     };
     veBal?: {
@@ -84,6 +89,7 @@ export interface NetworkData {
         delegationProxy: string;
     };
     gaugeControllerAddress?: string;
+    gaugeControllerHelperAddress?: string;
     balancer: {
         vault: string;
         weightedPoolV2Factories: string[];
@@ -96,7 +102,7 @@ export interface NetworkData {
     };
     multicall: string;
     multicall3: string;
-    masterchef: {
+    masterchef?: {
         address: string;
         excludedFarmIds: string[];
     };
@@ -141,7 +147,7 @@ export interface NetworkData {
             swapGas: BigNumber;
         };
     };
-    datastudio: {
+    datastudio?: {
         [key in DeploymentEnv]: {
             user: string;
             sheetId: string;

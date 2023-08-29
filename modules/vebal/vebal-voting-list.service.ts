@@ -2,14 +2,19 @@ import { prisma } from '../../prisma/prisma-client';
 
 import { chunk, keyBy } from 'lodash';
 import { VotingGauge, VotingGaugesRepository } from './voting-gauges.repository';
-import { specialVotingGaugeAddresses } from './special-pools/special-voting-gauge-addresses';
-import { getVeVotingGauge, veGauges, vePools } from './special-pools/ve-pools';
+import { oldVeBalAddress, specialVotingGaugeAddresses } from './special-pools/special-voting-gauge-addresses';
+import { getVeVotingGauges, veGauges, vePools } from './special-pools/ve-pools';
 import { hardCodedPools } from './special-pools/hardcoded-pools';
 import { GqlVotingPool } from '../../schema';
+import { Chain } from '@prisma/client';
 
 export class VeBalVotingListService {
     constructor(private votingGauges = new VotingGaugesRepository()) {}
 
+    /*
+        This methods is used by veBalGetVotingList resolver that is consumed by some partners
+        We should avoid breaking changes in the involved schema
+    */
     public async getVotingListWithHardcodedPools(): Promise<GqlVotingPool[]> {
         return [...(await this.getVotingList()), ...hardCodedPools];
     }
@@ -23,12 +28,15 @@ export class VeBalVotingListService {
         poolIds = [...poolIds, ...Object.keys(vePools)];
 
         const pools = await this.getPoolsForVotingList(poolIds);
+        const poolsById = keyBy(pools, 'id');
 
-        // Adds voting gauge info to each pool
-        return pools.map((pool) => {
-            // Use hardcoded data for ve gauges
-            const veVotingGauge = getVeVotingGauge(pool.id);
-            const votingGauge = veVotingGauge || validVotingGaugesByPoolId[pool.id];
+        const allGauges = [...validGauges, ...getVeVotingGauges()];
+
+        // For each voting gauge returns a pool with its gauge info inside
+        return allGauges.map((votingGauge) => {
+            const pool = poolsById[votingGauge.stakingGauge!.staking.poolId];
+            // Only L2 networks have childGaugeAddress
+            const childGaugeAddress = pool.chain === Chain.MAINNET ? null : votingGauge.stakingGauge?.staking.address;
             const votingPool = {
                 id: pool.id,
                 chain: pool.chain,
@@ -46,6 +54,7 @@ export class VeBalVotingListService {
                     relativeWeightCap: votingGauge.relativeWeightCap,
                     isKilled: votingGauge.status !== 'ACTIVE',
                     addedTimestamp: votingGauge.addedTimestamp,
+                    childGaugeAddress,
                 },
             };
             return votingPool;
@@ -105,7 +114,10 @@ export class VeBalVotingListService {
                 stakingGauge: {
                     select: {
                         staking: {
-                            select: { poolId: true },
+                            select: {
+                                poolId: true,
+                                address: true,
+                            },
                         },
                     },
                 },
@@ -114,14 +126,14 @@ export class VeBalVotingListService {
         return gaugesWithStaking;
     }
 
-    async syncVotingGauges() {
+    public async syncVotingGauges() {
         const onchainGaugeAddresses = await this.votingGauges.getVotingGaugeAddresses();
 
-        this.sync(onchainGaugeAddresses);
+        return this.sync(onchainGaugeAddresses);
     }
 
     async sync(votingGaugeAddresses: string[]) {
-        const chunks = chunk(votingGaugeAddresses, 100);
+        const chunks = chunk(votingGaugeAddresses, 50);
 
         for (const addressChunk of chunks) {
             const votingGauges = await this.fetchVotingGauges(addressChunk);
@@ -153,7 +165,9 @@ export class VeBalVotingListService {
         const gaugesWithMissingData = votingGauges
             .filter((gauge) => !veGauges.includes(gauge.gaugeAddress))
             .filter((gauge) => !gauge.isInSubgraph)
-            .filter(this.votingGauges.isValidForVotingList);
+            .filter(this.votingGauges.isValidForVotingList)
+            // Ignore old Vebal gauge address
+            .filter((gauge) => gauge.gaugeAddress !== oldVeBalAddress);
 
         if (gaugesWithMissingData.length > 0) {
             const errorMessage =

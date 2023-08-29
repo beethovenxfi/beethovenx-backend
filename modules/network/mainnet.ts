@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from 'ethers';
-import { NetworkConfig, NetworkData } from './network-config-types';
+import { DeploymentEnv, NetworkConfig, NetworkData } from './network-config-types';
 import { tokenService } from '../token/token.service';
 import { PhantomStableAprService } from '../pool/lib/apr-data-sources/phantom-stable-apr.service';
 import { BoostedPoolAprService } from '../pool/lib/apr-data-sources/boosted-pool-apr.service';
@@ -16,6 +16,7 @@ import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph
 import { coingeckoService } from '../coingecko/coingecko.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
 import { IbTokensAprService } from '../pool/lib/apr-data-sources/ib-tokens-apr.service';
+import { env } from '../../app/env';
 
 const underlyingTokens = {
     USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
@@ -60,17 +61,9 @@ export const mainnetNetworkData: NetworkData = {
     tokenPrices: {
         maxHourlyPriceHistoryNumDays: 100,
     },
-    rpcUrl: 'https://cloudflare-eth.com',
+    rpcUrl: env.INFURA_API_KEY ? `https://mainnet.infura.io/v3/${env.INFURA_API_KEY}` : 'https://eth.llamarpc.com',
     rpcMaxBlockRange: 700,
-    beetsPriceProviderRpcUrl: 'https://rpc.ftm.tools',
-    sanity: {
-        projectId: '',
-        dataset: '',
-    },
     protocolToken: 'bal',
-    beets: {
-        address: '0x0000000000000000000000000000000000000000',
-    },
     bal: {
         address: '0xba100000625a3754423978a60c9317c58a424e3D',
     },
@@ -79,6 +72,7 @@ export const mainnetNetworkData: NetworkData = {
         delegationProxy: '0x0000000000000000000000000000000000000000',
     },
     gaugeControllerAddress: '0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD',
+    gaugeControllerHelperAddress: '0x8E5698dC4897DC12243c8642e77B4f21349Db97C',
     balancer: {
         vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
         composableStablePoolFactories: [
@@ -100,10 +94,6 @@ export const mainnetNetworkData: NetworkData = {
     },
     multicall: '0x5ba1e12693dc8f9c48aad8770482f4739beed696',
     multicall3: '0xca11bde05977b3631167028862be2a173976ca11',
-    masterchef: {
-        address: '0x0000000000000000000000000000000000000000',
-        excludedFarmIds: [],
-    },
     avgBlockSpeed: 10,
     sor: {
         main: {
@@ -348,7 +338,7 @@ export const mainnetNetworkData: NetworkData = {
 export const mainnetNetworkConfig: NetworkConfig = {
     data: mainnetNetworkData,
     contentService: new GithubContentService(),
-    provider: new ethers.providers.JsonRpcProvider(mainnetNetworkData.rpcUrl),
+    provider: new ethers.providers.JsonRpcProvider({ url: mainnetNetworkData.rpcUrl, timeout: 60000 }),
     poolAprServices: [
         new IbTokensAprService(
             mainnetNetworkData.ibAprConfig,
@@ -359,12 +349,9 @@ export const mainnetNetworkConfig: NetworkConfig = {
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(mainnetNetworkData.balancer.swapProtocolFeePercentage),
-        new GaugeAprService(gaugeSubgraphService, tokenService, [
-            mainnetNetworkData.beets.address,
-            mainnetNetworkData.bal.address,
-        ]),
+        new GaugeAprService(gaugeSubgraphService, tokenService, [mainnetNetworkData.bal!.address]),
     ],
-    poolStakingServices: [new GaugeStakingService(gaugeSubgraphService)],
+    poolStakingServices: [new GaugeStakingService(gaugeSubgraphService, mainnetNetworkData.bal!.address)],
     tokenPriceHandlers: [
         new CoingeckoPriceHandlerService(coingeckoService),
         new BptPriceHandlerService(),
@@ -373,16 +360,16 @@ export const mainnetNetworkConfig: NetworkConfig = {
     ],
     userStakedBalanceServices: [new UserSyncGaugeBalanceService()],
     /*
-For sub-minute jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3.
-This is needed because the minimum alarm period is 1 minute and we want the alarm to trigger already after 1 minute instead of 3.
+    For sub-minute jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3.
+    This is needed because the minimum alarm period is 1 minute and we want the alarm to trigger already after 1 minute instead of 3.
 
-For every 1 days jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3.
-This is needed because the maximum alarm evaluation period is 1 day (period * evaluationPeriod).
-*/
+    For every 1 days jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3.
+    This is needed because the maximum alarm evaluation period is 1 day (period * evaluationPeriod).
+    */
     workerJobs: [
         {
             name: 'update-token-prices',
-            interval: every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'update-liquidity-for-inactive-pools',
@@ -392,19 +379,19 @@ This is needed because the maximum alarm evaluation period is 1 day (period * ev
         },
         {
             name: 'update-liquidity-for-active-pools',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'update-pool-apr',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'load-on-chain-data-for-pools-with-active-updates',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(1, 'minutes'),
         },
         {
             name: 'sync-new-pools-from-subgraph',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'sync-tokens-from-pool-tokens',
@@ -432,19 +419,19 @@ This is needed because the maximum alarm evaluation period is 1 day (period * ev
         },
         {
             name: 'sync-changed-pools',
-            interval: every(15, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(40, 'seconds') : every(20, 'seconds'),
             alarmEvaluationPeriod: 1,
             alarmDatapointsToAlarm: 1,
         },
         {
             name: 'user-sync-wallet-balances-for-all-pools',
-            interval: every(10, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'seconds') : every(15, 'seconds'),
             alarmEvaluationPeriod: 1,
             alarmDatapointsToAlarm: 1,
         },
         {
             name: 'user-sync-staked-balances',
-            interval: every(10, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'seconds') : every(15, 'seconds'),
             alarmEvaluationPeriod: 1,
             alarmDatapointsToAlarm: 1,
         },
@@ -468,7 +455,7 @@ This is needed because the maximum alarm evaluation period is 1 day (period * ev
         },
         {
             name: 'sync-vebal-balances',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(1, 'minutes'),
         },
         {
             name: 'sync-vebal-totalSupply',
@@ -481,7 +468,7 @@ This is needed because the maximum alarm evaluation period is 1 day (period * ev
         // The following are multichain jobs and should only run once for all chains.
         {
             name: 'sync-global-coingecko-prices',
-            interval: every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
     ],
 };

@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from 'ethers';
-import { NetworkConfig, NetworkData } from './network-config-types';
+import { DeploymentEnv, NetworkConfig, NetworkData } from './network-config-types';
 import { tokenService } from '../token/token.service';
 import { PhantomStableAprService } from '../pool/lib/apr-data-sources/phantom-stable-apr.service';
 import { BoostedPoolAprService } from '../pool/lib/apr-data-sources/boosted-pool-apr.service';
@@ -17,6 +17,7 @@ import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph
 import { coingeckoService } from '../coingecko/coingecko.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
 import { IbTokensAprService } from '../pool/lib/apr-data-sources/ib-tokens-apr.service';
+import { env } from '../../app/env';
 
 const polygonNetworkData: NetworkData = {
     chain: {
@@ -54,17 +55,11 @@ const polygonNetworkData: NetworkData = {
     tokenPrices: {
         maxHourlyPriceHistoryNumDays: 100,
     },
-    rpcUrl: 'https://polygon-rpc.com',
+    rpcUrl: env.INFURA_API_KEY
+        ? `https://polygon-mainnet.infura.io/v3/${env.INFURA_API_KEY}`
+        : 'https://rpc.ankr.com/polygon',
     rpcMaxBlockRange: 2000,
-    beetsPriceProviderRpcUrl: 'https://rpc.ftm.tools',
-    sanity: {
-        projectId: '',
-        dataset: '',
-    },
     protocolToken: 'bal',
-    beets: {
-        address: '0x0000000000000000000000000000000000000000',
-    },
     bal: {
         address: '0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3',
     },
@@ -92,10 +87,6 @@ const polygonNetworkData: NetworkData = {
     },
     multicall: '0x275617327c958bD06b5D6b871E7f491D76113dd8',
     multicall3: '0xca11bde05977b3631167028862be2a173976ca11',
-    masterchef: {
-        address: '0x0000000000000000000000000000000000000000',
-        excludedFarmIds: [],
-    },
     avgBlockSpeed: 1,
     sor: {
         main: {
@@ -260,7 +251,7 @@ const polygonNetworkData: NetworkData = {
 export const polygonNetworkConfig: NetworkConfig = {
     data: polygonNetworkData,
     contentService: new GithubContentService(),
-    provider: new ethers.providers.JsonRpcProvider(polygonNetworkData.rpcUrl),
+    provider: new ethers.providers.JsonRpcProvider({ url: polygonNetworkData.rpcUrl, timeout: 60000 }),
     poolAprServices: [
         new IbTokensAprService(
             polygonNetworkData.ibAprConfig,
@@ -271,12 +262,9 @@ export const polygonNetworkConfig: NetworkConfig = {
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(polygonNetworkData.balancer.swapProtocolFeePercentage),
-        new GaugeAprService(gaugeSubgraphService, tokenService, [
-            polygonNetworkData.beets.address,
-            polygonNetworkData.bal.address,
-        ]),
+        new GaugeAprService(gaugeSubgraphService, tokenService, [polygonNetworkData.bal!.address]),
     ],
-    poolStakingServices: [new GaugeStakingService(gaugeSubgraphService)],
+    poolStakingServices: [new GaugeStakingService(gaugeSubgraphService, polygonNetworkData.bal!.address)],
     tokenPriceHandlers: [
         new CoingeckoPriceHandlerService(coingeckoService),
         new BptPriceHandlerService(),
@@ -294,7 +282,7 @@ export const polygonNetworkConfig: NetworkConfig = {
     workerJobs: [
         {
             name: 'update-token-prices',
-            interval: every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'update-liquidity-for-inactive-pools',
@@ -304,19 +292,19 @@ export const polygonNetworkConfig: NetworkConfig = {
         },
         {
             name: 'update-liquidity-for-active-pools',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'update-pool-apr',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'load-on-chain-data-for-pools-with-active-updates',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(1, 'minutes'),
         },
         {
             name: 'sync-new-pools-from-subgraph',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'sync-tokens-from-pool-tokens',
@@ -344,19 +332,19 @@ export const polygonNetworkConfig: NetworkConfig = {
         },
         {
             name: 'sync-changed-pools',
-            interval: every(15, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(40, 'seconds') : every(20, 'seconds'),
             alarmEvaluationPeriod: 1,
             alarmDatapointsToAlarm: 1,
         },
         {
             name: 'user-sync-wallet-balances-for-all-pools',
-            interval: every(10, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'seconds') : every(15, 'seconds'),
             alarmEvaluationPeriod: 1,
             alarmDatapointsToAlarm: 1,
         },
         {
             name: 'user-sync-staked-balances',
-            interval: every(10, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'seconds') : every(15, 'seconds'),
             alarmEvaluationPeriod: 1,
             alarmDatapointsToAlarm: 1,
         },
@@ -380,7 +368,7 @@ export const polygonNetworkConfig: NetworkConfig = {
         },
         {
             name: 'sync-vebal-balances',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(1, 'minutes'),
         },
         {
             name: 'sync-vebal-totalSupply',

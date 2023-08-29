@@ -20,12 +20,12 @@ export class DatastudioService {
         const privateKey = await this.secretsManager.getSecret('backend-v3-datafeed-privatekey');
         const jwtClient = await this.jwtClientHelper.getAuthorizedSheetsClient(privateKey);
 
-        const databaseTabName = networkContext.data.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].databaseTabName;
-        const sheetId = networkContext.data.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].sheetId;
+        const databaseTabName = networkContext.data.datastudio![env.DEPLOYMENT_ENV as DeploymentEnv].databaseTabName;
+        const sheetId = networkContext.data.datastudio![env.DEPLOYMENT_ENV as DeploymentEnv].sheetId;
         const compositionTabName =
-            networkContext.data.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].compositionTabName;
+            networkContext.data.datastudio![env.DEPLOYMENT_ENV as DeploymentEnv].compositionTabName;
         const emissionDataTabName =
-            networkContext.data.datastudio[env.DEPLOYMENT_ENV as DeploymentEnv].emissionDataTabName;
+            networkContext.data.datastudio![env.DEPLOYMENT_ENV as DeploymentEnv].emissionDataTabName;
         const swapProtocolFeePercentage = networkContext.data.balancer.swapProtocolFeePercentage;
         const chainSlug = networkContext.data.chain.slug;
 
@@ -129,11 +129,7 @@ export class DatastudioService {
             let yesterdaySwapsCount = `0`;
             //find last entry of pool in currentSheet for the correct chain and get total swaps. If no previous value present, set previous value to 0
             for (let i = poolAddressValues.length - 1; i >= 0; i--) {
-                if (
-                    chainValues[i][0] === chainSlug &&
-                    poolAddressValues[i][0] === pool.address &&
-                    timestampValues[i][0] === endOfDayBeforeYesterday
-                ) {
+                if (chainValues[i][0] === chainSlug && poolAddressValues[i][0] === pool.address) {
                     yesterdaySwapsCount = totalSwapValues[i][0];
                     break;
                 }
@@ -260,7 +256,7 @@ export class DatastudioService {
                             pool.address,
                             pool.name,
                             'BEETS',
-                            networkContext.data.beets.address,
+                            networkContext.data.beets!.address,
                             `${beetsPerDay}`,
                             `${beetsValuePerDay}`,
                             chainSlug,

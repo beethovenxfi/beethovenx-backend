@@ -1,6 +1,8 @@
 import { BigNumber, ethers } from 'ethers';
 import { DeploymentEnv, NetworkConfig, NetworkData } from './network-config-types';
 import { tokenService } from '../token/token.service';
+import { WstethAprService } from '../pool/lib/apr-data-sources/optimism/wsteth-apr.service';
+import { ReaperCryptAprService } from '../pool/lib/apr-data-sources/reaper-crypt-apr.service';
 import { PhantomStableAprService } from '../pool/lib/apr-data-sources/phantom-stable-apr.service';
 import { BoostedPoolAprService } from '../pool/lib/apr-data-sources/boosted-pool-apr.service';
 import { SwapFeeAprService } from '../pool/lib/apr-data-sources/swap-fee-apr.service';
@@ -15,26 +17,25 @@ import { GithubContentService } from '../content/github-content.service';
 import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
 import { coingeckoService } from '../coingecko/coingecko.service';
-import { IbTokensAprService } from '../pool/lib/apr-data-sources/ib-tokens-apr.service';
 import { env } from '../../app/env';
 
-const arbitrumNetworkData: NetworkData = {
+const baseNetworkData: NetworkData = {
     chain: {
-        slug: 'arbitrum',
-        id: 42161,
+        slug: 'base',
+        id: 8453,
         nativeAssetAddress: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-        wrappedNativeAssetAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
-        prismaId: 'ARBITRUM',
-        gqlId: 'ARBITRUM',
+        wrappedNativeAssetAddress: '0x4200000000000000000000000000000000000006',
+        prismaId: 'BASE',
+        gqlId: 'BASE',
     },
     subgraphs: {
-        startDate: '2021-08-23',
-        balancer: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-arbitrum-v2',
-        beetsBar: 'https://',
-        blocks: 'https://api.thegraph.com/subgraphs/name/ianlapham/arbitrum-one-blocks',
-        gauge: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-gauges-arbitrum',
+        startDate: '2023-07-10',
+        balancer: 'https://api.studio.thegraph.com/query/24660/balancer-base-v2/version/latest',
+        beetsBar: '',
+        blocks: 'https://api.studio.thegraph.com/query/48427/bleu-base-blocks/version/latest',
+        gauge: 'https://api.studio.thegraph.com/query/24660/balancer-gauges-base/version/latest',
         veBalLocks: 'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-gauges',
-        userBalances: 'https://',
+        userBalances: '',
     },
     eth: {
         address: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
@@ -43,50 +44,42 @@ const arbitrumNetworkData: NetworkData = {
         name: 'Ether',
     },
     weth: {
-        address: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
-        addressFormatted: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
+        address: '0x4200000000000000000000000000000000000006',
+        addressFormatted: '0x4200000000000000000000000000000000000006',
     },
     coingecko: {
         nativeAssetId: 'ethereum',
-        platformId: 'arbitrum-one',
+        platformId: 'base',
         excludedTokenAddresses: [],
     },
     tokenPrices: {
         maxHourlyPriceHistoryNumDays: 100,
     },
-    rpcUrl: env.INFURA_API_KEY
-        ? `https://arbitrum-mainnet.infura.io/v3/${env.INFURA_API_KEY}`
-        : 'https://rpc.ankr.com/arbitrum',
-    rpcMaxBlockRange: 2000,
+    rpcUrl: 'https://base.gateway.tenderly.co/7mM7DbBouY1JjnQd9MMDsd',
+    rpcMaxBlockRange: 500,
+    sanity: {
+        projectId: '',
+        dataset: '',
+    },
     protocolToken: 'bal',
     bal: {
-        address: '0x040d1EdC9569d4Bab2D15287Dc5A4F10F56a56B8',
+        address: '0x7c6b91D9Be155A6Db01f749217d76fF02A7227F2',
     },
     veBal: {
         address: '0xc128a9954e6c874ea3d62ce62b468ba073093f25',
-        delegationProxy: '0x81cfae226343b24ba12ec6521db2c79e7aeeb310',
+        delegationProxy: '0xd87f44df0159dc78029ab9ca7d7e57e7249f5acd',
     },
     balancer: {
         vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
-        composableStablePoolFactories: [
-            '0xaEb406b0E430BF5Ea2Dc0B9Fe62E4E53f74B3a33',
-            '0x85a80afee867aDf27B50BdB7b76DA70f1E853062',
-            '0x1c99324EDC771c82A0DCCB780CC7DDA0045E50e7',
-            '0x2498A2B0d6462d2260EAC50aE1C3e03F4829BA95',
-            '0xA8920455934Da4D853faac1f94Fe7bEf72943eF1',
-        ],
-        weightedPoolV2Factories: [
-            '0x8df6EfEc5547e31B0eb7d1291B511FF8a2bf987c',
-            '0xf1665E19bc105BE4EDD3739F88315cC699cc5b65',
-            '0xc7E5ED1054A24Ef31D827E6F86caA58B3Bc168d7',
-        ],
+        composableStablePoolFactories: ['0x8df317a729fcaA260306d7de28888932cb579b88'],
+        weightedPoolV2Factories: ['0x4C32a8a8fDa4E24139B51b456B42290f51d6A1c4'],
         swapProtocolFeePercentage: 0.5,
         yieldProtocolFeePercentage: 0.5,
-        poolDataQueryContract: '0x7Ba29fE8E83dd6097A7298075C4AFfdBda3121cC',
+        poolDataQueryContract: '0x67af5D428d38C5176a286a2371Df691cDD914Fb8',
     },
-    multicall: '0x80C7DD17B01855a6D2347444a0FCC36136a314de',
+    multicall: '0xca11bde05977b3631167028862be2a173976ca11',
     multicall3: '0xca11bde05977b3631167028862be2a173976ca11',
-    avgBlockSpeed: 1,
+    avgBlockSpeed: 2,
     sor: {
         main: {
             url: 'https://uu6cfghhd5lqa7py3nojxkivd40zuugb.lambda-url.ca-central-1.on.aws/',
@@ -103,79 +96,9 @@ const arbitrumNetworkData: NetworkData = {
             swapGas: BigNumber.from('1000000'),
         },
     },
-    ibAprConfig: {
-        aave: {
-            v3: {
-                subgraphUrl: 'https://api.thegraph.com/subgraphs/name/aave/protocol-v3-arbitrum',
-                tokens: {
-                    USDC: {
-                        underlyingAssetAddress: '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
-                        aTokenAddress: '0x625e7708f30ca75bfd92586e17077590c60eb4cd',
-                        wrappedTokens: {
-                            waUSDC: '0xe719aef17468c7e10c0c205be62c990754dff7e5',
-                            stataArbUSDC: '0x3a301e7917689b8e8a19498b8a28fc912583490c',
-                            stataArbUSDCn: '0xbde67e089886ec0e615d6f054bc6f746189a3d56',
-                        },
-                    },
-                    USDT: {
-                        underlyingAssetAddress: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
-                        aTokenAddress: '0x6ab707aca953edaefbc4fd23ba73294241490620',
-                        wrappedTokens: {
-                            waUSDT: '0x3c7680dfe7f732ca0279c39ff30fe2eafdae49db',
-                            stataArbUSDT: '0x8b5541b773dd781852940490b0c3dc1a8cdb6a87',
-                        },
-                    },
-                    DAI: {
-                        underlyingAssetAddress: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
-                        aTokenAddress: '0x82e64f49ed5ec1bc6e43dad4fc8af9bb3a2312ee',
-                        wrappedTokens: {
-                            waDAI: '0x345a864ac644c82c2d649491c905c71f240700b2',
-                            stataArbDAI: '0x426e8778bf7f54b0e4fc703dcca6f26a4e5b71de',
-                        },
-                    },
-                    wETH: {
-                        underlyingAssetAddress: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
-                        aTokenAddress: '0xe50fa9b3c56ffb159cb0fca61f5c9d750e8128c8',
-                        wrappedTokens: {
-                            waWETH: '0x18c100415988bef4354effad1188d1c22041b046',
-                            stataArbWETH: '0x18468b6eba332285c6d9bb03fe7fb52e108c4596',
-                        },
-                    },
-                },
-            },
-        },
-        defaultHandlers: {
-            stETH: {
-                tokens: {
-                    wstETH: '0x5979d7b546e38e414f7e9822514be443a4800529',
-                },
-                sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
-                path: 'data.smaApr',
-            },
-        },
-    },
-    beefy: {
-        linearPools: [''],
-    },
     lido: {
         wstEthAprEndpoint: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
-        wstEthContract: '0x5979d7b546e38e414f7e9822514be443a4800529',
-    },
-    datastudio: {
-        main: {
-            user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
-            sheetId: '11anHUEb9snGwvB-errb5HvO8TvoLTRJhkDdD80Gxw1Q',
-            databaseTabName: 'Database v2',
-            compositionTabName: 'Pool Composition v2',
-            emissionDataTabName: 'EmissionData',
-        },
-        canary: {
-            user: 'datafeed-service@datastudio-366113.iam.gserviceaccount.com',
-            sheetId: '1HnJOuRQXGy06tNgqjYMzQNIsaCSCC01Yxe_lZhXBDpY',
-            databaseTabName: 'Database v2',
-            compositionTabName: 'Pool Composition v2',
-            emissionDataTabName: 'EmissionData',
-        },
+        wstEthContract: '',
     },
     monitoring: {
         main: {
@@ -187,23 +110,17 @@ const arbitrumNetworkData: NetworkData = {
     },
 };
 
-export const arbitrumNetworkConfig: NetworkConfig = {
-    data: arbitrumNetworkData,
+export const baseNetworkConfig: NetworkConfig = {
+    data: baseNetworkData,
     contentService: new GithubContentService(),
-    provider: new ethers.providers.JsonRpcProvider({ url: arbitrumNetworkData.rpcUrl, timeout: 60000 }),
+    provider: new ethers.providers.JsonRpcProvider({ url: baseNetworkData.rpcUrl, timeout: 60000 }),
     poolAprServices: [
-        new IbTokensAprService(
-            arbitrumNetworkData.ibAprConfig,
-            arbitrumNetworkData.chain.prismaId,
-            arbitrumNetworkData.chain.id,
-            tokenService,
-        ),
-        new PhantomStableAprService(),
+        new WstethAprService(tokenService, baseNetworkData.lido!.wstEthContract),
         new BoostedPoolAprService(),
-        new SwapFeeAprService(arbitrumNetworkData.balancer.swapProtocolFeePercentage),
-        new GaugeAprService(gaugeSubgraphService, tokenService, [arbitrumNetworkData.bal!.address]),
+        new SwapFeeAprService(baseNetworkData.balancer.swapProtocolFeePercentage),
+        new GaugeAprService(gaugeSubgraphService, tokenService, [baseNetworkData.bal!.address]),
     ],
-    poolStakingServices: [new GaugeStakingService(gaugeSubgraphService, arbitrumNetworkData.bal!.address)],
+    poolStakingServices: [new GaugeStakingService(gaugeSubgraphService, baseNetworkData.bal!.address)],
     tokenPriceHandlers: [
         new CoingeckoPriceHandlerService(coingeckoService),
         new BptPriceHandlerService(),

@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from 'ethers';
-import { NetworkConfig, NetworkData } from './network-config-types';
+import { DeploymentEnv, NetworkConfig, NetworkData } from './network-config-types';
 import { tokenService } from '../token/token.service';
 import { PhantomStableAprService } from '../pool/lib/apr-data-sources/phantom-stable-apr.service';
 import { BoostedPoolAprService } from '../pool/lib/apr-data-sources/boosted-pool-apr.service';
@@ -15,6 +15,7 @@ import { GithubContentService } from '../content/github-content.service';
 import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
 import { coingeckoService } from '../coingecko/coingecko.service';
+import { env } from '../../app/env';
 import { IbTokensAprService } from '../pool/lib/apr-data-sources/ib-tokens-apr.service';
 
 const zkevmNetworkData: NetworkData = {
@@ -55,15 +56,7 @@ const zkevmNetworkData: NetworkData = {
     },
     rpcUrl: 'https://zkevm-rpc.com',
     rpcMaxBlockRange: 2000,
-    beetsPriceProviderRpcUrl: '',
-    sanity: {
-        projectId: '',
-        dataset: '',
-    },
     protocolToken: 'bal',
-    beets: {
-        address: '0x0000000000000000000000000000000000000000',
-    },
     bal: {
         address: '0x120eF59b80774F02211563834d8E3b72cb1649d6',
     },
@@ -161,7 +154,7 @@ const zkevmNetworkData: NetworkData = {
 export const zkevmNetworkConfig: NetworkConfig = {
     data: zkevmNetworkData,
     contentService: new GithubContentService(),
-    provider: new ethers.providers.JsonRpcProvider(zkevmNetworkData.rpcUrl),
+    provider: new ethers.providers.JsonRpcProvider({ url: zkevmNetworkData.rpcUrl, timeout: 60000 }),
     poolAprServices: [
         new IbTokensAprService(
             zkevmNetworkData.ibAprConfig,
@@ -172,12 +165,9 @@ export const zkevmNetworkConfig: NetworkConfig = {
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(zkevmNetworkData.balancer.swapProtocolFeePercentage),
-        new GaugeAprService(gaugeSubgraphService, tokenService, [
-            zkevmNetworkData.beets.address,
-            zkevmNetworkData.bal.address,
-        ]),
+        new GaugeAprService(gaugeSubgraphService, tokenService, [zkevmNetworkData.bal!.address]),
     ],
-    poolStakingServices: [new GaugeStakingService(gaugeSubgraphService)],
+    poolStakingServices: [new GaugeStakingService(gaugeSubgraphService, zkevmNetworkData.bal!.address)],
     tokenPriceHandlers: [
         new CoingeckoPriceHandlerService(coingeckoService),
         new BptPriceHandlerService(),
@@ -186,16 +176,16 @@ export const zkevmNetworkConfig: NetworkConfig = {
     ],
     userStakedBalanceServices: [new UserSyncGaugeBalanceService()],
     /*
-  For sub-minute jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3. 
-  This is needed because the minimum alarm period is 1 minute and we want the alarm to trigger already after 1 minute instead of 3.
+    For sub-minute jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3. 
+    This is needed because the minimum alarm period is 1 minute and we want the alarm to trigger already after 1 minute instead of 3.
 
-  For every 1 days jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3. 
-  This is needed because the maximum alarm evaluation period is 1 day (period * evaluationPeriod).
-  */
+    For every 1 days jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3. 
+    This is needed because the maximum alarm evaluation period is 1 day (period * evaluationPeriod).
+    */
     workerJobs: [
         {
             name: 'update-token-prices',
-            interval: every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'update-liquidity-for-inactive-pools',
@@ -205,19 +195,19 @@ export const zkevmNetworkConfig: NetworkConfig = {
         },
         {
             name: 'update-liquidity-for-active-pools',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'update-pool-apr',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'load-on-chain-data-for-pools-with-active-updates',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(1, 'minutes'),
         },
         {
             name: 'sync-new-pools-from-subgraph',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'sync-tokens-from-pool-tokens',
@@ -245,19 +235,19 @@ export const zkevmNetworkConfig: NetworkConfig = {
         },
         {
             name: 'sync-changed-pools',
-            interval: every(15, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(40, 'seconds') : every(20, 'seconds'),
             alarmEvaluationPeriod: 1,
             alarmDatapointsToAlarm: 1,
         },
         {
             name: 'user-sync-wallet-balances-for-all-pools',
-            interval: every(10, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'seconds') : every(15, 'seconds'),
             alarmEvaluationPeriod: 1,
             alarmDatapointsToAlarm: 1,
         },
         {
             name: 'user-sync-staked-balances',
-            interval: every(10, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'seconds') : every(15, 'seconds'),
             alarmEvaluationPeriod: 1,
             alarmDatapointsToAlarm: 1,
         },
@@ -281,7 +271,7 @@ export const zkevmNetworkConfig: NetworkConfig = {
         },
         {
             name: 'sync-vebal-balances',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(1, 'minutes'),
         },
         {
             name: 'sync-vebal-totalSupply',
