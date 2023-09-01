@@ -3,7 +3,7 @@ import { sorService } from '../sor/sor.service';
 
 const balancerResolvers: Resolvers = {
     Query: {
-        sorGetSwaps: async (parent, args, context) => {
+        sorGetCowSwaps: async (parent, args, context) => {
             const swaps = await sorService.getCowSwaps({ ...args });
             return { ...swaps, __typename: 'GqlCowSwapApiResponse' };
         },

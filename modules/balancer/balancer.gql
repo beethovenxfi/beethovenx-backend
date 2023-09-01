@@ -3,7 +3,7 @@ extend type Mutation {
 }
 
 extend type Query {
-    sorGetSwaps(
+    sorGetCowSwaps(
         tokenIn: String!
         tokenOut: String!
         swapType: GqlSorSwapType!
