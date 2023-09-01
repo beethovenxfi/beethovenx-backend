@@ -3,7 +3,7 @@ import { PrismaPoolWithExpandedNesting } from '../../../../prisma/prisma-types';
 import { prisma } from '../../../../prisma/prisma-client';
 import { networkContext } from '../../../network/network-context.service';
 import { prismaBulkExecuteOperations } from '../../../../prisma/prisma-util';
-import { PrismaPoolAprItemGroup, PrismaPoolLinearData } from '@prisma/client';
+import { PrismaPoolAprItemGroup, PrismaPoolAprType, PrismaPoolLinearData } from '@prisma/client';
 import { IbLinearAprHandlers as IbTokensAprHandlers, TokenApr } from './ib-linear-apr-handlers/ib-linear-apr-handlers';
 import { TokenService } from '../../../token/token.service';
 import { collectsYieldFee } from '../pool-utils';
@@ -24,14 +24,14 @@ export class IbTokensAprService implements PoolAprService {
         const operations: any[] = [];
         const tokenPrices = await this.tokenService.getTokenPrices();
         const aprs = await this.fetchYieldTokensApr();
-        const tokenYieldPools = pools.filter((pool) => {
+        const poolsWithIbTokens = pools.filter((pool) => {
             return pool.tokens.find((token) => {
                 return Array.from(aprs.keys())
                     .map((key) => key.toLowerCase())
                     .includes(token.address.toLowerCase());
             });
         });
-        for (const pool of tokenYieldPools) {
+        for (const pool of poolsWithIbTokens) {
             if (!pool.dynamicData) {
                 continue;
             }
@@ -39,86 +39,65 @@ export class IbTokensAprService implements PoolAprService {
             if (!totalLiquidity) {
                 continue;
             }
-            const isLinear = pool.type === 'LINEAR' && pool.linearData !== null;
-            if (!isLinear) {
-                // TODO: In theory, we should check whether the token has a rate provider set, but we don't store this information yet
-                for (const token of pool.tokens) {
+
+            // TODO: We should check whether the token has a rate provider set, but we don't store this information yet
+
+            for (const token of pool.tokens) {
+                const tokenApr = aprs.get(token.address);
+                if (!tokenApr) {
+                    continue;
+                }
+
+                const tokenPrice = this.tokenService.getPriceForToken(tokenPrices, token.address);
+                const tokenBalance = token.dynamicData?.balance;
+
+                const tokenLiquidity = tokenPrice * parseFloat(tokenBalance || '0');
+                const tokenPercentageInPool = tokenLiquidity / totalLiquidity;
+
+                if (!tokenApr || !tokenPercentageInPool) {
+                    continue;
+                }
+
+                let aprAfterFees = tokenApr.val;
+
+                if (collectsYieldFee(pool)) {
                     const protocolYieldFeePercentage = pool.dynamicData?.protocolYieldFee
                         ? parseFloat(pool.dynamicData.protocolYieldFee)
                         : networkContext.data.balancer.yieldProtocolFeePercentage;
-                    const tokenPrice = this.tokenService.getPriceForToken(tokenPrices, token.address);
-                    const tokenBalance = token.dynamicData?.balance;
-                    const tokenApr = aprs.get(token.address);
-                    if (tokenPrice && tokenBalance && tokenApr !== undefined) {
-                        const tokenPercentage = (parseFloat(tokenBalance) * tokenPrice) / totalLiquidity;
-                        const poolTokenApr = totalLiquidity > 0 ? tokenApr.val * tokenPercentage : 0;
-                        const aprAfterFees =
-                            pool.type === 'META_STABLE'
-                                ? poolTokenApr * (1 - networkContext.data.balancer.swapProtocolFeePercentage)
-                                : poolTokenApr * (1 - protocolYieldFeePercentage);
-                        const tokenSymbol = token.token.symbol;
-                        const itemId = `${pool.id}-${tokenSymbol}-yield-apr`;
-                        operations.push(
-                            prisma.prismaPoolAprItem.upsert({
-                                where: { id_chain: { id: itemId, chain: networkContext.chain } },
-                                create: {
-                                    id: itemId,
-                                    chain: networkContext.chain,
-                                    poolId: pool.id,
-                                    title: `${tokenSymbol} APR`,
-                                    apr: collectsYieldFee(pool) ? aprAfterFees : poolTokenApr,
-                                    group: tokenApr.group as PrismaPoolAprItemGroup,
-                                    type: 'IB_YIELD',
-                                },
-                                update: {
-                                    title: `${tokenSymbol} APR`,
-                                    apr: collectsYieldFee(pool) ? aprAfterFees : poolTokenApr,
-                                },
-                            }),
-                        );
-                    }
+                    aprAfterFees =
+                        pool.type === 'META_STABLE'
+                            ? aprAfterFees * (1 - networkContext.data.balancer.swapProtocolFeePercentage)
+                            : aprAfterFees * (1 - protocolYieldFeePercentage);
                 }
-            } else {
-                const linearData = pool.linearData as PrismaPoolLinearData;
-                const wrappedToken = pool.tokens[linearData.wrappedIndex];
-                const mainToken = pool.tokens[linearData.mainIndex];
-                for (const token of pool.tokens) {
-                    const protocolYieldFeePercentage = pool.dynamicData?.protocolYieldFee
-                        ? parseFloat(pool.dynamicData.protocolYieldFee)
-                        : networkContext.data.balancer.yieldProtocolFeePercentage;
-                    const tokenPrice = this.tokenService.getPriceForToken(tokenPrices, mainToken.address);
-                    const wrappedTokenBalance = parseFloat(wrappedToken.dynamicData?.balance || '0');
-                    const wrappedTokenPriceRate = parseFloat(wrappedToken.dynamicData?.priceRate || '1.0');
-                    const poolWrappedLiquidity = wrappedTokenBalance * wrappedTokenPriceRate * tokenPrice;
-                    const totalLiquidity = pool.dynamicData.totalLiquidity;
-                    const tokenApr = aprs.get(wrappedToken.address);
-                    if (tokenPrice && wrappedTokenBalance && totalLiquidity !== undefined && tokenApr !== undefined) {
-                        const tokenPercentage = poolWrappedLiquidity / totalLiquidity;
-                        const poolTokenApr = totalLiquidity > 0 ? tokenApr.val * tokenPercentage : 0;
-                        const aprAfterFees = poolTokenApr * (1 - protocolYieldFeePercentage);
-                        const tokenSymbol = token.token.symbol;
-                        const isBoosted = this.ibTokensAprHandlers.wrappedBoostedTokens.includes(wrappedToken.address);
-                        const itemId = `${pool.id}-${tokenSymbol}-${isBoosted ? 'boosted' : 'yield'}-apr`;
-                        operations.push(
-                            prisma.prismaPoolAprItem.upsert({
-                                where: { id_chain: { id: itemId, chain: networkContext.chain } },
-                                create: {
-                                    id: itemId,
-                                    chain: networkContext.chain,
-                                    poolId: pool.id,
-                                    title: `${tokenSymbol} APR`,
-                                    apr: collectsYieldFee(pool) ? aprAfterFees : poolTokenApr,
-                                    group: tokenApr.group as PrismaPoolAprItemGroup,
-                                    type: isBoosted ? 'LINEAR_BOOSTED' : 'IB_YIELD',
-                                },
-                                update: {
-                                    title: `${tokenSymbol} APR`,
-                                    apr: collectsYieldFee(pool) ? aprAfterFees : poolTokenApr,
-                                },
-                            }),
-                        );
-                    }
-                }
+
+                // yieldType is LINEAR_BOOSTED if its in the wrappedLinearTokens list
+                const yieldType: PrismaPoolAprType = this.ibTokensAprHandlers.wrappedLinearTokens.includes(
+                    token.address,
+                )
+                    ? 'LINEAR_BOOSTED'
+                    : 'IB_YIELD';
+
+                const itemId = `${pool.id}-${token.token.symbol}-yield-apr`;
+
+                operations.push(
+                    prisma.prismaPoolAprItem.upsert({
+                        where: { id_chain: { id: itemId, chain: networkContext.chain } },
+                        create: {
+                            id: itemId,
+                            chain: networkContext.chain,
+                            poolId: pool.id,
+                            title: `${token.token.symbol} APR`,
+                            apr: aprAfterFees,
+                            group: tokenApr.group as PrismaPoolAprItemGroup,
+                            type: yieldType,
+                        },
+                        update: {
+                            title: `${token.token.symbol} APR`,
+                            group: tokenApr.group as PrismaPoolAprItemGroup,
+                            apr: aprAfterFees,
+                        },
+                    }),
+                );
             }
         }
         await prismaBulkExecuteOperations(operations);

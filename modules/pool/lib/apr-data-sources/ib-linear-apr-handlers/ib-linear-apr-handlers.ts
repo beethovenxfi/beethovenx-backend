@@ -16,12 +16,13 @@ import { IbAprConfig } from '../../../../network/apr-config-types';
 export class IbLinearAprHandlers {
     private handlers: AprHandler[] = [];
     //List of addresses of wrappedBoostedTokens, used to check what is LINEAR_BOOSTED APR and what is IB_YIELD APR
-    wrappedBoostedTokens: string[] = [];
+    wrappedLinearTokens: string[] = [];
+
     fixedAprTokens?: { [tokenName: string]: { address: string; value: number; group?: string } };
 
     constructor(aprConfig: IbAprConfig) {
         this.handlers = this.buildAprHandlers(aprConfig);
-        this.wrappedBoostedTokens = this.buildWrappedBoostedTokens(aprConfig);
+        this.wrappedLinearTokens = this.buildWrappedLinearTokens(aprConfig);
         this.fixedAprTokens = aprConfig.fixed;
     }
 
@@ -90,7 +91,8 @@ export class IbLinearAprHandlers {
         return handlers;
     }
 
-    buildWrappedBoostedTokens(aprConfig: IbAprConfig): string[] {
+    // TODO rethink that one
+    buildWrappedLinearTokens(aprConfig: IbAprConfig): string[] {
         return [
             ...Object.values(aprConfig?.aave?.v2?.tokens?.USDC?.wrappedTokens || {}),
             ...Object.values(aprConfig?.aave?.v3?.tokens?.USDC?.wrappedTokens || {}),
@@ -111,7 +113,7 @@ export class IbLinearAprHandlers {
             ...Object.values(
                 Object.entries(aprConfig?.defaultHandlers || {})
                     //Filtering out handlers that are not LINEAR_BOOSTED
-                    .filter(([key, _]) => ['rETH', 'USDR', 'swETH', 'wjAURA', 'qETH', 'overnight'].includes(key))
+                    .filter(([key, _]) => ['rETH', 'USDR', 'swETH', 'wjAURA', 'qETH'].includes(key))
                     .reduce((acc, [_, value]) => ({ ...acc, ...value.tokens }), {}) as { [p: string]: string },
             ),
         ];
