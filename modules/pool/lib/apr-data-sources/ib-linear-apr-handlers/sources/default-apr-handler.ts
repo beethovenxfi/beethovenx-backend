@@ -11,7 +11,15 @@ export class DefaultAprHandler implements AprHandler {
     scale: number;
     group: string | undefined = undefined;
 
-    constructor(aprHandlerConfig: DefaultAprHandlerConfig) {
+    constructor(aprHandlerConfig: {
+        sourceUrl: string;
+        tokens: {
+            [tokenName: string]: string;
+        };
+        path?: string;
+        scale?: number;
+        group?: string;
+    }) {
         this.tokens = aprHandlerConfig.tokens;
         this.url = aprHandlerConfig.sourceUrl;
         this.path = aprHandlerConfig.path ?? '';
@@ -47,13 +55,3 @@ export class DefaultAprHandler implements AprHandler {
         return value;
     }
 }
-
-export type DefaultAprHandlerConfig = {
-    tokens: {
-        [tokenName: string]: string;
-    };
-    sourceUrl: string;
-    scale?: number;
-    path?: string;
-    group?: string;
-};

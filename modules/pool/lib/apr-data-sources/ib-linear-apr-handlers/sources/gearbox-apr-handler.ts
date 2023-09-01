@@ -1,13 +1,14 @@
 import axios from 'axios';
 
 import { AprHandler } from '../ib-linear-apr-handlers';
+import { GearBoxAprConfig } from '../../../../../network/apr-config-types';
 
 export class GearboxAprHandler implements AprHandler {
     url: string;
     tokens: { [key: string]: string };
     readonly group = 'GEARBOX';
 
-    constructor(aprHandlerConfig: GearboxAprHandlerConfig) {
+    constructor(aprHandlerConfig: GearBoxAprConfig) {
         this.tokens = aprHandlerConfig.tokens;
         this.url = aprHandlerConfig.sourceUrl;
     }
@@ -29,8 +30,3 @@ export class GearboxAprHandler implements AprHandler {
         }
     }
 }
-
-type GearboxAprHandlerConfig = {
-    tokens: { [key: string]: string };
-    sourceUrl: string;
-};

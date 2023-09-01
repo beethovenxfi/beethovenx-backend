@@ -1,11 +1,11 @@
 import { BigNumber, Contract } from 'ethers';
 import { abi } from './abis/oErc20';
-import { JsonRpcProvider } from '@ethersproject/providers';
 
 import { AprHandler } from '../ib-linear-apr-handlers';
+import { networkContext } from '../../../../../network/network-context.service';
+import { OvixAprConfig } from '../../../../../network/apr-config-types';
 
 export class OvixAprHandler implements AprHandler {
-    provider: JsonRpcProvider;
     tokens: {
         [tokenName: string]: {
             yieldAddress: string;
@@ -14,15 +14,14 @@ export class OvixAprHandler implements AprHandler {
     };
     readonly group = 'OVIX';
 
-    constructor(aprHandlerConfig: OvixAprHandlerConfig) {
-        this.provider = new JsonRpcProvider(aprHandlerConfig.rpcUrl, aprHandlerConfig.networkChainId);
+    constructor(aprHandlerConfig: OvixAprConfig) {
         this.tokens = aprHandlerConfig.tokens;
     }
 
     async getAprs() {
         try {
             const aprEntries = Object.values(this.tokens).map(async ({ yieldAddress, wrappedAddress }) => {
-                const contract = new Contract(yieldAddress, abi, this.provider);
+                const contract = new Contract(yieldAddress, abi, networkContext.provider);
                 const borrowRate = await contract.borrowRatePerTimestamp();
                 return [
                     wrappedAddress,
@@ -37,14 +36,3 @@ export class OvixAprHandler implements AprHandler {
         }
     }
 }
-
-type OvixAprHandlerConfig = {
-    networkChainId: number;
-    rpcUrl: string;
-    tokens: {
-        [tokenName: string]: {
-            yieldAddress: string;
-            wrappedAddress: string;
-        };
-    };
-};

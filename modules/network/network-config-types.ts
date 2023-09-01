@@ -6,6 +6,7 @@ import { TokenPriceHandler } from '../token/token-types';
 import { BaseProvider } from '@ethersproject/providers';
 import { GqlChain } from '../../schema';
 import { ContentService } from '../content/content-types';
+import { AaveAprConfig, IbAprConfig } from './apr-config-types';
 
 export interface NetworkConfig {
     data: NetworkData;
@@ -159,141 +160,6 @@ export interface NetworkData {
     monitoring: {
         [key in DeploymentEnv]: {
             alarmTopicArn: string;
-        };
-    };
-}
-
-export interface IbAprConfig {
-    aave?: {
-        [version: string]: {
-            subgraphUrl: string;
-            tokens: {
-                [underlyingAssetName: string]: {
-                    underlyingAssetAddress: string;
-                    aTokenAddress: string;
-                    wrappedTokens: {
-                        [wrappedTokenName: string]: string;
-                    };
-                };
-            };
-        };
-    };
-    ankr?: {
-        sourceUrl: string;
-        tokens: {
-            [underlyingAssetName: string]: {
-                address: string;
-                serviceName: string;
-            };
-        };
-    };
-    beefy?: {
-        sourceUrl: string;
-        tokens: {
-            [tokenName: string]: {
-                address: string;
-                // To get the vaultId, get the vault address from the token contract(token.vault()),
-                // and search for the vault address in the link: https://api.beefy.finance/vaults
-                vaultId: string;
-            };
-        };
-    };
-    euler?: {
-        subgraphUrl: string;
-        tokens: {
-            [tokenName: string]: string;
-        };
-    };
-    gearbox?: {
-        sourceUrl: string;
-        tokens: {
-            [tokenName: string]: string;
-        };
-    };
-    idle?: {
-        sourceUrl: string;
-        authorizationHeader: string;
-        tokens: {
-            [tokenName: string]: {
-                address: string;
-                wrapped4626Address: string;
-            };
-        };
-    };
-    ovix?: {
-        rpcUrl: string;
-        tokens: {
-            [tokenName: string]: {
-                yieldAddress: string;
-                wrappedAddress: string;
-            };
-        };
-    };
-    reaper?: {
-        multiStrategy?: {
-            subgraphUrl: string;
-            tokens: {
-                [tokenName: string]: {
-                    address: string;
-                    isSftmX?: boolean;
-                    isWstETH?: boolean;
-                };
-            };
-        };
-        singleStrategy?: {
-            averageAPRAcrossLastNHarvests: number;
-            tokens: {
-                [tokenName: string]: {
-                    address: string;
-                    isSftmX?: boolean;
-                    isWstETH?: boolean;
-                };
-            };
-        };
-    };
-    tessera?: {
-        rpcUrl: string;
-        tokens: {
-            [tokenName: string]: {
-                tesseraPoolAddress: string;
-                tokenAddress: string;
-            };
-        };
-    };
-    tetu?: {
-        sourceUrl: string;
-        tokens: {
-            [tokenName: string]: string;
-        };
-    };
-    tranchess?: {
-        sourceUrl: string;
-        tokens: {
-            [tokenName: string]: {
-                address: string;
-                underlyingAssetName: string;
-            };
-        };
-    };
-    yearn?: {
-        sourceUrl: string;
-    };
-    defaultHandlers?: {
-        [tokenName: string]: {
-            sourceUrl: string;
-            tokens: {
-                [tokenName: string]: string;
-            };
-            path?: string;
-            scale?: number;
-            group?: string;
-        };
-    };
-    fixedAprTokens?: {
-        [tokenName: string]: {
-            address: string;
-            value: number;
-            group?: string;
         };
     };
 }

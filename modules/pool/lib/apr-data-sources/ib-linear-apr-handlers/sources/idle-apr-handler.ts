@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { AprHandler } from '../ib-linear-apr-handlers';
+import { IdleAprConfig } from '../../../../../network/apr-config-types';
 
 export class IdleAprHandler implements AprHandler {
     tokens: {
@@ -13,7 +14,7 @@ export class IdleAprHandler implements AprHandler {
     authorizationHeader: string;
     readonly group = 'IDLE';
 
-    constructor(aprHandlerConfig: IdleAprHandlerConfig) {
+    constructor(aprHandlerConfig: IdleAprConfig) {
         this.tokens = aprHandlerConfig.tokens;
         this.url = aprHandlerConfig.sourceUrl;
         this.authorizationHeader = aprHandlerConfig.authorizationHeader;
@@ -42,14 +43,3 @@ export class IdleAprHandler implements AprHandler {
         }
     }
 }
-
-type IdleAprHandlerConfig = {
-    tokens: {
-        [tokenName: string]: {
-            address: string;
-            wrapped4626Address: string;
-        };
-    };
-    sourceUrl: string;
-    authorizationHeader: string;
-};

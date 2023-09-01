@@ -3,14 +3,14 @@ import { getContractAt } from '../../../../../web3/contract';
 import ReaperCryptStrategyAbi from './abis/ReaperCryptStrategy.json';
 import axios from 'axios';
 import ReaperCryptAbi from './abis/ReaperCrypt.json';
-import { networkContext } from '../../../../../network/network-context.service';
+import { ReaperAprConfig } from '../../../../../network/apr-config-types';
 
 const APR_PERCENT_DIVISOR = 10_000;
 
 const sFTMxBaseApr = 0.046;
 export class ReaperCryptAprHandler implements AprHandler {
-    multiStrategyTokens?: { [tokenName: string]: { address: string; isSftmX?: boolean; isWstETH?: boolean } };
-    singleStrategyTokens?: { [tokenName: string]: { address: string; isSftmX?: boolean; isWstETH?: boolean } };
+    tokensWithSubgraphSource?: { [tokenName: string]: { address: string; isSftmX?: boolean; isWstETH?: boolean } };
+    tokensWithOnChainSource?: { [tokenName: string]: { address: string; isSftmX?: boolean; isWstETH?: boolean } };
     subgraphUrl?: string;
     averageAPRAcrossLastNHarvests?: number;
     wstETHBaseApr: number = 0;
@@ -22,22 +22,23 @@ export class ReaperCryptAprHandler implements AprHandler {
             }
           }`;
     readonly group = 'REAPER';
-    constructor(aprConfig: ReaperCryptAprHandlerConfig) {
-        this.multiStrategyTokens = aprConfig.multiStrategy?.tokens;
-        this.singleStrategyTokens = aprConfig.singleStrategy?.tokens;
-        this.subgraphUrl = aprConfig.multiStrategy?.subgraphUrl;
-        this.averageAPRAcrossLastNHarvests = aprConfig.singleStrategy?.averageAPRAcrossLastNHarvests;
+
+    constructor(aprConfig: ReaperAprConfig) {
+        this.tokensWithSubgraphSource = aprConfig.subgraphSource?.tokens;
+        this.tokensWithOnChainSource = aprConfig.onchainSource?.tokens;
+        this.subgraphUrl = aprConfig.subgraphSource?.subgraphUrl;
+        this.averageAPRAcrossLastNHarvests = aprConfig.onchainSource?.averageAPRAcrossLastNHarvests;
     }
 
     async getAprs(): Promise<{ [p: string]: number }> {
         let multiStrategyAprs = {};
         let singleStrategyAprs = {};
         this.wstETHBaseApr = await this.getWstEthBaseApr();
-        if (this.multiStrategyTokens !== undefined) {
-            multiStrategyAprs = await this.getMultiStrategyAprFromSubgraph(this.multiStrategyTokens);
+        if (this.tokensWithSubgraphSource !== undefined) {
+            multiStrategyAprs = await this.getMultiStrategyAprFromSubgraph(this.tokensWithSubgraphSource);
         }
-        if (this.singleStrategyTokens !== undefined) {
-            singleStrategyAprs = await this.getSingleStrategyCryptApr(this.singleStrategyTokens);
+        if (this.tokensWithOnChainSource !== undefined) {
+            singleStrategyAprs = await this.getSingleStrategyCryptApr(this.tokensWithOnChainSource);
         }
         return { ...multiStrategyAprs, ...singleStrategyAprs };
     }
@@ -55,6 +56,7 @@ export class ReaperCryptAprHandler implements AprHandler {
             avgAprAcrossXHarvests =
                 (await strategyContract.averageAPRAcrossLastNHarvests(this.averageAPRAcrossLastNHarvests)) /
                 APR_PERCENT_DIVISOR;
+            // TODO hanlde this outside
             if (isSftmX) {
                 avgAprAcrossXHarvests = avgAprAcrossXHarvests * (1 + sFTMxBaseApr);
             }
@@ -117,7 +119,6 @@ type MultiStratResponse = {
     }[];
 };
 interface ReaperCryptAprHandlerConfig {
-    networkChainId: number;
     multiStrategy?: {
         subgraphUrl: string;
         tokens: {

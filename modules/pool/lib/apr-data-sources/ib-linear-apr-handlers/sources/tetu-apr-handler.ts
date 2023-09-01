@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { AprHandler } from '../ib-linear-apr-handlers';
+import { TetuAprConfig } from '../../../../../network/apr-config-types';
 
 export class TetuAprHandler implements AprHandler {
     sourceUrl: string;
@@ -9,7 +10,7 @@ export class TetuAprHandler implements AprHandler {
     };
     readonly group = 'TETU';
 
-    constructor(aprHandlerConfig: TetuAprHandlerConfig) {
+    constructor(aprHandlerConfig: TetuAprConfig) {
         this.sourceUrl = aprHandlerConfig.sourceUrl;
         this.tokens = aprHandlerConfig.tokens;
     }
@@ -28,10 +29,3 @@ export class TetuAprHandler implements AprHandler {
         }
     }
 }
-
-type TetuAprHandlerConfig = {
-    sourceUrl: string;
-    tokens: {
-        [tokenName: string]: string;
-    };
-};

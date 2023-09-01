@@ -1,3 +1,4 @@
+import { BeefyAprConfig } from '../../../../../network/apr-config-types';
 import { AprHandler } from '../ib-linear-apr-handlers';
 import axios from 'axios';
 
@@ -11,7 +12,7 @@ export class BeefyAprHandler implements AprHandler {
     sourceUrl: string;
     group: string | undefined = 'BEEFY';
 
-    constructor(aprConfig: BeefyAprHandlerConfig) {
+    constructor(aprConfig: BeefyAprConfig) {
         this.tokens = aprConfig.tokens;
         this.sourceUrl = aprConfig.sourceUrl;
     }
@@ -24,16 +25,6 @@ export class BeefyAprHandler implements AprHandler {
         }
         return aprs;
     }
-}
-
-interface BeefyAprHandlerConfig {
-    tokens: {
-        [tokenName: string]: {
-            address: string;
-            vaultId: string;
-        };
-    };
-    sourceUrl: string;
 }
 
 type VaultApr = Record<

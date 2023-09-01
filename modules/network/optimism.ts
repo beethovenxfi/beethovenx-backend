@@ -133,7 +133,7 @@ const optimismNetworkData: NetworkData = {
             },
         },
         reaper: {
-            multiStrategy: {
+            subgraphSource: {
                 subgraphUrl: 'https://api.thegraph.com/subgraphs/name/byte-masons/multi-strategy-vaults-optimism',
                 tokens: {
                     rfUSDT: {
@@ -157,6 +157,26 @@ const optimismNetworkData: NetworkData = {
                     },
                     rfUSDC: {
                         address: '0x508734b52ba7e04ba068a2d4f67720ac1f63df47',
+                    },
+                },
+            },
+            onchainSource: {
+                averageAPRAcrossLastNHarvests: 2,
+                tokens: {
+                    rfsoUSDC: {
+                        address: '0x875456b73cbc58aa1be98dfe3b0459e0c0bf7b0e',
+                    },
+                    rfsoUSDT: {
+                        address: '0x1e1bf73db9b278a95c9fe9205759956edea8b6ae',
+                    },
+                    rfsoDAI: {
+                        address: '0x19ca00d242e96a30a1cad12f08c375caa989628f',
+                    },
+                    rfsoWBTC: {
+                        address: '0x73e51b0368ef8bd0070b12dd992c54aa53bcb5f4',
+                    },
+                    rfsoWSTETH: {
+                        address: '0x3573de618ae4a740fb24215d93f4483436fbb2b6',
                     },
                 },
             },
@@ -237,12 +257,7 @@ export const optimismNetworkConfig: NetworkConfig = {
     contentService: new SanityContentService(),
     provider: new ethers.providers.JsonRpcProvider({ url: optimismNetworkData.rpcUrl, timeout: 60000 }),
     poolAprServices: [
-        new IbTokensAprService(
-            optimismNetworkData.ibAprConfig,
-            optimismNetworkData.chain.prismaId,
-            optimismNetworkData.chain.id,
-            tokenService,
-        ),
+        new IbTokensAprService(optimismNetworkData.ibAprConfig, tokenService),
         new BeefyVaultAprService(optimismNetworkData.beefy!.linearPools, tokenService),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),

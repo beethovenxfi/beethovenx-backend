@@ -8,10 +8,10 @@ import { OvixAprHandler } from './sources/ovix-apr-handler';
 import { TesseraAprHandler } from './sources/tessera-apr-handler';
 import { TetuAprHandler } from './sources/tetu-apr-handler';
 import { TranchessAprHandler } from './sources/tranchess-apr-handler';
-import { IbAprConfig } from '../../../../network/network-config-types';
 import { YearnAprHandler } from './sources/yearn-apr-handler';
 import { ReaperCryptAprHandler } from './sources/reaper-crypt-apr-handler';
 import { BeefyAprHandler } from './sources/beefy-apr-handler';
+import { IbAprConfig } from '../../../../network/apr-config-types';
 
 export class IbLinearAprHandlers {
     private handlers: AprHandler[] = [];
@@ -19,13 +19,13 @@ export class IbLinearAprHandlers {
     wrappedBoostedTokens: string[] = [];
     fixedAprTokens?: { [tokenName: string]: { address: string; value: number; group?: string } };
 
-    constructor(aprConfig: IbAprConfig, networkPrismaId: string, networkChainId: number) {
-        this.handlers = this.buildAprHandlers(aprConfig, networkPrismaId, networkChainId);
+    constructor(aprConfig: IbAprConfig) {
+        this.handlers = this.buildAprHandlers(aprConfig);
         this.wrappedBoostedTokens = this.buildWrappedBoostedTokens(aprConfig);
-        this.fixedAprTokens = aprConfig.fixedAprTokens;
+        this.fixedAprTokens = aprConfig.fixed;
     }
 
-    buildAprHandlers(aprConfig: IbAprConfig, networkPrismaId: string, networkChainId: number) {
+    buildAprHandlers(aprConfig: IbAprConfig) {
         const handlers: AprHandler[] = [];
         if (aprConfig.aave) {
             for (const config of Object.values(aprConfig.aave)) {
@@ -56,18 +56,16 @@ export class IbLinearAprHandlers {
         if (aprConfig.ovix) {
             const ovixHandler = new OvixAprHandler({
                 ...aprConfig.ovix,
-                networkChainId,
             });
             handlers.push(ovixHandler);
         }
         if (aprConfig.reaper) {
-            const reaperCryptHandler = new ReaperCryptAprHandler({ ...aprConfig.reaper, networkChainId });
+            const reaperCryptHandler = new ReaperCryptAprHandler({ ...aprConfig.reaper });
             handlers.push(reaperCryptHandler);
         }
         if (aprConfig.tessera) {
             const tesseraHandler = new TesseraAprHandler({
                 ...aprConfig.tessera,
-                networkChainId,
             });
             handlers.push(tesseraHandler);
         }

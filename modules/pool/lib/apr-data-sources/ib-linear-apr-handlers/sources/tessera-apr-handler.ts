@@ -1,11 +1,11 @@
 import { Contract } from 'ethers';
 import { abi } from './abis/tesseraPool';
-import { JsonRpcProvider } from '@ethersproject/providers';
 
 import { AprHandler } from '../ib-linear-apr-handlers';
+import { networkContext } from '../../../../../network/network-context.service';
+import { TesseraAprConfig } from '../../../../../network/apr-config-types';
 
 export class TesseraAprHandler implements AprHandler {
-    provider: JsonRpcProvider;
     tokens: {
         [tokenName: string]: {
             tesseraPoolAddress: string;
@@ -14,8 +14,7 @@ export class TesseraAprHandler implements AprHandler {
     };
     readonly group = 'TESSERA';
 
-    constructor(aprHandlerConfig: TesseraAprHandlerConfig) {
-        this.provider = new JsonRpcProvider(aprHandlerConfig.rpcUrl, aprHandlerConfig.networkChainId);
+    constructor(aprHandlerConfig: TesseraAprConfig) {
         this.tokens = aprHandlerConfig.tokens;
     }
 
@@ -24,7 +23,7 @@ export class TesseraAprHandler implements AprHandler {
             let aprEntries = [];
             for (const { tesseraPoolAddress, tokenAddress } of Object.values(this.tokens)) {
                 try {
-                    const contract = new Contract(tesseraPoolAddress, abi, this.provider);
+                    const contract = new Contract(tesseraPoolAddress, abi, networkContext.provider);
                     const poolsUI = await contract.getPoolsUI();
 
                     const pool = poolsUI[0];
@@ -44,14 +43,3 @@ export class TesseraAprHandler implements AprHandler {
         }
     }
 }
-
-type TesseraAprHandlerConfig = {
-    networkChainId: number;
-    rpcUrl: string;
-    tokens: {
-        [tokenName: string]: {
-            tesseraPoolAddress: string;
-            tokenAddress: string;
-        };
-    };
-};

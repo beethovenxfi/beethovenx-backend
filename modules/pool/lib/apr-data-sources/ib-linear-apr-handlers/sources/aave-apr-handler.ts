@@ -29,7 +29,18 @@ export class AaveAprHandler implements AprHandler {
     }
   }`;
 
-    constructor(aprHandlerConfig: AaveAprHandlerConfig) {
+    constructor(aprHandlerConfig: {
+        subgraphUrl: string;
+        tokens: {
+            [underlyingAssetName: string]: {
+                underlyingAssetAddress: string;
+                aTokenAddress: string;
+                wrappedTokens: {
+                    [wrappedTokenName: string]: string;
+                };
+            };
+        };
+    }) {
         this.tokens = aprHandlerConfig.tokens;
         this.subgraphUrl = aprHandlerConfig.subgraphUrl;
     }
@@ -88,8 +99,3 @@ interface ReserveResponse {
         ];
     };
 }
-
-type AaveAprHandlerConfig = {
-    tokens: {};
-    subgraphUrl: string;
-};

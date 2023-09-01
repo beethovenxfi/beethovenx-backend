@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { AprHandler } from '../ib-linear-apr-handlers';
+import { AnkrAprConfig } from '../../../../../network/apr-config-types';
 
 export class AnkrAprHandler implements AprHandler {
     tokens: {
@@ -11,7 +12,7 @@ export class AnkrAprHandler implements AprHandler {
     url: string;
     readonly group = 'ANKR';
 
-    constructor(aprHandlerConfig: AnkrAprHandlerConfig) {
+    constructor(aprHandlerConfig: AnkrAprConfig) {
         this.tokens = aprHandlerConfig.tokens;
         this.url = aprHandlerConfig.sourceUrl;
     }
@@ -36,13 +37,3 @@ export class AnkrAprHandler implements AprHandler {
         }
     }
 }
-
-type AnkrAprHandlerConfig = {
-    tokens: {
-        [underlyingAssetName: string]: {
-            address: string;
-            serviceName: string;
-        };
-    };
-    sourceUrl: string;
-};

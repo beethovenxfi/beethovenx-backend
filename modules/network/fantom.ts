@@ -183,7 +183,7 @@ const fantomNetworkData: NetworkData = {
             },
         },
         reaper: {
-            multiStrategy: {
+            subgraphSource: {
                 subgraphUrl: 'https://api.thegraph.com/subgraphs/name/byte-masons/multi-strategy-vaults-fantom',
                 tokens: {
                     rfwBTC: {
@@ -226,7 +226,7 @@ const fantomNetworkData: NetworkData = {
                     },
                 },
             },
-            singleStrategy: {
+            onchainSource: {
                 averageAPRAcrossLastNHarvests: 5,
                 tokens: {
                     rfGrainSFTMX: {
@@ -242,7 +242,7 @@ const fantomNetworkData: NetworkData = {
         yearn: {
             sourceUrl: 'https://d28fcsszptni1s.cloudfront.net/v1/chains/250/vaults/all',
         },
-        fixedAprTokens: {
+        fixed: {
             sFTMx: {
                 address: '0xd7028092c830b5c8fce061af2e593413ebbc1fc1',
                 value: 0.046,
@@ -296,12 +296,7 @@ export const fantomNetworkConfig: NetworkConfig = {
     contentService: new SanityContentService(),
     provider: new ethers.providers.JsonRpcProvider({ url: fantomNetworkData.rpcUrl, timeout: 60000 }),
     poolAprServices: [
-        new IbTokensAprService(
-            fantomNetworkData.ibAprConfig,
-            fantomNetworkData.chain.prismaId,
-            fantomNetworkData.chain.id,
-            tokenService,
-        ),
+        new IbTokensAprService(fantomNetworkData.ibAprConfig, tokenService),
         // new SpookySwapAprService(tokenService, fantomNetworkData.spooky!.xBooContract),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),

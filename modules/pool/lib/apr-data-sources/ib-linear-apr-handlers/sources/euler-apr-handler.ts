@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { AprHandler } from '../ib-linear-apr-handlers';
+import { EulerAprConfig } from '../../../../../network/apr-config-types';
 
 export class EulerAprHandler implements AprHandler {
     tokens: { [key: string]: string };
@@ -19,7 +20,7 @@ export class EulerAprHandler implements AprHandler {
   }
 `;
 
-    constructor(aprHandlerConfig: EulerAprHandlerConfig) {
+    constructor(aprHandlerConfig: EulerAprConfig) {
         this.tokens = aprHandlerConfig.tokens;
         this.subgraphUrl = aprHandlerConfig.subgraphUrl;
     }
@@ -63,8 +64,3 @@ interface EulerResponse {
         ];
     };
 }
-
-type EulerAprHandlerConfig = {
-    tokens: { [key: string]: string };
-    subgraphUrl: string;
-};

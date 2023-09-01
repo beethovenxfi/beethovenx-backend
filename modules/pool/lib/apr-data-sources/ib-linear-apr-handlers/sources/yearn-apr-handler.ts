@@ -1,13 +1,13 @@
 import { AprHandler } from '../ib-linear-apr-handlers';
 import axios from 'axios';
 import { YearnVault } from '../../apr-types';
-import { networkContext } from '../../../../../network/network-context.service';
+import { YearnAprConfig } from '../../../../../network/apr-config-types';
 
 export class YearnAprHandler implements AprHandler {
     sourceUrl: string;
     group: string = 'YEARN';
 
-    constructor(aprHandlerConfig: YearnAprHandlerConfig) {
+    constructor(aprHandlerConfig: YearnAprConfig) {
         this.sourceUrl = aprHandlerConfig.sourceUrl;
     }
     async getAprs(): Promise<{ [p: string]: number }> {
@@ -19,8 +19,4 @@ export class YearnAprHandler implements AprHandler {
         );
         return aprs;
     }
-}
-
-interface YearnAprHandlerConfig {
-    sourceUrl: string;
 }
