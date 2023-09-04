@@ -5,14 +5,14 @@ import { networkContext } from '../../../network/network-context.service';
 import { prismaBulkExecuteOperations } from '../../../../prisma/prisma-util';
 import { PrismaPoolAprItemGroup, PrismaPoolAprType, PrismaPoolLinearData } from '@prisma/client';
 import { IbLinearAprHandlers as IbTokensAprHandlers, TokenApr } from './ib-linear-apr-handlers/ib-linear-apr-handlers';
-import { TokenService } from '../../../token/token.service';
+import { tokenService } from '../../../token/token.service';
 import { collectsYieldFee } from '../pool-utils';
 import { IbAprConfig } from '../../../network/apr-config-types';
 
 export class IbTokensAprService implements PoolAprService {
     private ibTokensAprHandlers: IbTokensAprHandlers;
 
-    constructor(aprConfig: IbAprConfig, private readonly tokenService: TokenService) {
+    constructor(aprConfig: IbAprConfig) {
         this.ibTokensAprHandlers = new IbTokensAprHandlers(aprConfig);
     }
 
@@ -22,7 +22,7 @@ export class IbTokensAprService implements PoolAprService {
 
     public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
         const operations: any[] = [];
-        const tokenPrices = await this.tokenService.getTokenPrices();
+        const tokenPrices = await tokenService.getTokenPrices();
         const aprs = await this.fetchYieldTokensApr();
         const poolsWithIbTokens = pools.filter((pool) => {
             return pool.tokens.find((token) => {
@@ -48,7 +48,7 @@ export class IbTokensAprService implements PoolAprService {
                     continue;
                 }
 
-                const tokenPrice = this.tokenService.getPriceForToken(tokenPrices, token.address);
+                const tokenPrice = tokenService.getPriceForToken(tokenPrices, token.address);
                 const tokenBalance = token.dynamicData?.balance;
 
                 const tokenLiquidity = tokenPrice * parseFloat(tokenBalance || '0');
@@ -58,16 +58,16 @@ export class IbTokensAprService implements PoolAprService {
                     continue;
                 }
 
-                let aprAfterFees = tokenApr.val;
+                let aprInPoolAfterFees = tokenApr.val * tokenPercentageInPool;
 
                 if (collectsYieldFee(pool)) {
                     const protocolYieldFeePercentage = pool.dynamicData?.protocolYieldFee
                         ? parseFloat(pool.dynamicData.protocolYieldFee)
                         : networkContext.data.balancer.yieldProtocolFeePercentage;
-                    aprAfterFees =
+                    aprInPoolAfterFees =
                         pool.type === 'META_STABLE'
-                            ? aprAfterFees * (1 - networkContext.data.balancer.swapProtocolFeePercentage)
-                            : aprAfterFees * (1 - protocolYieldFeePercentage);
+                            ? aprInPoolAfterFees * (1 - networkContext.data.balancer.swapProtocolFeePercentage)
+                            : aprInPoolAfterFees * (1 - protocolYieldFeePercentage);
                 }
 
                 // yieldType is IB_YIELD if its in the ibYieledTokens list
@@ -77,23 +77,21 @@ export class IbTokensAprService implements PoolAprService {
 
                 const itemId = `${pool.id}-${token.token.symbol}-yield-apr`;
 
+                const data = {
+                    id: itemId,
+                    chain: networkContext.chain,
+                    poolId: pool.id,
+                    title: `${token.token.symbol} APR`,
+                    apr: aprInPoolAfterFees,
+                    group: tokenApr.group as PrismaPoolAprItemGroup,
+                    type: yieldType,
+                };
+
                 operations.push(
                     prisma.prismaPoolAprItem.upsert({
                         where: { id_chain: { id: itemId, chain: networkContext.chain } },
-                        create: {
-                            id: itemId,
-                            chain: networkContext.chain,
-                            poolId: pool.id,
-                            title: `${token.token.symbol} APR`,
-                            apr: aprAfterFees,
-                            group: tokenApr.group as PrismaPoolAprItemGroup,
-                            type: yieldType,
-                        },
-                        update: {
-                            title: `${token.token.symbol} APR`,
-                            group: tokenApr.group as PrismaPoolAprItemGroup,
-                            apr: aprAfterFees,
-                        },
+                        create: data,
+                        update: data,
                     }),
                 );
             }

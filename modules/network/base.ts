@@ -15,6 +15,7 @@ import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
 import { coingeckoService } from '../coingecko/coingecko.service';
 import { env } from '../../app/env';
+import { IbTokensAprService } from '../pool/lib/apr-data-sources/ib-tokens-apr.service';
 
 const baseNetworkData: NetworkData = {
     chain: {
@@ -118,6 +119,7 @@ export const baseNetworkConfig: NetworkConfig = {
     contentService: new GithubContentService(),
     provider: new ethers.providers.JsonRpcProvider({ url: baseNetworkData.rpcUrl, timeout: 60000 }),
     poolAprServices: [
+        new IbTokensAprService(baseNetworkData.ibAprConfig),
         new BoostedPoolAprService(),
         new SwapFeeAprService(baseNetworkData.balancer.swapProtocolFeePercentage),
         new GaugeAprService(gaugeSubgraphService, tokenService, [baseNetworkData.bal!.address]),

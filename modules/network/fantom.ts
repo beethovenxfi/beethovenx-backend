@@ -296,7 +296,7 @@ export const fantomNetworkConfig: NetworkConfig = {
     contentService: new SanityContentService(),
     provider: new ethers.providers.JsonRpcProvider({ url: fantomNetworkData.rpcUrl, timeout: 60000 }),
     poolAprServices: [
-        new IbTokensAprService(fantomNetworkData.ibAprConfig, tokenService),
+        new IbTokensAprService(fantomNetworkData.ibAprConfig),
         // new SpookySwapAprService(tokenService, fantomNetworkData.spooky!.xBooContract),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),

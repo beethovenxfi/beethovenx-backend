@@ -249,8 +249,7 @@ export const optimismNetworkConfig: NetworkConfig = {
     contentService: new SanityContentService(),
     provider: new ethers.providers.JsonRpcProvider({ url: optimismNetworkData.rpcUrl, timeout: 60000 }),
     poolAprServices: [
-        new IbTokensAprService(optimismNetworkData.ibAprConfig, tokenService),
-        new BeefyVaultAprService(optimismNetworkData.beefy!.linearPools, tokenService),
+        new IbTokensAprService(optimismNetworkData.ibAprConfig),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(optimismNetworkData.balancer.swapProtocolFeePercentage),
