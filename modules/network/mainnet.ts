@@ -222,7 +222,6 @@ export const mainnetNetworkData: NetworkData = {
             },
         },
         tessera: {
-            rpcUrl: 'https://rpc.ankr.com/eth',
             tokens: {
                 sAPE: {
                     tesseraPoolAddress: '0x5954aB967Bc958940b7EB73ee84797Dc8a2AFbb9',
@@ -241,68 +240,49 @@ export const mainnetNetworkData: NetworkData = {
         },
         defaultHandlers: {
             vETH: {
-                tokens: {
-                    vETH: '0x4bc3263eb5bb2ef7ad9ab6fb68be80e43b43801f',
-                },
+                tokenAddress: '0x4bc3263eb5bb2ef7ad9ab6fb68be80e43b43801f',
                 sourceUrl: 'https://apy.liebi.com/veth',
                 path: 'veth',
             },
             stETH: {
-                tokens: {
-                    stETH: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
-                    wstETH: '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
-                },
+                tokenAddress: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
+                sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
+                path: 'data.smaApr',
+            },
+            wstETH: {
+                tokenAddress: '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
                 sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
                 path: 'data.smaApr',
             },
             cbETH: {
-                tokens: {
-                    cbETH: '0xbe9895146f7af43049ca1c1ae358b0541ea49704',
-                },
+                tokenAddress: '0xbe9895146f7af43049ca1c1ae358b0541ea49704',
                 sourceUrl: 'https://api.exchange.coinbase.com/wrapped-assets/CBETH/',
                 path: 'apy',
                 scale: 1,
             },
             sfrxETH: {
-                tokens: { sfrxETH: '0xac3e018457b222d93114458476f3e3416abbe38f' },
+                tokenAddress: '0xac3e018457b222d93114458476f3e3416abbe38f',
                 sourceUrl: 'https://api.frax.finance/v2/frxeth/summary/latest',
                 path: 'sfrxethApr',
             },
             rETH: {
-                tokens: {
-                    rETH: '0x9559aaa82d9649c7a7b220e7c461d2e74c9a3593',
-                },
+                tokenAddress: '0x9559aaa82d9649c7a7b220e7c461d2e74c9a3593',
                 sourceUrl: 'https://drop-api.stafi.io/reth/v1/poolData',
                 path: 'data.stakeApr',
             },
             USDR: {
-                tokens: {
-                    USDR: '0xaf0d9d65fc54de245cda37af3d18cbec860a4d4b',
-                },
+                tokenAddress: '0xaf0d9d65fc54de245cda37af3d18cbec860a4d4b',
                 sourceUrl: 'http://usdr-api.us-east-1.elasticbeanstalk.com/usdr/apy',
                 path: 'usdr',
             },
             swETH: {
-                tokens: {
-                    swETH: '0xf951e335afb289353dc249e82926178eac7ded78',
-                },
+                tokenAddress: '0xf951e335afb289353dc249e82926178eac7ded78',
                 sourceUrl: 'https://v3.svc.swellnetwork.io/api/tokens/sweth/apr',
             },
             wjAURA: {
-                tokens: {
-                    wjAURA: '0x198d7387fa97a73f05b8578cdeff8f2a1f34cd1f',
-                },
+                tokenAddress: '0x198d7387fa97a73f05b8578cdeff8f2a1f34cd1f',
                 sourceUrl: 'https://data.jonesdao.io/api/v1/jones/apy-wjaura',
                 path: 'wjauraApy',
-            },
-            overnight: {
-                tokens: {
-                    lpUsdcUsdPlus: '0x1aafc31091d93c3ff003cff5d2d8f7ba2e728425',
-                    UsdcUsdPlus: '0x6933ec1ca55c06a894107860c92acdfd2dd8512f',
-                },
-                sourceUrl: 'https://app.overnight.fi/api/balancer/week/apr',
-                group: 'OVERNIGHT',
-                scale: 1,
             },
         },
     },

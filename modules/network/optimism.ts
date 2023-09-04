@@ -182,32 +182,24 @@ const optimismNetworkData: NetworkData = {
             },
         },
         defaultHandlers: {
-            stEth: {
-                tokens: {
-                    wstETH: '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
-                },
+            wstEth: {
+                tokenAddress: '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
                 sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
                 path: 'data.smaApr',
             },
             rETH: {
-                tokens: {
-                    rETH: '0x9bcef72be871e61ed4fbbc7630889bee758eb81d',
-                },
+                tokenAddress: '0x9bcef72be871e61ed4fbbc7630889bee758eb81d',
                 sourceUrl: 'https://drop-api.stafi.io/reth/v1/poolData',
                 path: 'data.stakeApr',
             },
             overnightDAIPlus: {
-                tokens: {
-                    DAIPlus: '0x0b8f31480249cc717081928b8af733f45f6915bb',
-                },
+                tokenAddress: '0x0b8f31480249cc717081928b8af733f45f6915bb',
                 sourceUrl: 'https://api.overnight.fi/optimism/dai+/fin-data/avg-apr/week',
                 path: 'value',
                 group: 'OVERNIGHT',
             },
             overnightUSDPlus: {
-                tokens: {
-                    USDPlus: '0xa348700745d249c3b49d2c2acac9a5ae8155f826',
-                },
+                tokenAddress: '0xa348700745d249c3b49d2c2acac9a5ae8155f826',
                 sourceUrl: 'https://api.overnight.fi/optimism/usd+/fin-data/avg-apr/week',
                 path: 'value',
                 group: 'OVERNIGHT',

@@ -12,7 +12,7 @@ export interface IbAprConfig {
     tranchess?: TranchessAprConfig;
     yearn?: YearnAprConfig;
     defaultHandlers?: DefaultHandlerAprConfig;
-    fixed?: FixedAprConfig;
+    fixedAprHandler?: FixedAprConfig;
 }
 
 export interface AaveAprConfig {
@@ -78,7 +78,6 @@ export interface IdleAprConfig {
 }
 
 export interface OvixAprConfig {
-    rpcUrl: string;
     tokens: {
         [tokenName: string]: {
             yieldAddress: string;
@@ -111,7 +110,6 @@ export interface ReaperAprConfig {
 }
 
 export interface TesseraAprConfig {
-    rpcUrl: string;
     tokens: {
         [tokenName: string]: {
             tesseraPoolAddress: string;
@@ -144,9 +142,7 @@ export interface YearnAprConfig {
 export interface DefaultHandlerAprConfig {
     [tokenName: string]: {
         sourceUrl: string;
-        tokens: {
-            [tokenName: string]: string;
-        };
+        tokenAddress: string;
         path?: string;
         scale?: number;
         group?: string;

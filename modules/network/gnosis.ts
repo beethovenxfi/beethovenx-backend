@@ -96,18 +96,12 @@ const gnosisNetworkData: NetworkData = {
     },
     ibAprConfig: {
         defaultHandlers: {
-            stETH: {
-                tokens: {
-                    wstETH: '0x6c76971f98945ae98dd7d4dfca8711ebea946ea6',
-                },
+            wstETH: {
+                tokenAddress: '0x6c76971f98945ae98dd7d4dfca8711ebea946ea6',
                 sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
                 path: 'data.smaApr',
             },
         },
-    },
-    lido: {
-        wstEthAprEndpoint: '',
-        wstEthContract: '',
     },
     datastudio: {
         main: {

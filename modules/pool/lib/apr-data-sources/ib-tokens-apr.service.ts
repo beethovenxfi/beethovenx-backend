@@ -70,12 +70,10 @@ export class IbTokensAprService implements PoolAprService {
                             : aprAfterFees * (1 - protocolYieldFeePercentage);
                 }
 
-                // yieldType is LINEAR_BOOSTED if its in the wrappedLinearTokens list
-                const yieldType: PrismaPoolAprType = this.ibTokensAprHandlers.wrappedLinearTokens.includes(
-                    token.address,
-                )
-                    ? 'LINEAR_BOOSTED'
-                    : 'IB_YIELD';
+                // yieldType is IB_YIELD if its in the ibYieledTokens list
+                const yieldType: PrismaPoolAprType = this.ibTokensAprHandlers.ibYieledTokens.includes(token.address)
+                    ? 'IB_YIELD'
+                    : 'LINEAR_BOOSTED';
 
                 const itemId = `${pool.id}-${token.token.symbol}-yield-apr`;
 

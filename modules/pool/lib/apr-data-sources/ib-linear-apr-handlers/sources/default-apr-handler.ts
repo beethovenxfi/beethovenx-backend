@@ -1,11 +1,10 @@
 import axios from 'axios';
 
 import { AprHandler } from '../ib-linear-apr-handlers';
+import * as Sentry from '@sentry/node';
 
 export class DefaultAprHandler implements AprHandler {
-    tokens: {
-        [tokenName: string]: string;
-    };
+    tokenAddress: string;
     url: string;
     path: string;
     scale: number;
@@ -13,14 +12,12 @@ export class DefaultAprHandler implements AprHandler {
 
     constructor(aprHandlerConfig: {
         sourceUrl: string;
-        tokens: {
-            [tokenName: string]: string;
-        };
+        tokenAddress: string;
         path?: string;
         scale?: number;
         group?: string;
     }) {
-        this.tokens = aprHandlerConfig.tokens;
+        this.tokenAddress = aprHandlerConfig.tokenAddress;
         this.url = aprHandlerConfig.sourceUrl;
         this.path = aprHandlerConfig.path ?? '';
         this.scale = aprHandlerConfig.scale ?? 100;
@@ -33,12 +30,10 @@ export class DefaultAprHandler implements AprHandler {
             const value = this.path === '' ? data : this.getValueFromPath(data, this.path);
             const scaledValue = parseFloat(value) / this.scale;
 
-            return Object.values(this.tokens).reduce((acc, token) => {
-                acc[token] = scaledValue;
-                return acc;
-            }, {} as { [key: string]: number });
+            return [this.tokenAddress, scaledValue];
         } catch (error) {
             console.error(`Failed to fetch APRs in url ${this.url}:`, error);
+            Sentry.captureException(`Failed to fetch APRs in url ${this.url}: ${error}`);
             return {};
         }
     }

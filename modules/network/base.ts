@@ -76,12 +76,11 @@ const baseNetworkData: NetworkData = {
     },
     ibAprConfig: {
         defaultHandlers: {
-            stETH: {
-                tokens: {
-                    wstETH: '',
-                },
-                sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
-                path: 'data.smaApr',
+            cbETH: {
+                tokenAddress: '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22',
+                sourceUrl: 'https://api.exchange.coinbase.com/wrapped-assets/CBETH/',
+                path: 'apy',
+                scale: 1,
             },
         },
     },
@@ -103,10 +102,6 @@ const baseNetworkData: NetworkData = {
             gasPrice: BigNumber.from(10),
             swapGas: BigNumber.from('1000000'),
         },
-    },
-    lido: {
-        wstEthAprEndpoint: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
-        wstEthContract: '',
     },
     monitoring: {
         main: {

@@ -188,31 +188,23 @@ const polygonNetworkData: NetworkData = {
             },
         },
         defaultHandlers: {
-            stETH: {
-                tokens: {
-                    wstETH: '0x03b54a6e9a984069379fae1a4fc4dbae93b3bccd',
-                },
+            wstETH: {
+                tokenAddress: '0x03b54a6e9a984069379fae1a4fc4dbae93b3bccd',
                 sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
                 path: 'data.smaApr',
             },
             stMATIC: {
-                tokens: {
-                    stMATIC: '0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4',
-                },
+                tokenAddress: '0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4',
                 sourceUrl: 'https://polygon.lido.fi/api/stats',
                 path: 'apr',
             },
             MATICX: {
-                tokens: {
-                    MATICX: '0xfa68fb4628dff1028cfec22b4162fccd0d45efb6',
-                },
+                tokenAddress: '0xfa68fb4628dff1028cfec22b4162fccd0d45efb6',
                 sourceUrl: 'https://universe.staderlabs.com/polygon/apy',
                 path: 'value',
             },
             wbETH: {
-                tokens: {
-                    wbETH: '0xa2e3356610840701bdf5611a53974510ae27e2e1',
-                },
+                tokenAddress: '0xa2e3356610840701bdf5611a53974510ae27e2e1',
                 sourceUrl:
                     'https://www.binance.com/bapi/earn/v1/public/pos/cftoken/project/rewardRateList?projectId=BETH',
                 path: 'data.0.rewardRate',

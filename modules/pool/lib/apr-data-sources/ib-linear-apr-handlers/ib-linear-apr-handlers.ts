@@ -15,15 +15,15 @@ import { IbAprConfig } from '../../../../network/apr-config-types';
 
 export class IbLinearAprHandlers {
     private handlers: AprHandler[] = [];
-    //List of addresses of wrappedBoostedTokens, used to check what is LINEAR_BOOSTED APR and what is IB_YIELD APR
-    wrappedLinearTokens: string[] = [];
+    //List of addresses of any IB Yield tokens (such as reth, wsteth), used to check what is LINEAR_BOOSTED APR and what is IB_YIELD APR
+    ibYieledTokens: string[] = [];
 
     fixedAprTokens?: { [tokenName: string]: { address: string; value: number; group?: string } };
 
     constructor(aprConfig: IbAprConfig) {
         this.handlers = this.buildAprHandlers(aprConfig);
-        this.wrappedLinearTokens = this.buildWrappedLinearTokens(aprConfig);
-        this.fixedAprTokens = aprConfig.fixed;
+        this.ibYieledTokens = this.buildIbYieldTokens(aprConfig);
+        this.fixedAprTokens = aprConfig.fixedAprHandler;
     }
 
     buildAprHandlers(aprConfig: IbAprConfig) {
@@ -91,30 +91,33 @@ export class IbLinearAprHandlers {
         return handlers;
     }
 
-    // TODO rethink that one
-    buildWrappedLinearTokens(aprConfig: IbAprConfig): string[] {
+    // Any IB Yield tokens (such as rETH, wstETH) need to be added here. Linear Wrapped Tokens must NOT be added here.
+    buildIbYieldTokens(aprConfig: IbAprConfig): string[] {
+        const ibYieldTokenNamesForDefaultHandler = [
+            'rEth',
+            'stETH',
+            'wstETH',
+            'cbETH',
+            'sfrxETH',
+            'USDR',
+            'swETH',
+            'wjAURA',
+            'qETH',
+            'ankrETH',
+            'ankrFTM',
+            'sFTMx',
+            'stMATIC',
+            'MATICX',
+            'wbETH',
+        ].map((token) => token.toLowerCase());
+
         return [
-            ...Object.values(aprConfig?.aave?.v2?.tokens?.USDC?.wrappedTokens || {}),
-            ...Object.values(aprConfig?.aave?.v3?.tokens?.USDC?.wrappedTokens || {}),
-            ...Object.values(aprConfig?.aave?.v2?.tokens?.USDT?.wrappedTokens || {}),
-            ...Object.values(aprConfig?.aave?.v3?.tokens?.USDT?.wrappedTokens || {}),
-            ...Object.values(aprConfig?.aave?.v2?.tokens?.DAI?.wrappedTokens || {}),
-            ...Object.values(aprConfig?.aave?.v3?.tokens?.DAI?.wrappedTokens || {}),
-            ...Object.values(aprConfig?.aave?.v3?.tokens?.wETH?.wrappedTokens || {}),
-            ...Object.values(aprConfig?.aave?.v3?.tokens?.wMATIC?.wrappedTokens || {}),
-            ...Object.values(aprConfig?.ankr?.tokens || {}).map(({ address }) => address),
-            ...Object.values(aprConfig?.euler?.tokens || {}),
-            ...Object.values(aprConfig?.gearbox?.tokens || {}),
-            ...Object.values(aprConfig?.idle?.tokens || {}).map(({ wrapped4626Address }) => wrapped4626Address),
-            ...Object.values(aprConfig?.ovix?.tokens || {}).map(({ wrappedAddress }) => wrappedAddress),
-            ...Object.values(aprConfig?.tessera?.tokens || {}).map(({ tokenAddress }) => tokenAddress),
-            ...Object.values(aprConfig?.tranchess?.tokens || {}).map(({ address }) => address),
-            ...Object.values(aprConfig?.tetu?.tokens || {}),
-            ...Object.values(
-                Object.entries(aprConfig?.defaultHandlers || {})
-                    //Filtering out handlers that are not LINEAR_BOOSTED
-                    .filter(([key, _]) => ['rETH', 'USDR', 'swETH', 'wjAURA', 'qETH'].includes(key))
-                    .reduce((acc, [_, value]) => ({ ...acc, ...value.tokens }), {}) as { [p: string]: string },
+            ...Object.values(aprConfig?.ankr?.tokens || {}).map((token) => token.address),
+            ...Object.keys(aprConfig?.defaultHandlers || {}).filter((handler) =>
+                ibYieldTokenNamesForDefaultHandler.includes(handler.toLowerCase()),
+            ),
+            ...Object.keys(aprConfig?.fixedAprHandler || {}).filter((handler) =>
+                ibYieldTokenNamesForDefaultHandler.includes(handler.toLowerCase()),
             ),
         ];
     }

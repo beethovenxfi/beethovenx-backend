@@ -242,7 +242,7 @@ const fantomNetworkData: NetworkData = {
         yearn: {
             sourceUrl: 'https://d28fcsszptni1s.cloudfront.net/v1/chains/250/vaults/all',
         },
-        fixed: {
+        fixedAprHandler: {
             sFTMx: {
                 address: '0xd7028092c830b5c8fce061af2e593413ebbc1fc1',
                 value: 0.046,

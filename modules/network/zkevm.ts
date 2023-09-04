@@ -100,7 +100,6 @@ const zkevmNetworkData: NetworkData = {
     },
     ibAprConfig: {
         ovix: {
-            rpcUrl: 'https://zkevm-rpc.com',
             tokens: {
                 USDT: {
                     yieldAddress: '0xad41c77d99e282267c1492cdefe528d7d5044253',
@@ -113,10 +112,8 @@ const zkevmNetworkData: NetworkData = {
             },
         },
         defaultHandlers: {
-            stETH: {
-                tokens: {
-                    wstETH: '0x5d8cff95d7a57c0bf50b30b43c7cc0d52825d4a9',
-                },
+            wstETH: {
+                tokenAddress: '0x5d8cff95d7a57c0bf50b30b43c7cc0d52825d4a9',
                 sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
                 path: 'data.smaApr',
             },
