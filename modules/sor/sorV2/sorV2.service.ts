@@ -7,15 +7,12 @@ import {
     SwapKind,
     sorParseRawPools,
     RawStablePool,
-    RawLinearPool,
     RawWeightedPool,
-    RawComposableStablePool,
     RawMetaStablePool,
     Swap as SwapSdk,
     RawPool,
     TokenAmount,
 } from '@balancer/sdk';
-import { parseFixed } from '@ethersproject/bignumber';
 import cloneDeep from 'lodash/cloneDeep';
 import { GqlSorSwapType, GqlSwap, GqlSorGetSwapsResponse, GqlPoolMinimal, GqlSorSwapRoute } from '../../../schema';
 import { PrismaPoolType, PrismaToken } from '@prisma/client';
@@ -37,6 +34,7 @@ import { SwapInfoRoute, SwapTypes, Swap, bnum, SwapInfoRouteHop } from '@balance
 import { BigNumber } from 'ethers';
 import { oldBnumScale } from '../../big-number/old-big-number';
 import { mapRoutes } from './beetsHelpers';
+import { poolsToIgnore } from '../constants';
 
 const ALL_BASEPOOLS_CACHE_KEY = `basePools:all`;
 
@@ -342,8 +340,9 @@ export class SorV2Service implements SwapService {
                 },
                 NOT: {
                     id: {
-                        in: networkContext.data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].poolIdsToExclude,
+                        in: [...networkContext.data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].poolIdsToExclude, ...poolsToIgnore],
                     },
+                    type: 'LINEAR' // Linear pools are sunset so ignore to avoid issues related to lack of support
                 },
             },
             include: prismaPoolWithDynamic.include,
@@ -353,27 +352,12 @@ export class SorV2Service implements SwapService {
     }
 
     /**
-     * Remove linear pools that cause issues because of price rate.
-     * @param pools
-     */
-    private filterLinearPoolsWithZeroRate(pools: PrismaPoolWithDynamic[]): PrismaPoolWithDynamic[] {
-        // TODO Is this still an issue?
-        // 0x3c640f0d3036ad85afa2d5a9e32be651657b874f00000000000000000000046b is a linear pool with priceRate = 0.0 for some tokens which causes issues with b-sdk
-        return pools.filter((p) => {
-            const isLinearPriceRateOk =
-                p.type === 'LINEAR' ? !p.tokens.some((t) => t.dynamicData?.priceRate === '0.0') : true;
-            return isLinearPriceRateOk;
-        });
-    }
-
-    /**
      * Map Prisma pools to b-sdk RawPool.
      * @param pools
      * @returns
      */
     private mapToRawPools(pools: PrismaPoolWithDynamic[]): RawPool[] {
-        const filteredPools = this.filterLinearPoolsWithZeroRate(pools);
-        return filteredPools.map((prismaPool) => {
+        return pools.map((prismaPool) => {
             // b-sdk: src/data/types.ts
             let rawPool: RawPool = {
                 id: prismaPool.id as Address,
@@ -419,18 +403,6 @@ export class SorV2Service implements SwapService {
                     }),
                 } as RawMetaStablePool;
             }
-            if (rawPool.poolType === 'Linear') {
-                rawPool = {
-                    ...rawPool,
-                    mainIndex: prismaPool.linearData?.mainIndex,
-                    wrappedIndex: prismaPool.linearData?.wrappedIndex,
-                    lowerTarget: prismaPool.linearDynamicData?.lowerTarget,
-                    upperTarget: prismaPool.linearDynamicData?.upperTarget,
-                    tokens: rawPool.tokens.map((t, i) => {
-                        return { ...t, priceRate: prismaPool.tokens[i].dynamicData?.priceRate };
-                    }),
-                } as RawLinearPool;
-            }
             return rawPool;
         });
     }
@@ -468,8 +440,6 @@ export class SorV2Service implements SwapService {
             case PrismaPoolType.PHANTOM_STABLE:
                 // Composablestables are PHANTOM_STABLE in Prisma. b-sdk treats Phantoms as ComposableStable.
                 return 'ComposableStable';
-            case PrismaPoolType.LINEAR:
-                return 'Linear';
             default:
                 return type;
         }
