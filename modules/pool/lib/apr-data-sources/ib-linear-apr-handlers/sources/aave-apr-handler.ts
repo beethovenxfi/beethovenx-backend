@@ -1,4 +1,5 @@
 import axios from 'axios';
+import * as Sentry from '@sentry/node';
 import { AprHandler } from '../ib-linear-apr-handlers';
 
 export class AaveAprHandler implements AprHandler {
@@ -84,6 +85,7 @@ export class AaveAprHandler implements AprHandler {
             return aprEntries;
         } catch (e) {
             console.error(`Failed to fetch Aave APR in subgraph ${this.subgraphUrl}:`, e);
+            Sentry.captureException(`Aave IB APR handler failed: ${e}`);
             return {};
         }
     }

@@ -4,6 +4,7 @@ import { abi } from './abis/tesseraPool';
 import { AprHandler } from '../ib-linear-apr-handlers';
 import { networkContext } from '../../../../../network/network-context.service';
 import { TesseraAprConfig } from '../../../../../network/apr-config-types';
+import * as Sentry from '@sentry/node';
 
 export class TesseraAprHandler implements AprHandler {
     tokens: {
@@ -39,6 +40,7 @@ export class TesseraAprHandler implements AprHandler {
             return Object.fromEntries(aprEntries);
         } catch (error) {
             console.error('Failed to fetch Tessera APR:', error);
+            Sentry.captureException(`Tessera IB APR handler failed: ${error}`);
             return {};
         }
     }

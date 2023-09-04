@@ -4,6 +4,7 @@ import ReaperCryptStrategyAbi from './abis/ReaperCryptStrategy.json';
 import axios from 'axios';
 import ReaperCryptAbi from './abis/ReaperCrypt.json';
 import { ReaperAprConfig } from '../../../../../network/apr-config-types';
+import * as Sentry from '@sentry/node';
 
 const APR_PERCENT_DIVISOR = 10_000;
 
@@ -35,74 +36,86 @@ export class ReaperCryptAprHandler implements AprHandler {
         let singleStrategyAprs = {};
         this.wstETHBaseApr = await this.getWstEthBaseApr();
         if (this.tokensWithSubgraphSource !== undefined) {
-            multiStrategyAprs = await this.getMultiStrategyAprFromSubgraph(this.tokensWithSubgraphSource);
+            multiStrategyAprs = await this.getAprFromSubgraph(this.tokensWithSubgraphSource);
         }
         if (this.tokensWithOnChainSource !== undefined) {
-            singleStrategyAprs = await this.getSingleStrategyCryptApr(this.tokensWithOnChainSource);
+            singleStrategyAprs = await this.getOnChainCryptApr(this.tokensWithOnChainSource);
         }
         return { ...multiStrategyAprs, ...singleStrategyAprs };
     }
 
-    private async getSingleStrategyCryptApr(tokens: {
+    private async getOnChainCryptApr(tokens: {
         [tokenName: string]: { address: string; isSftmX?: boolean; isWstETH?: boolean };
     }): Promise<{ [tokenAddress: string]: number }> {
         const aprs: { [tokenAddress: string]: number } = {};
         for (const { address, isSftmX, isWstETH } of Object.values(tokens)) {
-            const tokenContract = getContractAt(address, ReaperCryptAbi);
-            const strategyAddress = await tokenContract.strategy();
-            const strategyContract = getContractAt(strategyAddress, ReaperCryptStrategyAbi);
-            let avgAprAcrossXHarvests = 0;
+            try {
+                const tokenContract = getContractAt(address, ReaperCryptAbi);
+                const strategyAddress = await tokenContract.strategy();
+                const strategyContract = getContractAt(strategyAddress, ReaperCryptStrategyAbi);
+                let avgAprAcrossXHarvests = 0;
 
-            avgAprAcrossXHarvests =
-                (await strategyContract.averageAPRAcrossLastNHarvests(this.averageAPRAcrossLastNHarvests)) /
-                APR_PERCENT_DIVISOR;
-            // TODO hanlde this outside
-            if (isSftmX) {
-                avgAprAcrossXHarvests = avgAprAcrossXHarvests * (1 + sFTMxBaseApr);
+                avgAprAcrossXHarvests =
+                    (await strategyContract.averageAPRAcrossLastNHarvests(this.averageAPRAcrossLastNHarvests)) /
+                    APR_PERCENT_DIVISOR;
+                // TODO hanlde this outside
+                if (isSftmX) {
+                    avgAprAcrossXHarvests = avgAprAcrossXHarvests * (1 + sFTMxBaseApr);
+                }
+                if (isWstETH) {
+                    avgAprAcrossXHarvests = avgAprAcrossXHarvests * (1 + this.wstETHBaseApr);
+                }
+                aprs[address] = avgAprAcrossXHarvests;
+            } catch (error) {
+                console.error(`Reaper IB APR handler failed for onChain source: `, error);
+                Sentry.captureException(`Reaper IB APR handler failed for onChain source: ${error}`);
+                return {};
             }
-            if (isWstETH) {
-                avgAprAcrossXHarvests = avgAprAcrossXHarvests * (1 + this.wstETHBaseApr);
-            }
-            aprs[address] = avgAprAcrossXHarvests;
         }
 
         return aprs;
     }
 
-    private async getMultiStrategyAprFromSubgraph(tokens: {
+    private async getAprFromSubgraph(tokens: {
         [tokenName: string]: { address: string; isSftmX?: boolean; isWstETH?: boolean };
     }): Promise<{ [tokenAddress: string]: number }> {
-        const requestQuery = {
-            operationName: 'getVaults',
-            query: this.query,
-            variables: {
-                ids: Object.values(tokens).map(({ address }) => address),
-            },
-        };
-        const {
-            data: { data },
-        }: { data: { data: MultiStratResponse } } = await axios({
-            method: 'post',
-            url: this.subgraphUrl,
-            data: JSON.stringify(requestQuery),
-        });
-        return data.vaults.reduce((acc, { id, apr }) => {
-            const token = Object.values(tokens).find((token) => token.address.toLowerCase() === id.toLowerCase());
-            if (!token) {
-                return acc;
-            }
-            let tokenApr = parseFloat(apr) / APR_PERCENT_DIVISOR;
-            if (token.isSftmX) {
-                tokenApr = tokenApr * (1 + sFTMxBaseApr);
-            }
-            if (token.isWstETH) {
-                tokenApr = tokenApr * (1 + this.wstETHBaseApr);
-            }
-            return {
-                ...acc,
-                [id]: tokenApr,
+        try {
+            const requestQuery = {
+                operationName: 'getVaults',
+                query: this.query,
+                variables: {
+                    ids: Object.values(tokens).map(({ address }) => address),
+                },
             };
-        }, {});
+            const {
+                data: { data },
+            }: { data: { data: MultiStratResponse } } = await axios({
+                method: 'post',
+                url: this.subgraphUrl,
+                data: JSON.stringify(requestQuery),
+            });
+            return data.vaults.reduce((acc, { id, apr }) => {
+                const token = Object.values(tokens).find((token) => token.address.toLowerCase() === id.toLowerCase());
+                if (!token) {
+                    return acc;
+                }
+                let tokenApr = parseFloat(apr) / APR_PERCENT_DIVISOR;
+                if (token.isSftmX) {
+                    tokenApr = tokenApr * (1 + sFTMxBaseApr);
+                }
+                if (token.isWstETH) {
+                    tokenApr = tokenApr * (1 + this.wstETHBaseApr);
+                }
+                return {
+                    ...acc,
+                    [id]: tokenApr,
+                };
+            }, {});
+        } catch (error) {
+            console.error(`Reaper IB APR handler failed for subgraph source: `, error);
+            Sentry.captureException(`Reaper IB APR handler failed for subgraph source: ${error}`);
+            return {};
+        }
     }
 
     private async getWstEthBaseApr(): Promise<number> {

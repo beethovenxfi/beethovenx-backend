@@ -1,6 +1,7 @@
 import { BeefyAprConfig } from '../../../../../network/apr-config-types';
 import { AprHandler } from '../ib-linear-apr-handlers';
 import axios from 'axios';
+import * as Sentry from '@sentry/node';
 
 export class BeefyAprHandler implements AprHandler {
     tokens: {
@@ -18,12 +19,18 @@ export class BeefyAprHandler implements AprHandler {
     }
 
     async getAprs(): Promise<{ [p: string]: number }> {
-        const { data: aprData } = await axios.get<VaultApr>(this.sourceUrl);
-        const aprs: { [tokenAddress: string]: number } = {};
-        for (const { address, vaultId } of Object.values(this.tokens)) {
-            aprs[address] = aprData[vaultId].vaultApr;
+        try {
+            const { data: aprData } = await axios.get<VaultApr>(this.sourceUrl);
+            const aprs: { [tokenAddress: string]: number } = {};
+            for (const { address, vaultId } of Object.values(this.tokens)) {
+                aprs[address] = aprData[vaultId].vaultApr;
+            }
+            return aprs;
+        } catch (error) {
+            console.error(`Beefy IB APR hanlder failed: `, error);
+            Sentry.captureException(`Beefy IB APR handler failed: ${error}`);
+            return {};
         }
-        return aprs;
     }
 }
 

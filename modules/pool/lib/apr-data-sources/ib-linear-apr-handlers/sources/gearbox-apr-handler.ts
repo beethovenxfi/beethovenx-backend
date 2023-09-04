@@ -1,4 +1,5 @@
 import axios from 'axios';
+import * as Sentry from '@sentry/node';
 
 import { AprHandler } from '../ib-linear-apr-handlers';
 import { GearBoxAprConfig } from '../../../../../network/apr-config-types';
@@ -26,6 +27,7 @@ export class GearboxAprHandler implements AprHandler {
             return Object.fromEntries(aprEntries);
         } catch (error) {
             console.error('Failed to fetch Gearbox APR:', error);
+            Sentry.captureException(`Gearbox IB APR handler failed: ${error}`);
             return {};
         }
     }

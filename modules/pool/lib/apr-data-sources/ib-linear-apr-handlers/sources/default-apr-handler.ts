@@ -33,7 +33,7 @@ export class DefaultAprHandler implements AprHandler {
             return [this.tokenAddress, scaledValue];
         } catch (error) {
             console.error(`Failed to fetch APRs in url ${this.url}:`, error);
-            Sentry.captureException(`Failed to fetch APRs in url ${this.url}: ${error}`);
+            Sentry.captureException(`Failed to fetch default IB APRs in url ${this.url}: ${error}`);
             return {};
         }
     }

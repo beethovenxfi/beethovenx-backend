@@ -2,6 +2,7 @@ import axios from 'axios';
 
 import { AprHandler } from '../ib-linear-apr-handlers';
 import { TetuAprConfig } from '../../../../../network/apr-config-types';
+import * as Sentry from '@sentry/node';
 
 export class TetuAprHandler implements AprHandler {
     sourceUrl: string;
@@ -25,6 +26,7 @@ export class TetuAprHandler implements AprHandler {
             return Object.fromEntries(aprs);
         } catch (error) {
             console.error('Failed to fetch Tetu APR:', error);
+            Sentry.captureException(`Tetu IB APR handler failed: ${error}`);
             return {};
         }
     }

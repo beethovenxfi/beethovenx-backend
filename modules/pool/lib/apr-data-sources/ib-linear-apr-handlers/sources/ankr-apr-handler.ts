@@ -1,4 +1,5 @@
 import axios from 'axios';
+import * as Sentry from '@sentry/node';
 import { AprHandler } from '../ib-linear-apr-handlers';
 import { AnkrAprConfig } from '../../../../../network/apr-config-types';
 
@@ -10,7 +11,7 @@ export class AnkrAprHandler implements AprHandler {
         };
     };
     url: string;
-    readonly group = 'ANKR';
+    readonly group = undefined;
 
     constructor(aprHandlerConfig: AnkrAprConfig) {
         this.tokens = aprHandlerConfig.tokens;
@@ -33,6 +34,7 @@ export class AnkrAprHandler implements AprHandler {
             return aprs;
         } catch (error) {
             console.error('Failed to fetch Ankr APR:', error);
+            Sentry.captureException(`Ankr IB APR handler failed: ${error}`);
             return {};
         }
     }
