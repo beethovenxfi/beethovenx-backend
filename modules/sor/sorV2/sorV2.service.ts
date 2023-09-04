@@ -379,6 +379,9 @@ export class SorV2Service implements SwapService {
                         balance: t.dynamicData?.balance as unknown as HumanAmount,
                     };
                 }),
+                isPaused: !!prismaPool.dynamicData?.isPaused,
+                inRecoveryMode: !!prismaPool.dynamicData?.isInRecoveryMode,
+                name: 'n/a'
             };
             if (['Weighted', 'Investment', 'LiquidityBootstrapping'].includes(rawPool.poolType)) {
                 rawPool = {
