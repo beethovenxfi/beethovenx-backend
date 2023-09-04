@@ -10,6 +10,7 @@ export class TranchessAprHandler implements AprHandler {
         [tokenName: string]: {
             address: string;
             underlyingAssetName: string;
+            isIbYield?: boolean;
         };
     };
     readonly group = 'TRANCHESS';
@@ -23,11 +24,14 @@ export class TranchessAprHandler implements AprHandler {
         try {
             const { data } = await axios.get('https://tranchess.com/eth/api/v3/funds');
             // const [{ weeklyAveragePnlPercentage }] = data as { weeklyAveragePnlPercentage: string }[];
-            const aprEntries = Object.values(this.tokens).map(({ address, underlyingAssetName }) => {
+            const aprEntries = Object.values(this.tokens).map(({ address, underlyingAssetName, isIbYield }) => {
                 const weeklyAveragePnlPercentage = (
                     data as { weeklyAveragePnlPercentage: string; name: string }[]
                 ).filter(({ name }) => name === underlyingAssetName)[0].weeklyAveragePnlPercentage;
-                return [address, (365 * Number(weeklyAveragePnlPercentage)) / 1e18];
+                return [
+                    address,
+                    { apr: (365 * Number(weeklyAveragePnlPercentage)) / 1e18, isIbYield: isIbYield ?? false },
+                ];
             });
             // The key weeklyAveragePnlPercentage is the daily yield of qETH in 18 decimals, timing 365 should give you the APR.
             return Object.fromEntries(aprEntries);

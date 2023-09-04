@@ -100,6 +100,7 @@ const gnosisNetworkData: NetworkData = {
                 tokenAddress: '0x6c76971f98945ae98dd7d4dfca8711ebea946ea6',
                 sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
                 path: 'data.smaApr',
+                isIbYield: true,
             },
         },
     },

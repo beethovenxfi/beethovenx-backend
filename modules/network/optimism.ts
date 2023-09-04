@@ -16,7 +16,6 @@ import { SanityContentService } from '../content/sanity-content.service';
 import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import { coingeckoService } from '../coingecko/coingecko.service';
 import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/coingecko-price-handler.service';
-import { BeefyVaultAprService } from '../pool/lib/apr-data-sources/beefy-vault-apr.service copy';
 import { IbTokensAprService } from '../pool/lib/apr-data-sources/ib-tokens-apr.service';
 import { env } from '../../app/env';
 
@@ -186,11 +185,13 @@ const optimismNetworkData: NetworkData = {
                 tokenAddress: '0x1f32b1c2345538c0c6f582fcb022739c4a194ebb',
                 sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
                 path: 'data.smaApr',
+                isIbYield: true,
             },
             rETH: {
                 tokenAddress: '0x9bcef72be871e61ed4fbbc7630889bee758eb81d',
                 sourceUrl: 'https://drop-api.stafi.io/reth/v1/poolData',
                 path: 'data.stakeApr',
+                isIbYield: true,
             },
             overnightDAIPlus: {
                 tokenAddress: '0x0b8f31480249cc717081928b8af733f45f6915bb',

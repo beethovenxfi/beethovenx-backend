@@ -10,6 +10,7 @@ export class AaveAprHandler implements AprHandler {
             wrappedTokens: {
                 [tokenName: string]: string;
             };
+            isIbYield?: boolean;
         };
     };
     subgraphUrl: string;
@@ -39,6 +40,7 @@ export class AaveAprHandler implements AprHandler {
                 wrappedTokens: {
                     [wrappedTokenName: string]: string;
                 };
+                isIbYield?: boolean;
             };
         };
     }) {
@@ -76,9 +78,11 @@ export class AaveAprHandler implements AprHandler {
                 ]),
             );
             const aprEntries = Object.values(this.tokens)
-                .map(({ wrappedTokens, underlyingAssetAddress }) => {
+                .map(({ wrappedTokens, underlyingAssetAddress, isIbYield }) => {
                     const apr = aprsByUnderlyingAddress[underlyingAssetAddress];
-                    return Object.values(wrappedTokens).map((wrappedTokenAddress) => ({ [wrappedTokenAddress]: apr }));
+                    return Object.values(wrappedTokens).map((wrappedTokenAddress) => ({
+                        [wrappedTokenAddress]: { apr, isIbYield: isIbYield ?? false },
+                    }));
                 })
                 .flat()
                 .reduce((acc, curr) => ({ ...acc, ...curr }), {});

@@ -189,17 +189,17 @@ export const mainnetNetworkData: NetworkData = {
         euler: {
             subgraphUrl: 'https://api.thegraph.com/subgraphs/name/euler-xyz/euler-mainnet',
             tokens: {
-                eUSDC: '0xeb91861f8a4e1c12333f42dce8fb0ecdc28da716',
-                eDAI: '0xe025e3ca2be02316033184551d4d3aa22024d9dc',
-                eUSDT: '0x4d19f33948b99800b6113ff3e83bec9b537c85d2',
-                eFRAX: '0x5484451a88a35cd0878a1be177435ca8a0e4054e',
+                eUSDC: { address: '0xeb91861f8a4e1c12333f42dce8fb0ecdc28da716' },
+                eDAI: { address: '0xe025e3ca2be02316033184551d4d3aa22024d9dc' },
+                eUSDT: { address: '0x4d19f33948b99800b6113ff3e83bec9b537c85d2' },
+                eFRAX: { address: '0x5484451a88a35cd0878a1be177435ca8a0e4054e' },
             },
         },
         gearbox: {
             sourceUrl: 'https://mainnet.gearbox.foundation/api/pools',
             tokens: {
-                dDAI: '0x6cfaf95457d7688022fc53e7abe052ef8dfbbdba',
-                dUSDC: '0xc411db5f5eb3f7d552f9b8454b2d74097ccde6e3',
+                dDAI: { address: '0x6cfaf95457d7688022fc53e7abe052ef8dfbbdba' },
+                dUSDC: { address: '0xc411db5f5eb3f7d552f9b8454b2d74097ccde6e3' },
             },
         },
         idle: {
@@ -248,17 +248,20 @@ export const mainnetNetworkData: NetworkData = {
                 tokenAddress: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
                 sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
                 path: 'data.smaApr',
+                isIbYield: true,
             },
             wstETH: {
                 tokenAddress: '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
                 sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
                 path: 'data.smaApr',
+                isIbYield: true,
             },
             cbETH: {
                 tokenAddress: '0xbe9895146f7af43049ca1c1ae358b0541ea49704',
                 sourceUrl: 'https://api.exchange.coinbase.com/wrapped-assets/CBETH/',
                 path: 'apy',
                 scale: 1,
+                isIbYield: true,
             },
             sfrxETH: {
                 tokenAddress: '0xac3e018457b222d93114458476f3e3416abbe38f',
@@ -269,15 +272,18 @@ export const mainnetNetworkData: NetworkData = {
                 tokenAddress: '0x9559aaa82d9649c7a7b220e7c461d2e74c9a3593',
                 sourceUrl: 'https://drop-api.stafi.io/reth/v1/poolData',
                 path: 'data.stakeApr',
+                isIbYield: true,
             },
             USDR: {
                 tokenAddress: '0xaf0d9d65fc54de245cda37af3d18cbec860a4d4b',
                 sourceUrl: 'http://usdr-api.us-east-1.elasticbeanstalk.com/usdr/apy',
                 path: 'usdr',
+                isIbYield: true,
             },
             swETH: {
                 tokenAddress: '0xf951e335afb289353dc249e82926178eac7ded78',
                 sourceUrl: 'https://v3.svc.swellnetwork.io/api/tokens/sweth/apr',
+                isIbYield: true,
             },
             wjAURA: {
                 tokenAddress: '0x198d7387fa97a73f05b8578cdeff8f2a1f34cd1f',

@@ -152,6 +152,7 @@ const avalancheNetworkData: NetworkData = {
                 ankrAVAX: {
                     address: '0xc3344870d52688874b06d844e0c36cc39fc727f6',
                     serviceName: 'avax',
+                    isIbYield: true,
                 },
             },
         },

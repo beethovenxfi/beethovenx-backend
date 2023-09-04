@@ -4,7 +4,12 @@ import { EulerAprConfig } from '../../../../../network/apr-config-types';
 import * as Sentry from '@sentry/node';
 
 export class EulerAprHandler implements AprHandler {
-    tokens: { [key: string]: string };
+    tokens: {
+        [key: string]: {
+            address: string;
+            isIbYield?: boolean;
+        };
+    };
     subgraphUrl: string;
     readonly group = 'EULER';
 
@@ -32,7 +37,7 @@ export class EulerAprHandler implements AprHandler {
                 operationName: 'getAssetsAPY',
                 query: this.query,
                 variables: {
-                    eTokenAddress_in: Object.values(this.tokens),
+                    eTokenAddress_in: Object.values(this.tokens).map(({ address }) => address),
                 },
             };
 
@@ -47,9 +52,15 @@ export class EulerAprHandler implements AprHandler {
             } = data as EulerResponse;
 
             const aprEntries = assets.map(({ eTokenAddress, supplyAPY }) => [
-                eTokenAddress,
+                eTokenAddress.toLowerCase(),
                 // supplyAPY is 1e27 and apr is in bps (1e4), so all we need is to format to 1e23
-                Number(supplyAPY.slice(0, 27)) / 1e27,
+                {
+                    apr: Number(supplyAPY.slice(0, 27)) / 1e27,
+                    isIbYield:
+                        Object.values(this.tokens).find(
+                            ({ address }) => address.toLowerCase() === eTokenAddress.toLowerCase(),
+                        )?.isIbYield ?? false,
+                },
             ]);
 
             return Object.fromEntries(aprEntries);

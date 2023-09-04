@@ -175,10 +175,12 @@ const fantomNetworkData: NetworkData = {
                 ankrETH: {
                     address: '0x12d8ce035c5de3ce39b1fdd4c1d5a745eaba3b8c',
                     serviceName: 'eth',
+                    isIbYield: true,
                 },
                 ankrFTM: {
                     address: '0xcfc785741dc0e98ad4c9f6394bb9d43cd1ef5179',
                     serviceName: 'ftm',
+                    isIbYield: true,
                 },
             },
         },
@@ -245,7 +247,7 @@ const fantomNetworkData: NetworkData = {
         fixedAprHandler: {
             sFTMx: {
                 address: '0xd7028092c830b5c8fce061af2e593413ebbc1fc1',
-                value: 0.046,
+                apr: 0.046,
             },
         },
     },

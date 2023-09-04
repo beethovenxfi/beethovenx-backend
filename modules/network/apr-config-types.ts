@@ -25,6 +25,7 @@ export interface AaveAprConfig {
                 wrappedTokens: {
                     [wrappedTokenName: string]: string;
                 };
+                isIbYield?: boolean;
             };
         };
     };
@@ -36,6 +37,7 @@ export interface AnkrAprConfig {
         [underlyingAssetName: string]: {
             address: string;
             serviceName: string;
+            isIbYield?: boolean;
         };
     };
 }
@@ -48,6 +50,7 @@ export interface BeefyAprConfig {
             // To get the vaultId, get the vault address from the token contract(token.vault()),
             // and search for the vault address in the link: https://api.beefy.finance/vaults
             vaultId: string;
+            isIbYield?: boolean;
         };
     };
 }
@@ -55,14 +58,20 @@ export interface BeefyAprConfig {
 export interface EulerAprConfig {
     subgraphUrl: string;
     tokens: {
-        [tokenName: string]: string;
+        [tokenName: string]: {
+            address: string;
+            isIbYield?: boolean;
+        };
     };
 }
 
 export interface GearBoxAprConfig {
     sourceUrl: string;
     tokens: {
-        [tokenName: string]: string;
+        [tokenName: string]: {
+            address: string;
+            isIbYield?: boolean;
+        };
     };
 }
 
@@ -73,6 +82,7 @@ export interface IdleAprConfig {
         [tokenName: string]: {
             address: string;
             wrapped4626Address: string;
+            isIbYield?: boolean;
         };
     };
 }
@@ -82,6 +92,7 @@ export interface OvixAprConfig {
         [tokenName: string]: {
             yieldAddress: string;
             wrappedAddress: string;
+            isIbYield?: boolean;
         };
     };
 }
@@ -94,6 +105,7 @@ export interface ReaperAprConfig {
                 address: string;
                 isSftmX?: boolean;
                 isWstETH?: boolean;
+                isIbYield?: boolean;
             };
         };
     };
@@ -104,6 +116,7 @@ export interface ReaperAprConfig {
                 address: string;
                 isSftmX?: boolean;
                 isWstETH?: boolean;
+                isIbYield?: boolean;
             };
         };
     };
@@ -114,6 +127,7 @@ export interface TesseraAprConfig {
         [tokenName: string]: {
             tesseraPoolAddress: string;
             tokenAddress: string;
+            isIbYield?: boolean;
         };
     };
 }
@@ -121,7 +135,10 @@ export interface TesseraAprConfig {
 export interface TetuAprConfig {
     sourceUrl: string;
     tokens: {
-        [tokenName: string]: string;
+        [tokenName: string]: {
+            address: string;
+            isIbYield?: boolean;
+        };
     };
 }
 
@@ -131,12 +148,14 @@ export interface TranchessAprConfig {
         [tokenName: string]: {
             address: string;
             underlyingAssetName: string;
+            isIbYield?: boolean;
         };
     };
 }
 
 export interface YearnAprConfig {
     sourceUrl: string;
+    isIbYield?: boolean;
 }
 
 export interface DefaultHandlerAprConfig {
@@ -146,13 +165,15 @@ export interface DefaultHandlerAprConfig {
         path?: string;
         scale?: number;
         group?: string;
+        isIbYield?: boolean;
     };
 }
 
 export interface FixedAprConfig {
     [tokenName: string]: {
         address: string;
-        value: number;
+        apr: number;
         group?: string;
+        isIbYield?: boolean;
     };
 }

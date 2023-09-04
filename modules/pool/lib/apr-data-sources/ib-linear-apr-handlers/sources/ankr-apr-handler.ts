@@ -8,6 +8,7 @@ export class AnkrAprHandler implements AprHandler {
         [underlyingAssetName: string]: {
             address: string;
             serviceName: string;
+            isIbYield?: boolean;
         };
     };
     url: string;
@@ -18,17 +19,17 @@ export class AnkrAprHandler implements AprHandler {
         this.url = aprHandlerConfig.sourceUrl;
     }
 
-    async getAprs() {
+    async getAprs(): Promise<{ [tokenAddress: string]: { apr: number; isIbYield: boolean } }> {
         try {
             const { data } = await axios.get(this.url);
             const services = (data as { services: { serviceName: string; apy: string }[] }).services;
             const aprs = Object.fromEntries(
-                Object.values(this.tokens).map(({ address, serviceName }) => {
+                Object.values(this.tokens).map(({ address, serviceName, isIbYield }) => {
                     const service = services.find((service) => service.serviceName === serviceName);
                     if (!service) {
                         return [address, 0];
                     }
-                    return [address, parseFloat(service.apy) / 1e2];
+                    return [address, { apr: parseFloat(service.apy) / 1e2, isIbYield: isIbYield ?? false }];
                 }),
             );
             return aprs;

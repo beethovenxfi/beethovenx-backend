@@ -11,6 +11,7 @@ export class TesseraAprHandler implements AprHandler {
         [tokenName: string]: {
             tesseraPoolAddress: string;
             tokenAddress: string;
+            isIbYield?: boolean;
         };
     };
     readonly group = 'TESSERA';
@@ -22,7 +23,7 @@ export class TesseraAprHandler implements AprHandler {
     async getAprs() {
         try {
             let aprEntries = [];
-            for (const { tesseraPoolAddress, tokenAddress } of Object.values(this.tokens)) {
+            for (const { tesseraPoolAddress, tokenAddress, isIbYield } of Object.values(this.tokens)) {
                 try {
                     const contract = new Contract(tesseraPoolAddress, abi, networkContext.provider);
                     const poolsUI = await contract.getPoolsUI();
@@ -31,10 +32,10 @@ export class TesseraAprHandler implements AprHandler {
                     const staked = BigInt(pool.stakedAmount);
                     const reward = BigInt(pool.currentTimeRange.rewardsPerHour) * BigInt(24 * 365);
                     const apr = Number(reward.toString()) / Number(staked.toString());
-                    aprEntries.push([tokenAddress, apr]);
+                    aprEntries.push([tokenAddress, { apr, isIbYield: isIbYield ?? false }]);
                 } catch (error) {
                     console.error('Failed to fetch Tessera Ape Coin APR:', error);
-                    aprEntries.push([tokenAddress, 0]);
+                    aprEntries.push([tokenAddress, { apr: 0, isIbYield: isIbYield ?? false }]);
                 }
             }
             return Object.fromEntries(aprEntries);

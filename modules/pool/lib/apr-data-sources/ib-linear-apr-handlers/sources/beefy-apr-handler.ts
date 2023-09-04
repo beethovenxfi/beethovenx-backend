@@ -8,6 +8,7 @@ export class BeefyAprHandler implements AprHandler {
         [tokenName: string]: {
             address: string;
             vaultId: string;
+            isIbYield?: boolean;
         };
     };
     sourceUrl: string;
@@ -18,12 +19,12 @@ export class BeefyAprHandler implements AprHandler {
         this.sourceUrl = aprConfig.sourceUrl;
     }
 
-    async getAprs(): Promise<{ [p: string]: number }> {
+    async getAprs(): Promise<{ [p: string]: { apr: number; isIbYield: boolean } }> {
         try {
             const { data: aprData } = await axios.get<VaultApr>(this.sourceUrl);
-            const aprs: { [tokenAddress: string]: number } = {};
-            for (const { address, vaultId } of Object.values(this.tokens)) {
-                aprs[address] = aprData[vaultId].vaultApr;
+            const aprs: { [tokenAddress: string]: { apr: number; isIbYield: boolean } } = {};
+            for (const { address, vaultId, isIbYield } of Object.values(this.tokens)) {
+                aprs[address] = { apr: aprData[vaultId].vaultApr, isIbYield: isIbYield ?? false };
             }
             return aprs;
         } catch (error) {

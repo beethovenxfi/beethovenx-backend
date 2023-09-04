@@ -15,14 +15,10 @@ import { IbAprConfig } from '../../../../network/apr-config-types';
 
 export class IbLinearAprHandlers {
     private handlers: AprHandler[] = [];
-    //List of addresses of any IB Yield tokens (such as reth, wsteth), used to check what is LINEAR_BOOSTED APR and what is IB_YIELD APR
-    ibYieledTokens: string[] = [];
-
-    fixedAprTokens?: { [tokenName: string]: { address: string; value: number; group?: string } };
+    fixedAprTokens?: { [tokenName: string]: { address: string; apr: number; group?: string; isIbYield?: boolean } };
 
     constructor(aprConfig: IbAprConfig) {
         this.handlers = this.buildAprHandlers(aprConfig);
-        this.ibYieledTokens = this.buildIbYieldTokens(aprConfig);
         this.fixedAprTokens = aprConfig.fixedAprHandler;
     }
 
@@ -125,19 +121,21 @@ export class IbLinearAprHandlers {
     async fetchAprsFromAllHandlers(): Promise<TokenApr[]> {
         let aprs: TokenApr[] = [];
         for (const handler of this.handlers) {
-            const fetchedResponse: { [key: string]: number } = await handler.getAprs();
-            for (const [address, aprValue] of Object.entries(fetchedResponse)) {
+            const fetchedResponse: { [key: string]: { apr: number; isIbYield: boolean } } = await handler.getAprs();
+            for (const [address, { apr, isIbYield }] of Object.entries(fetchedResponse)) {
                 aprs.push({
-                    val: aprValue,
+                    apr,
+                    isIbYield,
                     group: handler.group,
                     address,
                 });
             }
         }
         if (this.fixedAprTokens) {
-            for (const { address, value, group } of Object.values(this.fixedAprTokens)) {
+            for (const { address, apr, isIbYield, group } of Object.values(this.fixedAprTokens)) {
                 aprs.push({
-                    val: value,
+                    apr,
+                    isIbYield: isIbYield ?? false,
                     group,
                     address,
                 });
@@ -149,11 +147,12 @@ export class IbLinearAprHandlers {
 
 export interface AprHandler {
     group: string | undefined;
-    getAprs(): Promise<{ [tokenAddress: string]: number }>;
+    getAprs(): Promise<{ [tokenAddress: string]: { apr: number; isIbYield: boolean } }>;
 }
 
 export type TokenApr = {
-    val: number;
+    apr: number;
     address: string;
     group?: string;
+    isIbYield: boolean;
 };

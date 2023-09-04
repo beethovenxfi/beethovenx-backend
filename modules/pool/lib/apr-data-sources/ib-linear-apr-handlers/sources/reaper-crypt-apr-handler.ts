@@ -10,8 +10,22 @@ const APR_PERCENT_DIVISOR = 10_000;
 
 const sFTMxBaseApr = 0.046;
 export class ReaperCryptAprHandler implements AprHandler {
-    tokensWithSubgraphSource?: { [tokenName: string]: { address: string; isSftmX?: boolean; isWstETH?: boolean } };
-    tokensWithOnChainSource?: { [tokenName: string]: { address: string; isSftmX?: boolean; isWstETH?: boolean } };
+    tokensWithSubgraphSource?: {
+        [tokenName: string]: {
+            address: string;
+            isSftmX?: boolean;
+            isWstETH?: boolean;
+            isIbYield?: boolean;
+        };
+    };
+    tokensWithOnChainSource?: {
+        [tokenName: string]: {
+            address: string;
+            isSftmX?: boolean;
+            isWstETH?: boolean;
+            isIbYield?: boolean;
+        };
+    };
     subgraphUrl?: string;
     averageAPRAcrossLastNHarvests?: number;
     wstETHBaseApr: number = 0;
@@ -31,7 +45,7 @@ export class ReaperCryptAprHandler implements AprHandler {
         this.averageAPRAcrossLastNHarvests = aprConfig.onchainSource?.averageAPRAcrossLastNHarvests;
     }
 
-    async getAprs(): Promise<{ [p: string]: number }> {
+    async getAprs(): Promise<{ [p: string]: { apr: number; isIbYield: boolean } }> {
         let multiStrategyAprs = {};
         let singleStrategyAprs = {};
         this.wstETHBaseApr = await this.getWstEthBaseApr();
@@ -45,10 +59,10 @@ export class ReaperCryptAprHandler implements AprHandler {
     }
 
     private async getOnChainCryptApr(tokens: {
-        [tokenName: string]: { address: string; isSftmX?: boolean; isWstETH?: boolean };
-    }): Promise<{ [tokenAddress: string]: number }> {
-        const aprs: { [tokenAddress: string]: number } = {};
-        for (const { address, isSftmX, isWstETH } of Object.values(tokens)) {
+        [tokenName: string]: { address: string; isSftmX?: boolean; isWstETH?: boolean; isIbYield?: boolean };
+    }): Promise<{ [tokenAddress: string]: { apr: number; isIbYield: boolean } }> {
+        const aprs: { [tokenAddress: string]: { apr: number; isIbYield: boolean } } = {};
+        for (const { address, isSftmX, isWstETH, isIbYield } of Object.values(tokens)) {
             try {
                 const tokenContract = getContractAt(address, ReaperCryptAbi);
                 const strategyAddress = await tokenContract.strategy();
@@ -65,7 +79,7 @@ export class ReaperCryptAprHandler implements AprHandler {
                 if (isWstETH) {
                     avgAprAcrossXHarvests = avgAprAcrossXHarvests * (1 + this.wstETHBaseApr);
                 }
-                aprs[address] = avgAprAcrossXHarvests;
+                aprs[address] = { apr: avgAprAcrossXHarvests, isIbYield: isIbYield ?? false };
             } catch (error) {
                 console.error(`Reaper IB APR handler failed for onChain source: `, error);
                 Sentry.captureException(`Reaper IB APR handler failed for onChain source: ${error}`);
@@ -77,7 +91,7 @@ export class ReaperCryptAprHandler implements AprHandler {
     }
 
     private async getAprFromSubgraph(tokens: {
-        [tokenName: string]: { address: string; isSftmX?: boolean; isWstETH?: boolean };
+        [tokenName: string]: { address: string; isSftmX?: boolean; isWstETH?: boolean; isIbYield?: boolean };
     }): Promise<{ [tokenAddress: string]: number }> {
         try {
             const requestQuery = {
@@ -108,7 +122,7 @@ export class ReaperCryptAprHandler implements AprHandler {
                 }
                 return {
                     ...acc,
-                    [id]: tokenApr,
+                    [id]: { apr: tokenApr, isIbYield: token.isIbYield ?? false },
                 };
             }, {});
         } catch (error) {
@@ -131,25 +145,3 @@ type MultiStratResponse = {
         apr: string;
     }[];
 };
-interface ReaperCryptAprHandlerConfig {
-    multiStrategy?: {
-        subgraphUrl: string;
-        tokens: {
-            [tokenName: string]: {
-                address: string;
-                isSftmX?: boolean;
-                isWstETH?: boolean;
-            };
-        };
-    };
-    singleStrategy?: {
-        averageAPRAcrossLastNHarvests: number;
-        tokens: {
-            [tokenName: string]: {
-                address: string;
-                isSftmX?: boolean;
-                isWstETH?: boolean;
-            };
-        };
-    };
-}

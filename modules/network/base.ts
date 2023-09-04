@@ -82,6 +82,7 @@ const baseNetworkData: NetworkData = {
                 sourceUrl: 'https://api.exchange.coinbase.com/wrapped-assets/CBETH/',
                 path: 'apy',
                 scale: 1,
+                isIbYield: true,
             },
         },
     },

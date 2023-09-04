@@ -9,6 +9,7 @@ export class DefaultAprHandler implements AprHandler {
     path: string;
     scale: number;
     group: string | undefined = undefined;
+    isIbYield: boolean | undefined;
 
     constructor(aprHandlerConfig: {
         sourceUrl: string;
@@ -16,12 +17,14 @@ export class DefaultAprHandler implements AprHandler {
         path?: string;
         scale?: number;
         group?: string;
+        isIbYield?: boolean;
     }) {
         this.tokenAddress = aprHandlerConfig.tokenAddress;
         this.url = aprHandlerConfig.sourceUrl;
         this.path = aprHandlerConfig.path ?? '';
         this.scale = aprHandlerConfig.scale ?? 100;
         this.group = aprHandlerConfig.group;
+        this.isIbYield = aprHandlerConfig.isIbYield;
     }
 
     async getAprs() {
@@ -30,7 +33,7 @@ export class DefaultAprHandler implements AprHandler {
             const value = this.path === '' ? data : this.getValueFromPath(data, this.path);
             const scaledValue = parseFloat(value) / this.scale;
 
-            return [this.tokenAddress, scaledValue];
+            return { [this.tokenAddress]: { apr: scaledValue, isIbYield: this.isIbYield ?? false } };
         } catch (error) {
             console.error(`Failed to fetch APRs in url ${this.url}:`, error);
             Sentry.captureException(`Failed to fetch default IB APRs in url ${this.url}: ${error}`);

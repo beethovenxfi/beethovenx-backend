@@ -58,7 +58,7 @@ export class IbTokensAprService implements PoolAprService {
                     continue;
                 }
 
-                let aprInPoolAfterFees = tokenApr.val * tokenPercentageInPool;
+                let aprInPoolAfterFees = tokenApr.apr * tokenPercentageInPool;
 
                 if (collectsYieldFee(pool)) {
                     const protocolYieldFeePercentage = pool.dynamicData?.protocolYieldFee
@@ -70,10 +70,8 @@ export class IbTokensAprService implements PoolAprService {
                             : aprInPoolAfterFees * (1 - protocolYieldFeePercentage);
                 }
 
-                // yieldType is IB_YIELD if its in the ibYieledTokens list
-                const yieldType: PrismaPoolAprType = this.ibTokensAprHandlers.ibYieledTokens.includes(token.address)
-                    ? 'IB_YIELD'
-                    : 'LINEAR_BOOSTED';
+                const yieldType: PrismaPoolAprType =
+                    tokenApr.isIbYield || pool.type !== 'LINEAR' ? 'IB_YIELD' : 'LINEAR_BOOSTED';
 
                 const itemId = `${pool.id}-${token.token.symbol}-yield-apr`;
 
@@ -101,6 +99,12 @@ export class IbTokensAprService implements PoolAprService {
 
     private async fetchYieldTokensApr(): Promise<Map<string, TokenApr>> {
         const data = await this.ibTokensAprHandlers.fetchAprsFromAllHandlers();
-        return new Map<string, TokenApr>(data.filter((apr) => !isNaN(apr.val)).map((apr) => [apr.address, apr]));
+        return new Map<string, TokenApr>(
+            data
+                .filter((tokenApr) => {
+                    return !isNaN(tokenApr.apr);
+                })
+                .map((apr) => [apr.address, apr]),
+        );
     }
 }

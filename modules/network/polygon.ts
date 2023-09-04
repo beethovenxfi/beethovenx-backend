@@ -6,7 +6,6 @@ import { BoostedPoolAprService } from '../pool/lib/apr-data-sources/boosted-pool
 import { SwapFeeAprService } from '../pool/lib/apr-data-sources/swap-fee-apr.service';
 import { GaugeAprService } from '../pool/lib/apr-data-sources/ve-bal-gauge-apr.service';
 import { GaugeStakingService } from '../pool/lib/staking/gauge-staking.service';
-import { BeetsPriceHandlerService } from '../token/lib/token-price-handlers/beets-price-handler.service';
 import { BptPriceHandlerService } from '../token/lib/token-price-handlers/bpt-price-handler.service';
 import { LinearWrappedTokenPriceHandlerService } from '../token/lib/token-price-handlers/linear-wrapped-token-price-handler.service';
 import { SwapsPriceHandlerService } from '../token/lib/token-price-handlers/swaps-price-handler.service';
@@ -181,10 +180,10 @@ const polygonNetworkData: NetworkData = {
         tetu: {
             sourceUrl: 'https://api.tetu.io/api/v1/reader/compoundAPRs?network=MATIC',
             tokens: {
-                tUSDC: '0x113f3d54c31ebc71510fd664c8303b34fbc2b355',
-                tUSDT: '0x236975da9f0761e9cf3c2b0f705d705e22829886',
-                tDAI: '0xace2ac58e1e5a7bfe274916c4d82914d490ed4a5',
-                tetuStQI: '0x4cd44ced63d9a6fef595f6ad3f7ced13fceac768',
+                tUSDC: { address: '0x113f3d54c31ebc71510fd664c8303b34fbc2b355' },
+                tUSDT: { address: '0x236975da9f0761e9cf3c2b0f705d705e22829886' },
+                tDAI: { address: '0xace2ac58e1e5a7bfe274916c4d82914d490ed4a5' },
+                tetuStQI: { address: '0x4cd44ced63d9a6fef595f6ad3f7ced13fceac768' },
             },
         },
         defaultHandlers: {
@@ -192,22 +191,26 @@ const polygonNetworkData: NetworkData = {
                 tokenAddress: '0x03b54a6e9a984069379fae1a4fc4dbae93b3bccd',
                 sourceUrl: 'https://eth-api.lido.fi/v1/protocol/steth/apr/sma',
                 path: 'data.smaApr',
+                isIbYield: true,
             },
             stMATIC: {
                 tokenAddress: '0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4',
                 sourceUrl: 'https://polygon.lido.fi/api/stats',
                 path: 'apr',
+                isIbYield: true,
             },
             MATICX: {
                 tokenAddress: '0xfa68fb4628dff1028cfec22b4162fccd0d45efb6',
                 sourceUrl: 'https://universe.staderlabs.com/polygon/apy',
                 path: 'value',
+                isIbYield: true,
             },
             wbETH: {
                 tokenAddress: '0xa2e3356610840701bdf5611a53974510ae27e2e1',
                 sourceUrl:
                     'https://www.binance.com/bapi/earn/v1/public/pos/cftoken/project/rewardRateList?projectId=BETH',
                 path: 'data.0.rewardRate',
+                isIbYield: true,
             },
         },
     },
