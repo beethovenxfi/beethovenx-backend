@@ -237,6 +237,18 @@ type GqlPoolGyro implements GqlPoolBase {
 
     alpha: String!
     beta: String!
+    c: String!
+    s: String!
+    lambda: String!
+    tauAlphaX: String!
+    tauAlphaY: String!
+    tauBetaX: String!
+    tauBetaY: String!
+    u: String!
+    v: String!
+    w: String!
+    z: String!
+    dSq: String!
 
     tokens: [GqlPoolTokenUnion!]!
     nestingType: GqlPoolNestingType!

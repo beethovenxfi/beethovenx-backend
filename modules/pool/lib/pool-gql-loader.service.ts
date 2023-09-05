@@ -386,6 +386,18 @@ export class PoolGqlLoaderService {
                     type: mappedData.type,
                     alpha: pool.gyroData?.alpha || '',
                     beta: pool.gyroData?.beta || '',
+                    c: pool.gyroData?.c || '',
+                    s: pool.gyroData?.s || '',
+                    lambda: pool.gyroData?.lambda || '',
+                    tauAlphaX: pool.gyroData?.tauAlphaX || '',
+                    tauAlphaY: pool.gyroData?.tauAlphaY || '',
+                    tauBetaX: pool.gyroData?.tauBetaX || '',
+                    tauBetaY: pool.gyroData?.tauBetaY || '',
+                    u: pool.gyroData?.u || '',
+                    v: pool.gyroData?.v || '',
+                    w: pool.gyroData?.w || '',
+                    z: pool.gyroData?.z || '',
+                    dSq: pool.gyroData?.dSq || '',
                 };
             case 'GYRO3':
                 return {
@@ -394,6 +406,18 @@ export class PoolGqlLoaderService {
                     type: mappedData.type,
                     alpha: pool.gyroData?.alpha || '',
                     beta: pool.gyroData?.beta || '',
+                    c: pool.gyroData?.c || '',
+                    s: pool.gyroData?.s || '',
+                    lambda: pool.gyroData?.lambda || '',
+                    tauAlphaX: pool.gyroData?.tauAlphaX || '',
+                    tauAlphaY: pool.gyroData?.tauAlphaY || '',
+                    tauBetaX: pool.gyroData?.tauBetaX || '',
+                    tauBetaY: pool.gyroData?.tauBetaY || '',
+                    u: pool.gyroData?.u || '',
+                    v: pool.gyroData?.v || '',
+                    w: pool.gyroData?.w || '',
+                    z: pool.gyroData?.z || '',
+                    dSq: pool.gyroData?.dSq || '',
                 };
             case 'GYROE':
                 return {
@@ -402,6 +426,18 @@ export class PoolGqlLoaderService {
                     type: mappedData.type,
                     alpha: pool.gyroData?.alpha || '',
                     beta: pool.gyroData?.beta || '',
+                    c: pool.gyroData?.c || '',
+                    s: pool.gyroData?.s || '',
+                    lambda: pool.gyroData?.lambda || '',
+                    tauAlphaX: pool.gyroData?.tauAlphaX || '',
+                    tauAlphaY: pool.gyroData?.tauAlphaY || '',
+                    tauBetaX: pool.gyroData?.tauBetaX || '',
+                    tauBetaY: pool.gyroData?.tauBetaY || '',
+                    u: pool.gyroData?.u || '',
+                    v: pool.gyroData?.v || '',
+                    w: pool.gyroData?.w || '',
+                    z: pool.gyroData?.z || '',
+                    dSq: pool.gyroData?.dSq || '',
                 };
         }
 

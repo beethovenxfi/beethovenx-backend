@@ -182,6 +182,18 @@ fragment BalancerPool on Pool {
     amp
     alpha
     beta
+    c
+    s
+    lambda
+    tauAlphaX
+    tauAlphaY
+    tauBetaX
+    tauBetaY
+    u
+    v
+    w
+    z
+    dSq
 
     tokens {
         ...BalancerPoolToken
