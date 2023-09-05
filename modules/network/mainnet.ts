@@ -65,7 +65,7 @@ export const mainnetNetworkData: NetworkData = {
     rpcMaxBlockRange: 700,
     protocolToken: 'bal',
     bal: {
-        address: '0xba100000625a3754423978a60c9317c58a424e3D',
+        address: '0xba100000625a3754423978a60c9317c58a424e3d',
     },
     veBal: {
         address: '0xc128a9954e6c874ea3d62ce62b468ba073093f25',

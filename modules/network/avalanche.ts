@@ -22,7 +22,7 @@ const avalancheNetworkData: NetworkData = {
     chain: {
         slug: 'avalanche',
         id: 43114,
-        nativeAssetAddress: '0x0000000000000000000000000000000000000000',
+        nativeAssetAddress: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
         wrappedNativeAssetAddress: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
         prismaId: 'AVALANCHE',
         gqlId: 'AVALANCHE',
@@ -37,8 +37,8 @@ const avalancheNetworkData: NetworkData = {
         userBalances: 'https://',
     },
     eth: {
-        address: '0x0000000000000000000000000000000000000000',
-        addressFormatted: '0x0000000000000000000000000000000000000000',
+        address: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+        addressFormatted: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
         symbol: 'AVAX',
         name: 'Avax',
     },
@@ -60,7 +60,7 @@ const avalancheNetworkData: NetworkData = {
     rpcMaxBlockRange: 2000,
     protocolToken: 'bal',
     bal: {
-        address: '0xE15bCB9E0EA69e6aB9FA080c4c4A5632896298C3',
+        address: '0xe15bcb9e0ea69e6ab9fa080c4c4a5632896298c3',
     },
     veBal: {
         address: '',
