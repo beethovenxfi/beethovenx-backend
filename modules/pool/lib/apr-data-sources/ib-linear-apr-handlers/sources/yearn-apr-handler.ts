@@ -1,6 +1,5 @@
 import { AprHandler } from '../ib-linear-apr-handlers';
 import axios from 'axios';
-import { YearnVault } from '../../apr-types';
 import { YearnAprConfig } from '../../../../../network/apr-config-types';
 import * as Sentry from '@sentry/node';
 
@@ -28,4 +27,15 @@ export class YearnAprHandler implements AprHandler {
             return {};
         }
     }
+}
+
+import { Dictionary } from 'lodash';
+
+interface YearnVault {
+    address: string;
+    apy: YearnVaultApy;
+}
+
+interface YearnVaultApy {
+    net_apy: number;
 }
