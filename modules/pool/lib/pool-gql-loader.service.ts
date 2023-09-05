@@ -13,6 +13,7 @@ import {
     GqlBalancePoolAprSubItem,
     GqlPoolDynamicData,
     GqlPoolFeaturedPoolGroup,
+    GqlPoolGyro,
     GqlPoolInvestConfig,
     GqlPoolInvestOption,
     GqlPoolLinear,
@@ -73,6 +74,16 @@ export class PoolGqlLoaderService {
         });
 
         return pools.map((pool) => this.mapPoolToGqlPool(pool)) as GqlPoolLinear[];
+    }
+
+    public async getGyroPools(): Promise<GqlPoolGyro[]> {
+        const pools = await prisma.prismaPool.findMany({
+            where: { type: {in: ["GYRO", "GYRO3", "GYROE"]}, chain: networkContext.chain },
+            orderBy: { dynamicData: { totalLiquidity: 'desc' } },
+            include: prismaPoolWithExpandedNesting.include,
+        });
+
+        return pools.map((pool) => this.mapPoolToGqlPool(pool)) as GqlPoolGyro[];
     }
 
     public mapToMinimalGqlPool(pool: PrismaPoolMinimal): GqlPoolMinimal {

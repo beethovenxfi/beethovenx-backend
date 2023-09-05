@@ -66,6 +66,9 @@ const balancerResolvers: Resolvers = {
         poolGetLinearPools: async () => {
             return poolService.getGqlLinearPools();
         },
+        poolGetGyroPools: async () => {
+            return poolService.getGqlGyroPools();
+        }
     },
     Mutation: {
         poolSyncAllPoolsFromSubgraph: async (parent, {}, context) => {
