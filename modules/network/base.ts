@@ -73,7 +73,6 @@ const baseNetworkData: NetworkData = {
         weightedPoolV2Factories: ['0x4c32a8a8fda4e24139b51b456b42290f51d6a1c4'],
         swapProtocolFeePercentage: 0.5,
         yieldProtocolFeePercentage: 0.5,
-        poolDataQueryContract: '0x67af5d428d38c5176a286a2371df691cdd914fb8',
     },
     ibAprConfig: {
         defaultHandlers: {

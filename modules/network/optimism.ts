@@ -90,7 +90,6 @@ const optimismNetworkData: NetworkData = {
         ],
         swapProtocolFeePercentage: 0.5,
         yieldProtocolFeePercentage: 0.5,
-        poolDataQueryContract: '0x6b5da774890db7b7b96c6f44e6a4b0f657399e2e',
     },
     multicall: '0x2dc0e2aa608532da689e89e237df582b783e552c',
     multicall3: '0xca11bde05977b3631167028862be2a173976ca11',

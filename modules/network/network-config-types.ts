@@ -97,7 +97,6 @@ export interface NetworkData {
         composableStablePoolFactories: string[];
         yieldProtocolFeePercentage: number;
         swapProtocolFeePercentage: number;
-        poolDataQueryContract: string;
         excludedPoolDataQueryPoolIds?: string[];
         factoriesWithpoolSpecificProtocolFeePercentagesProvider?: string[];
     };

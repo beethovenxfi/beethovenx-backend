@@ -89,7 +89,6 @@ export const mainnetNetworkData: NetworkData = {
         ],
         swapProtocolFeePercentage: 0.5,
         yieldProtocolFeePercentage: 0.5,
-        poolDataQueryContract: '0xf5cddf6fed9c589f1be04899f48f9738531dad59',
         excludedPoolDataQueryPoolIds: ['0xf71d0774b214c4cf51e33eb3d30ef98132e4dbaa00000000000000000000046e'],
     },
     multicall: '0x5ba1e12693dc8f9c48aad8770482f4739beed696',

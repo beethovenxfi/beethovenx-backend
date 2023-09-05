@@ -82,7 +82,6 @@ const polygonNetworkData: NetworkData = {
         ],
         swapProtocolFeePercentage: 0.5,
         yieldProtocolFeePercentage: 0.5,
-        poolDataQueryContract: '0x84813aa3e079a665c0b80f944427ee83cba63617',
     },
     multicall: '0x275617327c958bd06b5d6b871e7f491d76113dd8',
     multicall3: '0xca11bde05977b3631167028862be2a173976ca11',
