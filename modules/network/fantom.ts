@@ -248,6 +248,7 @@ const fantomNetworkData: NetworkData = {
             sFTMx: {
                 address: '0xd7028092c830b5c8fce061af2e593413ebbc1fc1',
                 apr: 0.046,
+                isIbYield: true,
             },
         },
     },

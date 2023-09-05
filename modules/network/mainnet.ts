@@ -183,6 +183,7 @@ export const mainnetNetworkData: NetworkData = {
                 ankrETH: {
                     address: '0xe95a203b1a91a908f9b9ce46459d101078c2c3cb',
                     serviceName: 'eth',
+                    isIbYield: true,
                 },
             },
         },
@@ -267,6 +268,7 @@ export const mainnetNetworkData: NetworkData = {
                 tokenAddress: '0xac3e018457b222d93114458476f3e3416abbe38f',
                 sourceUrl: 'https://api.frax.finance/v2/frxeth/summary/latest',
                 path: 'sfrxethApr',
+                isIbYield: true,
             },
             rETH: {
                 tokenAddress: '0x9559aaa82d9649c7a7b220e7c461d2e74c9a3593',
@@ -289,6 +291,7 @@ export const mainnetNetworkData: NetworkData = {
                 tokenAddress: '0x198d7387fa97a73f05b8578cdeff8f2a1f34cd1f',
                 sourceUrl: 'https://data.jonesdao.io/api/v1/jones/apy-wjaura',
                 path: 'wjauraApy',
+                isIbYield: true,
             },
         },
     },
