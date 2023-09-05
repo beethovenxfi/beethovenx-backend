@@ -1,5 +1,5 @@
 import { PoolAprService } from '../../pool-types';
-import { PrismaPoolWithExpandedNesting } from '../../../../prisma/prisma-types';
+import { PrismaPoolWithTokens } from '../../../../prisma/prisma-types';
 import { prisma } from '../../../../prisma/prisma-client';
 import { networkContext } from '../../../network/network-context.service';
 import { prismaBulkExecuteOperations } from '../../../../prisma/prisma-util';
@@ -20,7 +20,7 @@ export class IbTokensAprService implements PoolAprService {
         return 'IbTokensAprService';
     }
 
-    public async updateAprForPools(pools: PrismaPoolWithExpandedNesting[]): Promise<void> {
+    public async updateAprForPools(pools: PrismaPoolWithTokens[]): Promise<void> {
         const operations: any[] = [];
         const tokenPrices = await tokenService.getTokenPrices();
         const aprs = await this.fetchYieldTokensApr();
@@ -31,7 +31,22 @@ export class IbTokensAprService implements PoolAprService {
                     .includes(token.address.toLowerCase());
             });
         });
-        for (const pool of poolsWithIbTokens) {
+
+        const poolsWithIbTokensExpanded = await prisma.prismaPool.findMany({
+            where: { chain: networkContext.chain, id: { in: poolsWithIbTokens.map((pool) => pool.id) } },
+            include: {
+                dynamicData: true,
+                tokens: {
+                    orderBy: { index: 'asc' },
+                    include: {
+                        token: true,
+                        dynamicData: true,
+                    },
+                },
+            },
+        });
+
+        for (const pool of poolsWithIbTokensExpanded) {
             if (!pool.dynamicData) {
                 continue;
             }
