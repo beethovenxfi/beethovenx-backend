@@ -269,10 +269,16 @@ export const mainnetNetworkData: NetworkData = {
                 path: 'sfrxethApr',
                 isIbYield: true,
             },
-            rETH: {
+            StaFirETH: {
                 tokenAddress: '0x9559aaa82d9649c7a7b220e7c461d2e74c9a3593',
                 sourceUrl: 'https://drop-api.stafi.io/reth/v1/poolData',
                 path: 'data.stakeApr',
+                isIbYield: true,
+            },
+            rETH: {
+                tokenAddress: '0xae78736cd615f374d3085123a210448e74fc6393',
+                sourceUrl: 'https://rocketpool.net/api/mainnet/payload',
+                path: 'rethAPR',
                 isIbYield: true,
             },
             USDR: {

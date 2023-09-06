@@ -188,8 +188,8 @@ const optimismNetworkData: NetworkData = {
             },
             rETH: {
                 tokenAddress: '0x9bcef72be871e61ed4fbbc7630889bee758eb81d',
-                sourceUrl: 'https://drop-api.stafi.io/reth/v1/poolData',
-                path: 'data.stakeApr',
+                sourceUrl: 'https://rocketpool.net/api/mainnet/payload',
+                path: 'rethAPR',
                 isIbYield: true,
             },
             overnightDAIPlus: {
