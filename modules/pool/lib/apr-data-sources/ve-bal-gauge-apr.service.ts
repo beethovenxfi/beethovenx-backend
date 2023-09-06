@@ -84,34 +84,31 @@ export class GaugeAprService implements PoolAprService {
                     thirdPartyApr += rewardApr;
                 }
 
-                // apply vebal boost for BAL rewards on v2 gauges
+                // apply vebal boost for BAL rewards on v2 gauges on child changes or on mainnet
                 if (
                     rewardToken.tokenAddress.toLowerCase() === networkContext.data.bal!.address.toLowerCase() &&
-                    preferredStaking.gauge.version === 2
+                    (preferredStaking.gauge.version === 2 || networkContext.chain === 'MAINNET')
                 ) {
                     const aprItemId = `${pool.id}-${rewardTokenDefinition.symbol}-apr`;
                     const aprRangeId = `${pool.id}-bal-apr-range`;
 
-                    // we need to create/update the range item first, as APRs can change from total to range types
-                    // if we try to update apritem and nested range item in the same upsert, range item does not yet exist.
-                    operations.push(
-                        prisma.prismaPoolAprRange.upsert({
-                            where: {
-                                id_chain: { id: aprRangeId, chain: networkContext.chain },
-                            },
-                            update: {
-                                min: rewardApr,
-                                max: rewardApr * this.MAX_VEBAL_BOOST,
-                            },
-                            create: {
-                                id: aprRangeId,
-                                chain: networkContext.chain,
-                                aprItemId: aprItemId,
-                                min: rewardApr,
-                                max: rewardApr,
-                            },
-                        }),
-                    );
+                    const itemData = {
+                        id: aprItemId,
+                        chain: networkContext.chain,
+                        poolId: pool.id,
+                        title: `${rewardTokenDefinition.symbol} reward APR`,
+                        apr: 0,
+                        type: PrismaPoolAprType.NATIVE_REWARD,
+                        group: null,
+                    };
+
+                    const rangeData = {
+                        id: aprRangeId,
+                        chain: networkContext.chain,
+                        aprItemId: aprItemId,
+                        min: rewardApr,
+                        max: rewardApr * this.MAX_VEBAL_BOOST,
+                    };
 
                     operations.push(
                         prisma.prismaPoolAprItem.upsert({
@@ -121,18 +118,18 @@ export class GaugeAprService implements PoolAprService {
                                     chain: networkContext.chain,
                                 },
                             },
-                            update: {
-                                apr: 0,
+                            update: itemData,
+                            create: itemData,
+                        }),
+                    );
+
+                    operations.push(
+                        prisma.prismaPoolAprRange.upsert({
+                            where: {
+                                id_chain: { id: aprRangeId, chain: networkContext.chain },
                             },
-                            create: {
-                                id: aprItemId,
-                                chain: networkContext.chain,
-                                poolId: pool.id,
-                                title: `${rewardTokenDefinition.symbol} reward APR`,
-                                apr: 0,
-                                type: PrismaPoolAprType.NATIVE_REWARD,
-                                group: null,
-                            },
+                            update: rangeData,
+                            create: rangeData,
                         }),
                     );
                 } else {
@@ -155,6 +152,6 @@ export class GaugeAprService implements PoolAprService {
                 }
             }
         }
-        await prismaBulkExecuteOperations(operations);
+        await prismaBulkExecuteOperations(operations, true);
     }
 }
