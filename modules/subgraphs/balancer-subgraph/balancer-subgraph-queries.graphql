@@ -182,6 +182,9 @@ fragment BalancerPool on Pool {
     amp
     alpha
     beta
+    sqrtAlpha
+    sqrtBeta
+    root3Alpha
     c
     s
     lambda
