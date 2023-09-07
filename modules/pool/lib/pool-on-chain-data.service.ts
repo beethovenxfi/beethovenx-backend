@@ -47,6 +47,7 @@ interface MulticallExecuteResult {
     rate?: BigNumber | undefined;
     swapEnabled?: boolean | undefined;
     protocolFeePercentageCache?: number | undefined;
+    isExemptFromYieldProtocolFee?: boolean[] | undefined;
     tokenRates?: BigNumber[] | undefined;
     metaPriceRateCache?: [BigNumber, BigNumber, BigNumber][] | undefined;
 }
@@ -232,6 +233,13 @@ export class PoolOnChainDataService {
                 });
             }
 
+            if (isComposableStablePool(pool)) {
+                const tokenAddresses = pool.tokens.map((token) => token.address);
+                tokenAddresses.forEach((token, i) => {
+                    multiPool.call(`${pool.id}.isTokenExemptFromYieldProtocolFee[${i}]`, pool.address, 'isTokenExemptFromYieldProtocolFee', [token]);
+                });
+            }
+
             if (isComposableStablePool(pool) || isWeightedPoolV2(pool)) {
                 multiPool.call(`${pool.id}.totalSupply`, pool.address, 'getActualSupply');
             } else if (pool.type === 'LINEAR' || pool.type === 'PHANTOM_STABLE') {
@@ -371,6 +379,11 @@ export class PoolOnChainDataService {
                     const balance = formatFixed(poolTokens.balances[i], poolToken.token.decimals);
                     const weight = onchainData.weights ? formatFixed(onchainData.weights[i], 18) : null;
 
+                    let isExemptFromYieldProtocolFee = false;
+                    if (onchainData.isExemptFromYieldProtocolFee && onchainData.isExemptFromYieldProtocolFee[i]) {
+                        isExemptFromYieldProtocolFee = onchainData.isExemptFromYieldProtocolFee[i];
+                    }
+
                     // set token price rate for various rate types
 
                     // top level token rates, e.g. LSTs in pools
@@ -389,6 +402,12 @@ export class PoolOnChainDataService {
                     // linear wrapped token rate
                     if (onchainData.wrappedTokenRate && pool.linearData?.wrappedIndex === poolToken.index) {
                         priceRate = formatFixed(onchainData.wrappedTokenRate, 18);
+                    }
+
+                    // If it's a weighted pool and the token doesn't have a rate provider (price rate is 1.0), 
+                    // then it is exempt from yield protocol fees. 
+                    if (pool.type === 'WEIGHTED' && BigNumber.from(priceRate).eq('1.0')) {
+                        isExemptFromYieldProtocolFee = true;
                     }
 
                     if (
@@ -412,6 +431,7 @@ export class PoolOnChainDataService {
                                         ? 0
                                         : this.tokenService.getPriceForToken(tokenPrices, poolToken.address) *
                                           parseFloat(balance),
+                                isExemptFromYieldProtocolFee,
                             },
                             update: {
                                 blockNumber,

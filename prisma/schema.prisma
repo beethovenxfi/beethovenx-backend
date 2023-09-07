@@ -248,17 +248,19 @@ model PrismaPoolTokenDynamicData {
     @@id([id, chain])
     @@unique([poolTokenId, chain])
 
-    id                  String
-    poolTokenId         String
-    poolToken           PrismaPoolToken     @relation(fields:[poolTokenId, chain], references: [id, chain])
-    chain               Chain
-    blockNumber         Int
-    updatedAt           DateTime            @updatedAt
+    id                              String
+    poolTokenId                     String
+    poolToken                       PrismaPoolToken     @relation(fields:[poolTokenId, chain], references: [id, chain])
+    chain                           Chain
+    blockNumber                     Int
+    updatedAt                       DateTime            @updatedAt
+    isExemptFromYieldProtocolFee    Boolean             @default(false)
 
-    balance             String
-    balanceUSD          Float
-    weight              String?
-    priceRate           String
+
+    balance                         String
+    balanceUSD                      Float
+    weight                          String?
+    priceRate                       String
 }
 
 model PrismaPoolSwap {
