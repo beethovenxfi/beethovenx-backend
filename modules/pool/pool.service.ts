@@ -443,6 +443,10 @@ export class PoolService {
         await prisma.prismaPoolLinearData.deleteMany({
             where: { chain: networkContext.chain, poolId: poolId },
         });
+        
+        await prisma.prismaPoolGyroData.deleteMany({
+            where: { chain: networkContext.chain, poolId: poolId },
+        });
 
         await prisma.prismaPoolGyroData.deleteMany({
             where: { chain: networkContext.chain, poolId: poolId },
