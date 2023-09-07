@@ -12,6 +12,9 @@ import {
     Swap as SwapSdk,
     RawPool,
     TokenAmount,
+    RawGyro2Pool,
+    RawGyro3Pool,
+    RawGyroEPool,
 } from '@balancer/sdk';
 import cloneDeep from 'lodash/cloneDeep';
 import { GqlSorSwapType, GqlSwap, GqlSorGetSwapsResponse, GqlPoolMinimal, GqlSorSwapRoute } from '../../../schema';
@@ -340,9 +343,12 @@ export class SorV2Service implements SwapService {
                 },
                 NOT: {
                     id: {
-                        in: [...networkContext.data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].poolIdsToExclude, ...poolsToIgnore],
+                        in: [
+                            ...networkContext.data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].poolIdsToExclude,
+                            ...poolsToIgnore,
+                        ],
                     },
-                    type: 'LINEAR' // Linear pools are sunset so ignore to avoid issues related to lack of support
+                    type: 'LINEAR', // Linear pools are sunset so ignore to avoid issues related to lack of support
                 },
             },
             include: prismaPoolWithDynamic.include,
@@ -381,7 +387,7 @@ export class SorV2Service implements SwapService {
                 }),
                 isPaused: !!prismaPool.dynamicData?.isPaused,
                 inRecoveryMode: !!prismaPool.dynamicData?.isInRecoveryMode,
-                name: 'n/a'
+                name: 'n/a',
             };
             if (['Weighted', 'Investment', 'LiquidityBootstrapping'].includes(rawPool.poolType)) {
                 rawPool = {
@@ -405,6 +411,41 @@ export class SorV2Service implements SwapService {
                         return { ...t, priceRate: prismaPool.tokens[i].dynamicData?.priceRate };
                     }),
                 } as RawMetaStablePool;
+            }
+            if (rawPool.poolType === 'Gyro2') {
+                rawPool = {
+                    ...rawPool,
+                    alpha: prismaPool.gyroData?.alpha,
+                    beta: prismaPool.gyroData?.beta,
+                    sqrtAlpha: prismaPool.gyroData?.sqrtAlpha,
+                    sqrtBeta: prismaPool.gyroData?.sqrtBeta,
+                } as RawGyro2Pool;
+            }
+            if (rawPool.poolType === 'Gyro3') {
+                rawPool = {
+                    ...rawPool,
+                    root3Alpha: prismaPool.gyroData?.root3Alpha,
+                } as RawGyro3Pool;
+            }
+            if (rawPool.poolType === 'GyroE') {
+                rawPool = {
+                    ...rawPool,
+                    alpha: prismaPool.gyroData?.alpha,
+                    beta: prismaPool.gyroData?.beta,
+                    c: prismaPool.gyroData?.c,
+                    s: prismaPool.gyroData?.s,
+                    lambda: prismaPool.gyroData?.lambda,
+                    tauAlphaX: prismaPool.gyroData?.tauAlphaX,
+                    tauAlphaY: prismaPool.gyroData?.tauAlphaY,
+                    tauBetaX: prismaPool.gyroData?.tauBetaX,
+                    tauBetaY: prismaPool.gyroData?.tauBetaY,
+                    u: prismaPool.gyroData?.u,
+                    v: prismaPool.gyroData?.v,
+                    w: prismaPool.gyroData?.w,
+                    z: prismaPool.gyroData?.z,
+                    dSq: prismaPool.gyroData?.dSq,
+                    tokenRates: prismaPool.tokens.map((t) => t.dynamicData?.priceRate),
+                } as RawGyroEPool;
             }
             return rawPool;
         });
@@ -443,6 +484,13 @@ export class SorV2Service implements SwapService {
             case PrismaPoolType.PHANTOM_STABLE:
                 // Composablestables are PHANTOM_STABLE in Prisma. b-sdk treats Phantoms as ComposableStable.
                 return 'ComposableStable';
+            case PrismaPoolType.GYRO:
+                return 'Gyro2';
+            // TODO - Needs a package update, see: https://github.com/balancer/b-sdk/pull/92
+            // case PrismaPoolType.GYRO3:
+            //     return 'Gyro3';
+            case PrismaPoolType.GYROE:
+                return 'GyroE';
             default:
                 return type;
         }

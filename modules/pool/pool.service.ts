@@ -444,6 +444,10 @@ export class PoolService {
             where: { chain: networkContext.chain, poolId: poolId },
         });
 
+        await prisma.prismaPoolGyroData.deleteMany({
+            where: { chain: networkContext.chain, poolId: poolId },
+        });
+
         await prisma.prismaPoolExpandedTokens.deleteMany({
             where: { chain: networkContext.chain, poolId: poolId },
         });
@@ -482,9 +486,9 @@ export class PoolService {
                         },
                     });
 
-                    if(gauge && gauge.votingGauge)
+                    if (gauge && gauge.votingGauge)
                         await prisma.prismaVotingGauge.deleteMany({
-                            where: { chain: networkContext.chain, id: gauge.votingGauge.id }
+                            where: { chain: networkContext.chain, id: gauge.votingGauge.id },
                         });
 
                     await prisma.prismaPoolStakingGauge.deleteMany({

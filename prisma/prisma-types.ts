@@ -288,6 +288,7 @@ export const prismaPoolWithDynamic = Prisma.validator<Prisma.PrismaPoolArgs>()({
                 dynamicData: true,
                 linearDynamicData: true,
                 linearData: true,
+                gyroData: true,
                 tokens: {
                     orderBy: { index: 'asc' },
                     include: {
