@@ -18,7 +18,15 @@ export const schema = {
         optional: true,
         type: String,
     },
+    ALCHEMY_API_KEY: {
+        optional: true,
+        type: String,
+    },
     COINGECKO_API_KEY: {
+        optional: true,
+        type: String,
+    },
+    SUPPORTED_NETWORKS: {
         optional: true,
         type: String,
     },

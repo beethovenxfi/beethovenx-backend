@@ -140,7 +140,7 @@ const balancerResolvers: Resolvers = {
         poolReloadAllPoolAprs: async (parent, {}, context) => {
             isAdminRoute(context);
 
-            await poolService.realodAllPoolAprs();
+            await poolService.reloadAllPoolAprs();
 
             return 'success';
         },

@@ -269,8 +269,8 @@ export class PoolService {
         await this.poolSyncService.syncChangedPools();
     }
 
-    public async realodAllPoolAprs() {
-        await this.poolAprUpdaterService.realodAllPoolAprs();
+    public async reloadAllPoolAprs() {
+        await this.poolAprUpdaterService.reloadAllPoolAprs();
     }
 
     public async updateLiquidity24hAgoForAllPools() {
@@ -470,6 +470,22 @@ export class PoolService {
                     await prisma.prismaPoolStakingGaugeReward.deleteMany({
                         where: { chain: networkContext.chain, gaugeId: staking.id },
                     });
+
+                    // delete votingGauge entry before deleting the staking gauge
+                    let gauge = await prisma.prismaPoolStakingGauge.findFirst({
+                        where: {
+                            chain: networkContext.chain,
+                            stakingId: staking.id,
+                        },
+                        select: {
+                            votingGauge: true,
+                        },
+                    });
+
+                    if(gauge && gauge.votingGauge)
+                        await prisma.prismaVotingGauge.deleteMany({
+                            where: { chain: networkContext.chain, id: gauge.votingGauge.id }
+                        });
 
                     await prisma.prismaPoolStakingGauge.deleteMany({
                         where: { chain: networkContext.chain, stakingId: staking.id },
