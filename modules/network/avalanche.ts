@@ -158,6 +158,25 @@ const avalancheNetworkData: NetworkData = {
                 },
             },
         },
+        defaultHandlers: {
+            sAVAX: {
+                tokenAddress: '0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be',
+                sourceUrl: 'https://api.benqi.fi/liquidstaking/apr',
+                path: 'apr',
+                scale: 1,
+            },
+            yyAVAX: {
+                tokenAddress: '0xf7d9281e8e363584973f946201b82ba72c965d27',
+                sourceUrl: 'https://staging-api.yieldyak.com/yyavax',
+                path: 'yyAVAX.apr',
+            },
+            ggAVAX: {
+                tokenAddress: '0xa25eaf2906fa1a3a13edac9b9657108af7b703e3',
+                sourceUrl: 'https://ceres.gogopool.com',
+                path: 'ggAVAXMonthlyInterestMonth.value',
+                scale: -0.8333,
+            },
+        },
     },
     beefy: {
         linearPools: [''],
