@@ -174,7 +174,7 @@ const avalancheNetworkData: NetworkData = {
                 tokenAddress: '0xa25eaf2906fa1a3a13edac9b9657108af7b703e3',
                 sourceUrl: 'https://ceres.gogopool.com',
                 path: 'ggAVAXMonthlyInterestMonth.value',
-                scale: -0.8333,
+                scale: -8.3333,
             },
         },
     },
