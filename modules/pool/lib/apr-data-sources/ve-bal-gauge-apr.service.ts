@@ -92,12 +92,25 @@ export class GaugeAprService implements PoolAprService {
                     const aprItemId = `${pool.id}-${rewardTokenDefinition.symbol}-apr`;
                     const aprRangeId = `${pool.id}-bal-apr-range`;
 
+                    // We need gauge's workingSupply and the pool BPT price
+                    const gaugeEmissionsUsd = rewardTokenValuePerYear;
+
+                    // Only 40% of LP token staked accrue emissions, totalSupply = workingSupply * 2.5
+                    const workingSupply = (parseFloat(preferredStaking.gauge.workingSupply) + 0.4) / 0.4;
+                    const bptPrice = this.tokenService.getPriceForToken(tokenPrices, pool.address);
+                    const workingSupplyUsd = workingSupply * bptPrice;
+                
+                    let balApr = 0;
+                    if (workingSupply > 0) {
+                        balApr = gaugeEmissionsUsd / workingSupplyUsd;
+                    }
+
                     const itemData = {
                         id: aprItemId,
                         chain: networkContext.chain,
                         poolId: pool.id,
                         title: `${rewardTokenDefinition.symbol} reward APR`,
-                        apr: 0,
+                        apr: balApr,
                         type: PrismaPoolAprType.NATIVE_REWARD,
                         group: null,
                     };
@@ -106,8 +119,8 @@ export class GaugeAprService implements PoolAprService {
                         id: aprRangeId,
                         chain: networkContext.chain,
                         aprItemId: aprItemId,
-                        min: rewardApr,
-                        max: rewardApr * this.MAX_VEBAL_BOOST,
+                        min: balApr,
+                        max: balApr * this.MAX_VEBAL_BOOST,
                     };
 
                     operations.push(

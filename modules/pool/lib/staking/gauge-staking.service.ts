@@ -1,7 +1,7 @@
 import { PoolStakingService } from '../../pool-types';
 import { prisma } from '../../../../prisma/prisma-client';
 import { prismaBulkExecuteOperations } from '../../../../prisma/prisma-util';
-import { PrismaPoolStakingType } from '@prisma/client';
+import { Chain, PrismaPoolStakingType } from '@prisma/client';
 import { networkContext } from '../../../network/network-context.service';
 import { GaugeSubgraphService, LiquidityGaugeStatus } from '../../../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import { formatUnits } from 'ethers/lib/utils';
@@ -9,23 +9,27 @@ import { getContractAt } from '../../../web3/contract';
 import childChainGaugeV2Abi from './abi/ChildChainGaugeV2.json';
 import childChainGaugeV1Abi from './abi/ChildChainGaugeV1.json';
 import moment from 'moment';
-import { formatFixed } from '@ethersproject/bignumber';
+import { BigNumber, formatFixed } from '@ethersproject/bignumber';
 import { Multicaller3 } from '../../../web3/multicaller3';
 import _ from 'lodash';
 
-interface ChildChainInfo {
+interface GaugeRate {
     /** 1 for old gauges, 2 for gauges receiving cross chain BAL rewards */
     version: number;
     /** BAL per second received by the gauge */
     rate: string;
+    // Amount of tokens staked in the gauge
+    workingSupply: string;
 }
 
 export class GaugeStakingService implements PoolStakingService {
     private balAddress: string;
+
     constructor(private readonly gaugeSubgraphService: GaugeSubgraphService, balAddress: string) {
         this.balAddress = balAddress.toLowerCase();
     }
-    public async syncStakingForPools(): Promise<void> {
+
+    async syncStakingForPools(): Promise<void> {
         const pools = await prisma.prismaPool.findMany({
             where: { chain: networkContext.chain },
         });
@@ -37,7 +41,11 @@ export class GaugeStakingService implements PoolStakingService {
 
         const allGaugeAddresses = subgraphPoolsWithGauges.map((pool) => pool.gaugesList).flat();
 
-        const childChainGaugeInfo = await this.getChildChainGaugeInfo(allGaugeAddresses);
+        const childChainGaugeInfo = await (
+            networkContext.chain === Chain.MAINNET
+                ? this.getMainnetGaugeRates(allGaugeAddresses)
+                : this.getChildChainGaugeInfo(allGaugeAddresses)
+        );
 
         for (const gaugePool of subgraphPoolsWithGauges) {
             const pool = pools.find((pool) => pool.id === gaugePool.poolId);
@@ -84,6 +92,7 @@ export class GaugeStakingService implements PoolStakingService {
                             update: {
                                 status: gaugeStatus,
                                 version: gaugeVersion,
+                                workingSupply: childChainGaugeInfo[gauge.id].workingSupply,
                             },
                         }),
                     );
@@ -180,40 +189,88 @@ export class GaugeStakingService implements PoolStakingService {
         await prismaBulkExecuteOperations(operations, true, undefined);
     }
 
-    async getChildChainGaugeInfo(gaugeAddresses: string[]): Promise<{ [gaugeAddress: string]: ChildChainInfo }> {
+    /**
+     * Get the inflation rate for all the gauges on child chains.
+     * 
+     * @param gaugeAddresses
+     * @returns
+     */
+    private async getChildChainGaugeInfo(gaugeAddresses: string[]): Promise<{ [gaugeAddress: string]: GaugeRate }> {
         const currentWeek = Math.floor(Date.now() / 1000 / 604800);
-        const childChainAbi =
-            networkContext.chain === 'MAINNET'
-                ? 'function inflation_rate() view returns (uint256)'
-                : 'function inflation_rate(uint256 week) view returns (uint256)';
-        const multicall = new Multicaller3([childChainAbi]);
-
-        let response: { [gaugeAddress: string]: ChildChainInfo } = {};
+        const childChainAbi = [
+            'function inflation_rate(uint256 week) view returns (uint256)',
+            'function working_supply() view returns (uint256)'
+        ];
+        const multicall = new Multicaller3(childChainAbi);
 
         gaugeAddresses.forEach((address) => {
-            // Only L2 gauges have the inflation_rate with a week parameter
-            if (networkContext.chain === 'MAINNET') {
-                multicall.call(address, address, 'inflation_rate', [], true);
-            } else {
-                multicall.call(address, address, 'inflation_rate', [currentWeek], true);
-            }
+            multicall.call(`${address}.inflationRate`, address, 'inflation_rate', [currentWeek], true);
+            multicall.call(`${address}.workingSupply`, address, 'working_supply', [], true);
         });
 
-        const childChainData = (await multicall.execute()) as Record<string, string | undefined>;
-
-        for (const childChainGauge in childChainData) {
-            if (childChainData[childChainGauge]) {
-                response[childChainGauge] = {
-                    version: 2,
-                    rate: formatUnits(childChainData[childChainGauge]!, 18),
-                };
-            } else {
-                response[childChainGauge] = {
-                    version: 1,
-                    rate: '0.0',
-                };
+        const results = (await multicall.execute()) as {
+            [address: string]: {
+                inflationRate: BigNumber | undefined,
+                workingSupply: BigNumber
             }
-        }
+        };
+
+        const response = Object.keys(results).reduce((acc, address) => {
+            const rate = results[address].inflationRate ? formatUnits(results[address].inflationRate!) : '0.0';
+            const workingSupply = formatUnits(results[address].workingSupply);
+            const version = results[address].inflationRate ? 2 : 1;
+            acc[address] = { version, rate, workingSupply };
+            return acc;
+        }, {} as { [gaugeAddress: string]: GaugeRate });
+
+        return response;
+    }
+
+    /**
+     * Get the inflation rate for all the gauges on mainnet.
+     * Gauges on mainnet use the inflation rate from token admin contract
+     * and relative weight from the gauge contract.
+     *
+     * @param gaugeAddresses 
+     * @returns 
+     */
+    private async getMainnetGaugeRates(gaugeAddresses: string[]): Promise<{ [gaugeAddress: string]: GaugeRate }> {
+        const version = 2; // On Mainnet BAL is always distributed directly to gauges
+        const { gaugeControllerAddress } = networkContext.data;
+        const abi = [
+            'function inflation_rate() view returns (uint256)',
+            'function working_supply() view returns (uint256)',
+            'function gauge_relative_weight(address) view returns (uint256)'
+        ];
+        const multicall = new Multicaller3(abi);
+
+        // On mainnet inflation rate is the same for all the gauges
+        multicall.call('inflation_rate', gaugeAddresses[0], 'inflation_rate', [], true);
+
+        gaugeAddresses.forEach((address) => {
+            multicall.call(`${address}.weight`, gaugeControllerAddress!, 'gauge_relative_weight', [address], true);
+            multicall.call(`${address}.workingSupply`, address, 'working_supply', [], true);
+        });
+        
+        const multicallResult = await multicall.execute() as { inflation_rate: BigNumber } & { [address: string]: { weight: BigNumber, workingSupply: BigNumber } };
+        const { inflation_rate, ...gaugeData } = multicallResult;
+        const inflationRate = Number(formatUnits(inflation_rate!));
+
+        const weightedRates = _.mapValues(gaugeData, ({ weight }) => {
+            if (weight.eq(0)) return 0;
+            return inflationRate * Number(formatUnits(weight));
+        });
+
+        const response = Object.keys(gaugeData).reduce((acc, address) => {
+            acc[address] = {
+                version,
+                rate: weightedRates[address] > 0
+                    ? weightedRates[address].toFixed(18)
+                    : '0.0',
+                workingSupply: formatUnits(gaugeData[address].workingSupply)
+            };
+            return acc;
+        }, {} as { [gaugeAddress: string]: GaugeRate });
 
         return response;
     }
