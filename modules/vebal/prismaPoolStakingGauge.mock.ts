@@ -11,6 +11,7 @@ export function aPrismaPoolStakingGauge(...options: Partial<PrismaPoolStakingGau
         chain: 'MAINNET' as Chain,
         status: 'ACTIVE',
         version: 1,
+        workingSupply: '0',
     };
     return Object.assign({}, defaultGauge, ...options);
 }
