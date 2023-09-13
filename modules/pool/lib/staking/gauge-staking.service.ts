@@ -11,6 +11,7 @@ import childChainGaugeV1Abi from './abi/ChildChainGaugeV1.json';
 import moment from 'moment';
 import { BigNumber, formatFixed } from '@ethersproject/bignumber';
 import { Multicaller3 } from '../../../web3/multicaller3';
+import * as emissions from './bal-emissions';
 import _ from 'lodash';
 
 interface GaugeRate {
@@ -235,26 +236,22 @@ export class GaugeStakingService implements PoolStakingService {
      * @returns 
      */
     private async getMainnetGaugeRates(gaugeAddresses: string[]): Promise<{ [gaugeAddress: string]: GaugeRate }> {
+        const now = Math.round(new Date().getTime() / 1000);
         const version = 2; // On Mainnet BAL is always distributed directly to gauges
         const { gaugeControllerAddress } = networkContext.data;
         const abi = [
-            'function inflation_rate() view returns (uint256)',
             'function working_supply() view returns (uint256)',
             'function gauge_relative_weight(address) view returns (uint256)'
         ];
         const multicall = new Multicaller3(abi);
-
-        // On mainnet inflation rate is the same for all the gauges
-        multicall.call('inflation_rate', gaugeAddresses[0], 'inflation_rate', [], true);
 
         gaugeAddresses.forEach((address) => {
             multicall.call(`${address}.weight`, gaugeControllerAddress!, 'gauge_relative_weight', [address], true);
             multicall.call(`${address}.workingSupply`, address, 'working_supply', [], true);
         });
         
-        const multicallResult = await multicall.execute() as { inflation_rate: BigNumber } & { [address: string]: { weight: BigNumber, workingSupply: BigNumber } };
-        const { inflation_rate, ...gaugeData } = multicallResult;
-        const inflationRate = Number(formatUnits(inflation_rate!));
+        const gaugeData = await multicall.execute() as { [address: string]: { weight: BigNumber, workingSupply: BigNumber } };
+        const inflationRate = emissions.weekly(now) / 604800; // BAL inflation rate per second
 
         const weightedRates = _.mapValues(gaugeData, ({ weight }) => {
             if (weight.eq(0)) return 0;
