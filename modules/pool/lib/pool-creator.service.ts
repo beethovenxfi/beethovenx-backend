@@ -394,7 +394,7 @@ export class PoolCreatorService {
             case 'StablePhantom':
                 return 'PHANTOM_STABLE';
             case 'ComposableStable':
-                return 'PHANTOM_STABLE';
+                return 'COMPOSABLE_STABLE';
             case 'Linear':
                 return 'LINEAR';
             case 'Element':
@@ -407,6 +407,8 @@ export class PoolCreatorService {
                 return 'GYRO3';
             case 'GyroE':
                 return 'GYROE';
+            case 'FX':
+                return 'FX';
         }
 
         // balancer still uses AaveLinear, etc, so we account for that here
