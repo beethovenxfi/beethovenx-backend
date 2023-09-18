@@ -95,15 +95,22 @@ export class SorService {
         if (!v1.isValid || !v2.isValid) {
             isV1 = v1.isValid ? true : false;
         } else if (swapType === 'EXACT_IN') {
-            if (v2.outputAmount < v1.outputAmount) isV1 = true;
+            if (v2.outputAmount < v1.outputAmount) {
+                isV1 = true;
+            }
         } else {
-            if (v2.inputAmount > v1.inputAmount) isV1 = true;
+            if (v2.inputAmount > v1.inputAmount) {
+                isV1 = true;
+            }
         }
 
         if (isV1 === true) {
             this.logResult(`V1`, v1, v2, swapType, assetIn, assetOut);
             return v1;
-        } else return v2;
+        } else {
+            this.logResult(`V2`, v1, v2, swapType, assetIn, assetOut);
+        }
+        return v2;
     }
 
     private logResult(
@@ -115,18 +122,35 @@ export class SorService {
         assetOut: string,
     ) {
         // console.log() will log to cloudwatch
-        console.log(
-            'SOR Service',
-            networkContext.chain,
-            logType,
-            swapType,
-            assetIn,
-            assetOut,
-            v1.inputAmount,
-            v1.outputAmount,
-            v2.inputAmount,
-            v2.outputAmount,
-        );
+        if (swapType === 'EXACT_IN') {
+            console.log(
+                'SOR Service',
+                networkContext.chain,
+                logType,
+                swapType,
+                assetIn,
+                assetOut,
+                v1.inputAmount,
+                v1.outputAmount,
+                v2.inputAmount,
+                v2.outputAmount,
+                v1.outputAmount - v2.outputAmount,
+            );
+        } else {
+            console.log(
+                'SOR Service',
+                networkContext.chain,
+                logType,
+                swapType,
+                assetIn,
+                assetOut,
+                v1.inputAmount,
+                v1.outputAmount,
+                v2.inputAmount,
+                v2.outputAmount,
+                v1.inputAmount - v2.inputAmount,
+            );
+        }
     }
 }
 

@@ -74,8 +74,9 @@ export function splitPaths(
     kind: SwapKind,
 ): BatchSwapStep[][] {
     const swapsCopy = [...swaps];
-    if (kind === SwapKind.GivenOut) swapsCopy.reverse();
-    console.log(swapsCopy);
+    if (kind === SwapKind.GivenOut) {
+        swapsCopy.reverse();
+    }
     const assetInIndex = BigInt(assets.indexOf(assetIn));
     const assetOutIndex = BigInt(assets.indexOf(assetOut));
     let path: BatchSwapStep[];
