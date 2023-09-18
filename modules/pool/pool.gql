@@ -92,6 +92,7 @@ enum GqlPoolMinimalType {
     GYRO
     GYRO3
     GYROE
+    FX
 }
 
 interface GqlPoolBase {
