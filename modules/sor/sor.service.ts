@@ -63,11 +63,22 @@ export class SorService {
 
         const sorMetricsPublisher = await getSorMetricsPublisher(networkContext.chain);
 
-        sorMetricsPublisher.publish(`SOR_TIME_V1_${input.tokenIn}_${input.tokenOut}`, v1End - v1Start);
-        sorMetricsPublisher.publish(`SOR_TIME_V2_${input.tokenIn}_${input.tokenOut}`, v2End - v2Start);
+        sorMetricsPublisher.publish(`SOR_TIME_V1`, v1End - v1Start);
+        sorMetricsPublisher.publish(`SOR_TIME_V2`, v2End - v2Start);
 
-        sorMetricsPublisher.publish(`SOR_VALID_V1_${input.tokenIn}_${input.tokenOut}`, swapV1.isValid ? 1 : 0);
-        sorMetricsPublisher.publish(`SOR_VALID_V2_${input.tokenIn}_${input.tokenOut}`, swapV2.isValid ? 1 : 0);
+        sorMetricsPublisher.publish(`SOR_VALID_V1`, swapV1.isValid ? 10 : 1);
+        sorMetricsPublisher.publish(`SOR_VALID_V2`, swapV2.isValid ? 10 : 1);
+
+        const swapDiff =
+            input.swapType === 'EXACT_IN'
+                ? Number(swapV1.outputAmount - swapV2.outputAmount)
+                : Number(swapV1.inputAmount - swapV2.inputAmount);
+
+        console.log(
+            `${input.tokenIn},${input.tokenOut},${input.swapType},${input.swapAmount},${swapV1.isValid},${
+                swapV2.isValid
+            },${v1End - v1Start},${v2End - v2Start},${swapDiff},${swapDiff > 0}`,
+        );
 
         if (!swapV1.isValid && !swapV2.isValid)
             return sorV1BeetsService.zeroResponse(input.swapType, input.tokenIn, input.tokenOut, input.swapAmount);
@@ -137,12 +148,7 @@ export class SorService {
         assetOut: string,
     ) {
         // console.log() will log to cloudwatch
-        const sorMetricsPublisher = await getSorMetricsPublisher(networkContext.chain);
         if (swapType === 'EXACT_IN') {
-            sorMetricsPublisher.publish(
-                `SOR_EXACT_IN_${assetIn}_${assetOut}`,
-                Number(v1.outputAmount - v2.outputAmount),
-            );
             await console.log(
                 'SOR Service',
                 networkContext.chain,
@@ -157,10 +163,6 @@ export class SorService {
                 v1.outputAmount - v2.outputAmount,
             );
         } else {
-            sorMetricsPublisher.publish(
-                `SOR_EXACT_OUT_${assetIn}_${assetOut}`,
-                Number(v1.inputAmount - v2.inputAmount),
-            );
             console.log(
                 'SOR Service',
                 networkContext.chain,
