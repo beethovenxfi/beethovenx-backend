@@ -6,5 +6,4 @@
 -- the enum.
 
 
-ALTER TYPE "PrismaPoolType" ADD VALUE 'COMPOSABLE_STABLE';
 ALTER TYPE "PrismaPoolType" ADD VALUE 'FX';

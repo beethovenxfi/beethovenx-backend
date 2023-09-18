@@ -93,7 +93,6 @@ enum PrismaPoolType {
     STABLE
     META_STABLE
     PHANTOM_STABLE
-    COMPOSABLE_STABLE
     ELEMENT
     LINEAR
     UNKNOWN

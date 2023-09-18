@@ -394,7 +394,7 @@ export class PoolCreatorService {
             case 'StablePhantom':
                 return 'PHANTOM_STABLE';
             case 'ComposableStable':
-                return 'COMPOSABLE_STABLE';
+                return 'PHANTOM_STABLE';
             case 'Linear':
                 return 'LINEAR';
             case 'Element':
