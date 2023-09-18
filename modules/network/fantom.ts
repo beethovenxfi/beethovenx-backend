@@ -86,6 +86,7 @@ const fantomNetworkData: NetworkData = {
             '0x9879abdea01a879644185341f7af7d8343556b7a', // multi tusd
             '0x3129662808bec728a27ab6a6b9afd3cbaca8a43c', // multi dola
             '0x0615dbba33fe61a31c7ed131bda6655ed76748b1', // multi ankr
+            '0xb7c2ddb1ebac1056231ef22c1b0a13988537a274', // new tarot
         ],
     },
     tokenPrices: {
@@ -343,7 +344,7 @@ export const fantomNetworkConfig: NetworkConfig = {
     workerJobs: [
         {
             name: 'update-token-prices',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(10, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'update-liquidity-for-inactive-pools',
@@ -353,35 +354,31 @@ export const fantomNetworkConfig: NetworkConfig = {
         },
         {
             name: 'update-liquidity-for-active-pools',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(6, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'update-pool-apr',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(6, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'load-on-chain-data-for-pools-with-active-updates',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(1, 'minutes'),
         },
         {
             name: 'sync-new-pools-from-subgraph',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(6, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'sync-sanity-pool-data',
-            interval: every(3, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(9, 'minutes') : every(3, 'minutes'),
         },
         {
             name: 'sync-tokens-from-pool-tokens',
-            interval: every(5, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(10, 'minutes') : every(5, 'minutes'),
         },
         {
             name: 'update-liquidity-24h-ago-for-all-pools',
-            interval: every(5, 'minutes'),
-        },
-        {
-            name: 'sync-fbeets-ratio',
-            interval: every(12, 'hours'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(10, 'minutes') : every(5, 'minutes'),
         },
         {
             name: 'cache-average-block-time',
@@ -389,11 +386,11 @@ export const fantomNetworkConfig: NetworkConfig = {
         },
         {
             name: 'sync-staking-for-pools',
-            interval: every(5, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(10, 'minutes') : every(5, 'minutes'),
         },
         {
             name: 'cache-protocol-data',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(5, 'minutes') : every(1, 'minutes'),
         },
         {
             name: 'sync-latest-snapshots-for-all-pools',
@@ -405,21 +402,21 @@ export const fantomNetworkConfig: NetworkConfig = {
         },
         {
             name: 'sync-changed-pools',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(40, 'seconds') : every(20, 'seconds'),
-            alarmEvaluationPeriod: 1,
-            alarmDatapointsToAlarm: 1,
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(20, 'seconds'),
+            alarmEvaluationPeriod: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? 3 : 1,
+            alarmDatapointsToAlarm: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? 3 : 1,
         },
         {
             name: 'user-sync-wallet-balances-for-all-pools',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'seconds') : every(15, 'seconds'),
-            alarmEvaluationPeriod: 1,
-            alarmDatapointsToAlarm: 1,
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(5, 'minutes') : every(15, 'seconds'),
+            alarmEvaluationPeriod: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? 3 : 1,
+            alarmDatapointsToAlarm: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? 3 : 1,
         },
         {
             name: 'user-sync-staked-balances',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'seconds') : every(15, 'seconds'),
-            alarmEvaluationPeriod: 1,
-            alarmDatapointsToAlarm: 1,
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(5, 'minutes') : every(15, 'seconds'),
+            alarmEvaluationPeriod: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? 3 : 1,
+            alarmDatapointsToAlarm: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? 3 : 1,
         },
         {
             name: 'sync-user-snapshots',
@@ -449,7 +446,7 @@ export const fantomNetworkConfig: NetworkConfig = {
         },
         {
             name: 'feed-data-to-datastudio',
-            interval: every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(5, 'minutes') : every(1, 'minutes'),
         },
     ],
 };

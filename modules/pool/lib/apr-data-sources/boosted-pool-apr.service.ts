@@ -38,6 +38,7 @@ export class BoostedPoolAprService implements PoolAprService {
                     include: {
                         dynamicData: true,
                         nestedPool: true,
+                        token: true,
                     },
                 },
             },
@@ -79,7 +80,8 @@ export class BoostedPoolAprService implements PoolAprService {
                     !token.dynamicData ||
                     !token.nestedPool ||
                     !token.nestedPool.type ||
-                    token.dynamicData.balanceUSD === 0
+                    token.dynamicData.balanceUSD === 0 ||
+                    pool.dynamicData.totalLiquidity === 0
                 ) {
                     continue;
                 }
@@ -101,6 +103,8 @@ export class BoostedPoolAprService implements PoolAprService {
                         userApr = apr * (1 - protocolYieldFeePercentage);
                     }
 
+                    const title = aprItem.type === 'SWAP_FEE' ? `${token.token.symbol} APR` : aprItem.title;
+
                     await prisma.prismaPoolAprItem.upsert({
                         where: { id_chain: { id: itemId, chain: networkContext.chain } },
                         create: {
@@ -108,10 +112,10 @@ export class BoostedPoolAprService implements PoolAprService {
                             chain: networkContext.chain,
                             poolId: pool.id,
                             apr: userApr,
-                            title: aprItem.title,
+                            title: title,
                             group: aprItem.group,
                         },
-                        update: { apr: userApr, title: aprItem.title },
+                        update: { apr: userApr, title: title },
                     });
                 }
             }

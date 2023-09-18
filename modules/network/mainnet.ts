@@ -61,7 +61,10 @@ export const mainnetNetworkData: NetworkData = {
     tokenPrices: {
         maxHourlyPriceHistoryNumDays: 100,
     },
-    rpcUrl: env.INFURA_API_KEY ? `https://mainnet.infura.io/v3/${env.INFURA_API_KEY}` : 'https://eth.llamarpc.com',
+    rpcUrl:
+        env.INFURA_API_KEY && (env.DEPLOYMENT_ENV as DeploymentEnv) === 'main'
+            ? `https://mainnet.infura.io/v3/${env.INFURA_API_KEY}`
+            : 'https://eth.llamarpc.com',
     rpcMaxBlockRange: 700,
     protocolToken: 'bal',
     bal: {
@@ -171,7 +174,7 @@ export const mainnetNetworkData: NetworkData = {
                         aTokenAddress: '0x018008bfb33d285247a21d44e50697654f754e63',
                         wrappedTokens: {
                             waDAI: '0x098256c06ab24f5655c5506a6488781bd711c14b',
-                            stataEthDAI: '0x098256c06ab24f5655c5506a6488781bd711c14b',
+                            stataEthDAI: '0xeb708639e8e518b86a916db3685f90216b1c1c67',
                         },
                     },
                     wETH: {
@@ -192,6 +195,14 @@ export const mainnetNetworkData: NetworkData = {
                     address: '0xe95a203b1a91a908f9b9ce46459d101078c2c3cb',
                     serviceName: 'eth',
                     isIbYield: true,
+                },
+            },
+        },
+        bloom: {
+            tokens: {
+                tbyFeb1924: {
+                    address: '0xc4cafefbc3dfea629c589728d648cb6111db3136',
+                    feedAddress: '0xde1f5f2d69339171d679fb84e4562febb71f36e6',
                 },
             },
         },
@@ -227,6 +238,14 @@ export const mainnetNetworkData: NetworkData = {
                 idleUSDT: {
                     address: '0xfa3afc9a194babd56e743fa3b7aa2ccbed3eaaad',
                     wrapped4626Address: '0x544897a3b944fdeb1f94a0ed973ea31a80ae18e1',
+                },
+            },
+        },
+        maker: {
+            tokens: {
+                sDAI: {
+                    address: '0x83f20f44975d03b1b09e64809b757c47f942beea',
+                    potAddress: '0x197e90f9fad81970ba7976f33cbd77088e5d7cf7',
                 },
             },
         },
@@ -307,6 +326,12 @@ export const mainnetNetworkData: NetworkData = {
                 path: 'wjauraApy',
                 isIbYield: true,
             },
+            ETHx: {
+                tokenAddress: '0x0f7f961648ae6db43c75663ac7e5414eb79b5704',
+                sourceUrl: 'https://universe.staderlabs.com/eth/apy',
+                path: 'value',
+                isIbYield: true,
+            },
         },
     },
     beefy: {
@@ -367,7 +392,7 @@ export const mainnetNetworkConfig: NetworkConfig = {
     workerJobs: [
         {
             name: 'update-token-prices',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(10, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'update-liquidity-for-inactive-pools',
@@ -377,27 +402,27 @@ export const mainnetNetworkConfig: NetworkConfig = {
         },
         {
             name: 'update-liquidity-for-active-pools',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(6, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'update-pool-apr',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(6, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'load-on-chain-data-for-pools-with-active-updates',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(1, 'minutes'),
         },
         {
             name: 'sync-new-pools-from-subgraph',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(6, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'sync-tokens-from-pool-tokens',
-            interval: every(5, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(10, 'minutes') : every(5, 'minutes'),
         },
         {
             name: 'update-liquidity-24h-ago-for-all-pools',
-            interval: every(5, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(10, 'minutes') : every(5, 'minutes'),
         },
         {
             name: 'cache-average-block-time',
@@ -405,7 +430,7 @@ export const mainnetNetworkConfig: NetworkConfig = {
         },
         {
             name: 'sync-staking-for-pools',
-            interval: every(5, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(10, 'minutes') : every(5, 'minutes'),
         },
         {
             name: 'sync-latest-snapshots-for-all-pools',
@@ -417,25 +442,17 @@ export const mainnetNetworkConfig: NetworkConfig = {
         },
         {
             name: 'sync-changed-pools',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(40, 'seconds') : every(20, 'seconds'),
-            alarmEvaluationPeriod: 1,
-            alarmDatapointsToAlarm: 1,
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(20, 'seconds'),
+            alarmEvaluationPeriod: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? 3 : 1,
+            alarmDatapointsToAlarm: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? 3 : 1,
         },
         {
             name: 'user-sync-wallet-balances-for-all-pools',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'seconds') : every(15, 'seconds'),
-            alarmEvaluationPeriod: 1,
-            alarmDatapointsToAlarm: 1,
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'minutes') : every(10, 'minutes'),
         },
         {
             name: 'user-sync-staked-balances',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'seconds') : every(15, 'seconds'),
-            alarmEvaluationPeriod: 1,
-            alarmDatapointsToAlarm: 1,
-        },
-        {
-            name: 'sync-user-snapshots',
-            interval: every(1, 'hours'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'minutes') : every(10, 'minutes'),
         },
         {
             name: 'sync-coingecko-coinids',
@@ -453,20 +470,20 @@ export const mainnetNetworkConfig: NetworkConfig = {
         },
         {
             name: 'sync-vebal-balances',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(9, 'minutes') : every(3, 'minutes'),
         },
         {
             name: 'sync-vebal-totalSupply',
-            interval: every(5, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(10, 'minutes') : every(5, 'minutes'),
         },
         {
             name: 'sync-vebal-voting-gauges',
-            interval: every(5, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(20, 'minutes') : every(5, 'minutes'),
         },
         // The following are multichain jobs and should only run once for all chains.
         {
             name: 'sync-global-coingecko-prices',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(10, 'minutes') : every(2, 'minutes'),
         },
     ],
 };

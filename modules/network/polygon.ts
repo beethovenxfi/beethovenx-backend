@@ -56,7 +56,7 @@ const polygonNetworkData: NetworkData = {
     },
     rpcUrl: env.INFURA_API_KEY
         ? `https://polygon-mainnet.infura.io/v3/${env.INFURA_API_KEY}`
-        : 'https://rpc.ankr.com/polygon',
+        : 'https://polygon.sakurarpc.io',
     rpcMaxBlockRange: 2000,
     protocolToken: 'bal',
     bal: {
@@ -206,6 +206,18 @@ const polygonNetworkData: NetworkData = {
                 path: 'value',
                 isIbYield: true,
             },
+            overnightUSDPlus: {
+                tokenAddress: '0x5d9d8509c522a47d9285b9e4e9ec686e6a580850',
+                sourceUrl: 'https://api.overnight.fi/optimism/usd+/fin-data/avg-apr/week',
+                path: 'value',
+                group: 'OVERNIGHT',
+            },
+            overnightstUSDPlus: {
+                tokenAddress: '0x5a5c6aa6164750b530b8f7658b827163b3549a4d',
+                sourceUrl: 'https://api.overnight.fi/optimism/usd+/fin-data/avg-apr/week',
+                path: 'value',
+                group: 'OVERNIGHT',
+            },
             wbETH: {
                 tokenAddress: '0xa2e3356610840701bdf5611a53974510ae27e2e1',
                 sourceUrl:
@@ -273,7 +285,7 @@ export const polygonNetworkConfig: NetworkConfig = {
     workerJobs: [
         {
             name: 'update-token-prices',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(10, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'update-liquidity-for-inactive-pools',
@@ -283,27 +295,27 @@ export const polygonNetworkConfig: NetworkConfig = {
         },
         {
             name: 'update-liquidity-for-active-pools',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(6, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'update-pool-apr',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(6, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'load-on-chain-data-for-pools-with-active-updates',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(1, 'minutes'),
         },
         {
             name: 'sync-new-pools-from-subgraph',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(4, 'minutes') : every(2, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(6, 'minutes') : every(2, 'minutes'),
         },
         {
             name: 'sync-tokens-from-pool-tokens',
-            interval: every(5, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(10, 'minutes') : every(5, 'minutes'),
         },
         {
             name: 'update-liquidity-24h-ago-for-all-pools',
-            interval: every(5, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(10, 'minutes') : every(5, 'minutes'),
         },
         {
             name: 'cache-average-block-time',
@@ -311,7 +323,7 @@ export const polygonNetworkConfig: NetworkConfig = {
         },
         {
             name: 'sync-staking-for-pools',
-            interval: every(5, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(10, 'minutes') : every(5, 'minutes'),
         },
         {
             name: 'sync-latest-snapshots-for-all-pools',
@@ -323,25 +335,17 @@ export const polygonNetworkConfig: NetworkConfig = {
         },
         {
             name: 'sync-changed-pools',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(40, 'seconds') : every(20, 'seconds'),
-            alarmEvaluationPeriod: 1,
-            alarmDatapointsToAlarm: 1,
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(20, 'seconds'),
+            alarmEvaluationPeriod: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? 3 : 1,
+            alarmDatapointsToAlarm: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? 3 : 1,
         },
         {
             name: 'user-sync-wallet-balances-for-all-pools',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'seconds') : every(15, 'seconds'),
-            alarmEvaluationPeriod: 1,
-            alarmDatapointsToAlarm: 1,
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(20, 'minutes') : every(10, 'minutes'),
         },
         {
             name: 'user-sync-staked-balances',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(30, 'seconds') : every(15, 'seconds'),
-            alarmEvaluationPeriod: 1,
-            alarmDatapointsToAlarm: 1,
-        },
-        {
-            name: 'sync-user-snapshots',
-            interval: every(1, 'hours'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(20, 'minutes') : every(10, 'minutes'),
         },
         {
             name: 'sync-coingecko-coinids',
@@ -359,11 +363,11 @@ export const polygonNetworkConfig: NetworkConfig = {
         },
         {
             name: 'sync-vebal-balances',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(1, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(9, 'minutes') : every(3, 'minutes'),
         },
         {
             name: 'sync-vebal-totalSupply',
-            interval: every(5, 'minutes'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(10, 'minutes') : every(5, 'minutes'),
         },
     ],
 };
