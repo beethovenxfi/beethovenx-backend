@@ -471,6 +471,7 @@ model PrismaPoolStakingGauge {
     status              PrismaPoolStakingGaugeStatus    @default(ACTIVE)
     version             Int                             @default(1)
     workingSupply       String                          @default("0.0")
+    totalSupply         String                          @default("0.0")
 }
 
 enum PrismaPoolStakingGaugeStatus {

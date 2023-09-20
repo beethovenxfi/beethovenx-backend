@@ -339,7 +339,7 @@ export const mainnetNetworkConfig: NetworkConfig = {
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(mainnetNetworkData.balancer.swapProtocolFeePercentage),
-        new GaugeAprService(gaugeSubgraphService, tokenService, [mainnetNetworkData.bal!.address]),
+        new GaugeAprService(tokenService, [mainnetNetworkData.bal!.address]),
     ],
     poolStakingServices: [new GaugeStakingService(gaugeSubgraphService, mainnetNetworkData.bal!.address)],
     tokenPriceHandlers: [

@@ -30,6 +30,8 @@ interface GaugeRate {
     /** BAL per second received by the gauge */
     rate: string;
     // Amount of tokens staked in the gauge
+    totalSupply: string;
+    // Effective total LP token amount after all deposits have been boosted
     workingSupply: string;
 }
 
@@ -49,6 +51,7 @@ interface GaugeBalDistributionData {
         rate?: BigNumber,
         weight?: BigNumber,
         workingSupply?: BigNumber
+        totalSupply?: BigNumber
     }
 }
 
@@ -62,6 +65,7 @@ export class GaugeStakingService implements PoolStakingService {
         this.balAddress = balAddress.toLowerCase();
 
         this.balMulticaller = new Multicaller3([
+            ...childChainGaugeV2Abi.filter((abi) => abi.name === 'totalSupply'),
             ...childChainGaugeV2Abi.filter((abi) => abi.name === 'working_supply'),
             ...childChainGaugeV2Abi.filter((abi) => abi.name === 'inflation_rate'),
             gaugeControllerAbi.find((abi) => abi.name === 'gauge_relative_weight'),
@@ -152,11 +156,13 @@ export class GaugeStakingService implements PoolStakingService {
                         status: gauge.status,
                         version: gauge.version,
                         workingSupply: onchainRates.find(({ id }) => `${this.balAddress}-${gauge.id}` === id)?.workingSupply,
+                        totalSupply: onchainRates.find(({ id }) => id.includes(gauge.id))?.totalSupply,
                     },
                     update: {
                         status: gauge.status,
                         version: gauge.version,
                         workingSupply: onchainRates.find(({ id }) => `${this.balAddress}-${gauge.id}` === id)?.workingSupply,
+                        totalSupply: onchainRates.find(({ id }) => id.includes(gauge.id))?.totalSupply,
                     },
                 }),
             );
@@ -198,6 +204,7 @@ export class GaugeStakingService implements PoolStakingService {
         // Get onchain data for BAL rewards
         const currentWeek = Math.floor(Date.now() / 1000 / 604800);
         for (const gauge of gauges) {
+            this.balMulticaller.call(`${gauge.id}.totalSupply`, gauge.id, 'totalSupply', [], true);
             if (gauge.version === 2) {
                 this.balMulticaller.call(`${gauge.id}.rate`, gauge.id, 'inflation_rate', [currentWeek], true);
                 this.balMulticaller.call(`${gauge.id}.workingSupply`, gauge.id, 'working_supply', [], true);
@@ -230,7 +237,7 @@ export class GaugeStakingService implements PoolStakingService {
         const onchainRates = [
             ...Object.keys(balData).map((gaugeAddress) => {
                 const id = `${this.balAddress}-${gaugeAddress}`.toLowerCase();
-                const { rate, weight, workingSupply } = balData[gaugeAddress];
+                const { rate, weight, workingSupply, totalSupply } = balData[gaugeAddress];
                 const rewardPerSecond = rate
                     ? formatUnits(rate) // L2 V2 case
                     : weight ? (parseFloat(formatUnits(weight!)) * totalBalRate).toFixed(18) // mainnet case
@@ -240,6 +247,7 @@ export class GaugeStakingService implements PoolStakingService {
                     id,
                     rewardPerSecond,
                     workingSupply: workingSupply ? formatUnits(workingSupply) : '0',
+                    totalSupply: totalSupply ? formatUnits(totalSupply) : '0',
                 }
             }),
             ...Object.keys(rewardsData).map((gaugeAddress) => [ // L2 V1 case, includes tokens other than BAL
@@ -247,14 +255,21 @@ export class GaugeStakingService implements PoolStakingService {
                     const id = `${tokenAddress}-${gaugeAddress}`.toLowerCase();
                     const { rate, period_finish } = rewardsData[gaugeAddress].rewardData[tokenAddress];
                     const rewardPerSecond = (period_finish && period_finish.toNumber() > now) ? formatUnits(rate!) : '0.0';
+                    const { totalSupply } = balData[gaugeAddress];
 
-                    return { id, rewardPerSecond, workingSupply: '0' };
+                    return {
+                        id,
+                        rewardPerSecond,
+                        workingSupply: '0',
+                        totalSupply: totalSupply ? formatUnits(totalSupply) : '0'
+                    };
                 }),
             ]).flat(),
         ].filter(({ rewardPerSecond }) => parseFloat(rewardPerSecond) > 0) as {
-            id: string,
-            rewardPerSecond: string,
+            id: string
+            rewardPerSecond: string
             workingSupply: string
+            totalSupply: string
         }[];
 
         return onchainRates;
