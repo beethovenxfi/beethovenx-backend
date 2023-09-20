@@ -12,6 +12,7 @@ export function aPrismaPoolStakingGauge(...options: Partial<PrismaPoolStakingGau
         status: 'ACTIVE',
         version: 1,
         workingSupply: '0',
+        totalSupply: '0',
     };
     return Object.assign({}, defaultGauge, ...options);
 }
