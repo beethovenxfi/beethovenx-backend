@@ -1,11 +1,12 @@
 /**
- * Supports calculation of BAL rewards sent to gauges. Balancer setup has 3 types of gauges:
+ * Supports calculation of BAL and token rewards sent to gauges.
+ * Balancer has 3 types of gauges:
  * 
  * 1. Mainnet gauges with working supply and relative weight
  * 2. Old L2 gauges with BAL rewards sent as a reward token
  * 3. New L2 gauges (aka child chain gauges) with direct BAL rewards through a streamer.
  * 
- * This service supports all 3 types of gauges and stores the BAL rewards in the DB as a reward token rate per second.
+ * Reward data is fetched onchain and stored in the DB as a token rate per second.
  */
 import { PoolStakingService } from '../../pool-types';
 import { prisma } from '../../../../prisma/prisma-client';
@@ -21,7 +22,7 @@ import { BigNumber } from '@ethersproject/bignumber';
 import { formatUnits } from '@ethersproject/units';
 import type { JsonFragment } from '@ethersproject/abi';
 import { Multicaller3 } from '../../../web3/multicaller3';
-import * as emissions from './bal-emissions';
+import { getInflationRate } from '../../../vebal/balancer-token-admin.service';
 import _ from 'lodash';
 
 interface GaugeRate {
@@ -230,7 +231,7 @@ export class GaugeStakingService implements PoolStakingService {
         const rewardsDataV2 = await this.rewardsMulticallerV2.execute() as GaugeRewardData;
         const rewardsData = { ...rewardsDataV1, ...rewardsDataV2 };
 
-        const totalBalRate = emissions.weekly() / 604800;
+        const totalBalRate = parseFloat(formatUnits(await getInflationRate()));
         const now = Math.floor(Date.now() / 1000);
 
         // Format onchain rates for all the rewards
