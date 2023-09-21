@@ -9,14 +9,7 @@ import { PrismaPoolWithTokens } from '../../../../prisma/prisma-types';
 import { PoolAprService } from '../../pool-types';
 import { TokenService } from '../../../token/token.service';
 import { secondsPerYear } from '../../../common/time';
-import {
-    PrismaPoolAprItem,
-    PrismaPoolAprRange,
-    PrismaPoolAprType,
-    PrismaPoolStaking,
-    PrismaPoolStakingGauge,
-    PrismaPoolStakingGaugeReward,
-} from '@prisma/client';
+import { PrismaPoolAprItem, PrismaPoolAprRange, PrismaPoolAprType } from '@prisma/client';
 import { prisma } from '../../../../prisma/prisma-client';
 import { prismaBulkExecuteOperations } from '../../../../prisma/prisma-util';
 import { networkContext } from '../../../network/network-context.service';
@@ -58,7 +51,7 @@ export class GaugeAprService implements PoolAprService {
         for (const stake of stakings) {
             const { pool, gauge } = stake;
 
-            if (!gauge || !pool.dynamicData || !gauge.rewards) {
+            if (!gauge || !gauge.rewards || !pool.dynamicData || pool.dynamicData.totalShares === '0') {
                 continue;
             }
 
@@ -120,7 +113,10 @@ export class GaugeAprService implements PoolAprService {
                         address.toLowerCase() === networkContext.data.bal!.address.toLowerCase() &&
                         (networkContext.chain === 'MAINNET' || gauge.version === 2)
                     ) {
-                        const minApr = rewardPerYear / workingSupplyTvl;
+                        let minApr = 0;
+                        if (rewardPerYear > 0 && workingSupplyTvl > 0) {
+                            minApr = rewardPerYear / workingSupplyTvl;
+                        }
 
                         const aprRangeId = `${pool.id}-bal-apr-range`;
 
