@@ -120,17 +120,10 @@ export class GaugeAprService implements PoolAprService {
                         address.toLowerCase() === networkContext.data.bal!.address.toLowerCase() &&
                         (networkContext.chain === 'MAINNET' || gauge.version === 2)
                     ) {
-                        let minApr = 0;
-
-                        if (workingSupply > 0) {
-                            minApr = rewardPerYear / workingSupplyTvl;
-                        }
+                        const minApr = rewardPerYear / workingSupplyTvl;
 
                         const aprRangeId = `${pool.id}-bal-apr-range`;
 
-                        itemData.apr = minApr;
-
-                        // TODO: Is this needed? Are there any other use-cases besides veBAL? If not, maybe we can remove this and just use the itemData
                         const rangeData = {
                             id: aprRangeId,
                             chain: networkContext.chain,
