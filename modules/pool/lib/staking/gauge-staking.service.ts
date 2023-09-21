@@ -175,7 +175,7 @@ export class GaugeStakingService implements PoolStakingService {
 
         // DB operations for gauge reward tokens
         for (const { id, rewardPerSecond } of onchainRates) {
-            const [tokenAddress, gaugeId] = id.toLowerCase().split('-');
+            const [gaugeId, tokenAddress] = id.toLowerCase().split('-');
             const token = prismaTokens.find((token) => token.address === tokenAddress);
             if (!token) {
                 const poolId = subgraphGauges.find((gauge) => gauge.id === gaugeId)?.poolId;
@@ -259,7 +259,7 @@ export class GaugeStakingService implements PoolStakingService {
         // Format onchain rates for all the rewards
         const onchainRates = [
             ...Object.keys(balData).map((gaugeAddress) => {
-                const id = `${this.balAddress}-${gaugeAddress}`.toLowerCase();
+                const id = `${gaugeAddress}-${this.balAddress}-`.toLowerCase();
                 const { rate, weight, workingSupply, totalSupply } = balData[gaugeAddress];
                 const rewardPerSecond = rate
                     ? formatUnits(rate) // L2 V2 case
@@ -278,7 +278,7 @@ export class GaugeStakingService implements PoolStakingService {
                 .map((gaugeAddress) => [
                     // L2 V1 case, includes tokens other than BAL
                     ...Object.keys(rewardsData[gaugeAddress].rewardData).map((tokenAddress) => {
-                        const id = `${tokenAddress}-${gaugeAddress}`.toLowerCase();
+                        const id = `${gaugeAddress}-${tokenAddress}`.toLowerCase();
                         const { rate, period_finish } = rewardsData[gaugeAddress].rewardData[tokenAddress];
                         const rewardPerSecond =
                             period_finish && period_finish.toNumber() > now ? formatUnits(rate!) : '0.0';
@@ -293,7 +293,7 @@ export class GaugeStakingService implements PoolStakingService {
                     }),
                 ])
                 .flat(),
-        ].filter(({ rewardPerSecond }) => parseFloat(rewardPerSecond) > 0) as {
+        ] as {
             id: string;
             rewardPerSecond: string;
             workingSupply: string;
