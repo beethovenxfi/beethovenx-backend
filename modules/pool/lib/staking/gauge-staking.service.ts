@@ -93,13 +93,52 @@ export class GaugeStakingService implements PoolStakingService {
             .map((pool) => pool.gauges)
             .flat()
             .filter((gauge): gauge is LiquidityGauge => !!gauge);
-      
+
+        // Handle preferential gauges edge cases where the preferential gauge is not set, but pool has gauges,
+        // or there are multiple preferential gauges set for a pool
+        // My eyes hurt from looking at this code, but it works
+        const poolIdsWithPreferentialGauges = subgraphPoolsWithGauges
+            .filter((pool) => !!pool.preferentialGauge)
+            .map((pool) => pool.poolId);
+        const poolIdsWithoutPreferentialGauge = subgraphPoolsWithGauges
+            .filter((pool) => !poolIdsWithPreferentialGauges.includes(pool.poolId))
+            .map((pool) => pool.poolId);
+        const gaugesForPoolsWithoutPreferentialGauge = subgraphGauges
+            .filter((gauge) => poolIdsWithoutPreferentialGauge.includes(gauge.poolId));
+        const preferentialIdsForPoolsWithoutPreferentialGauge = _
+            .uniqBy(gaugesForPoolsWithoutPreferentialGauge, (gauge) => gauge.poolId)
+            .map((gauge) => gauge.id);
+        // Remove duplicated preferential gauges for pools that have multiple preferential gauges
+        const poolsWithMultiplePreferentialGauges = _.countBy(
+            subgraphGauges.filter((gauge) => gauge.isPreferentialGauge),
+            (gauge) => gauge.poolId
+        );
+        const poolIdsWithMultiplePreferentialGauges = Object.keys(poolsWithMultiplePreferentialGauges)
+            .filter((poolId) => poolsWithMultiplePreferentialGauges[poolId] > 1);
+        const singlePreferentialIds = subgraphGauges
+            .filter((gauge) => gauge.isPreferentialGauge && !poolIdsWithMultiplePreferentialGauges.includes(gauge.poolId!))
+            .map((gauge) => gauge.id);
+        const preferentialGaugesForPoolsWithMultiplePreferentialGauges = subgraphGauges
+            .filter((gauge) => poolIdsWithMultiplePreferentialGauges.includes(gauge.poolId!));
+        const preferentialIdsForPoolsWithMultiplePreferentialGauges = _
+            .uniqBy(preferentialGaugesForPoolsWithMultiplePreferentialGauges, (gauge) => gauge.poolId)
+            .map((gauge) => gauge.id);
+        const preferentialIds = [
+            ...singlePreferentialIds,
+            ...preferentialIdsForPoolsWithoutPreferentialGauge,
+            ...preferentialIdsForPoolsWithMultiplePreferentialGauges,
+        ];
+
         const dbGauges = subgraphGauges
             .map((gauge) => ({
                 id: gauge.id,
-                poolId: gauge.poolId,
+                poolId: gauge.poolId!,
                 // we need to set the status based on the preferentialGauge entity on the gaugePool. If it's set there, it's preferential, otherwise it's active (or killed)
-                status: gauge.isKilled ? 'KILLED' : gauge.isPreferentialGauge ? 'PREFERRED' : 'ACTIVE' as LiquidityGaugeStatus,
+                status: gauge.isKilled
+                    ? 'KILLED'
+                    : preferentialIds.includes(gauge.id)
+                    ? 'PREFERRED'
+                    : 'ACTIVE' as LiquidityGaugeStatus,
                 version: gauge.streamer ? 1 : 2 as 1 | 2,
                 tokens: gauge.tokens || [],
             }));
@@ -127,11 +166,6 @@ export class GaugeStakingService implements PoolStakingService {
 
         // DB operations for gauges
         for (const gauge of dbGauges) {
-            // Skip gauges which pools aren't in the DB
-            if (!gauge.poolId || !poolIds.includes(gauge.poolId)) {
-                continue;
-            }
-
             operations.push(
                 prisma.prismaPoolStaking.upsert({
                     where: { id_chain: { id: gauge.id, chain: networkContext.chain } },
