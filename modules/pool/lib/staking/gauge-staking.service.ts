@@ -108,7 +108,7 @@ export class GaugeStakingService implements PoolStakingService {
                     : !uniquePreferentialIds.includes(gauge.id)
                     ? 'ACTIVE'
                     : 'PREFERRED' as LiquidityGaugeStatus,
-                version: gauge.streamer ? 1 : 2 as 1 | 2,
+                version: gauge.streamer || networkContext.chain == 'MAINNET' ? 1 : 2 as 1 | 2,
                 tokens: gauge.tokens || [],
             }));
 
