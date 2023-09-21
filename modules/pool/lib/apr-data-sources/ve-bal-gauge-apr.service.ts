@@ -122,7 +122,7 @@ export class GaugeAprService implements PoolAprService {
                     ) {
                         const minApr = rewardPerYear / workingSupplyTvl;
 
-                        const aprRangeId = `${pool.id}-bal-apr-range`;
+                        const aprRangeId = `${pool.id}-BAL-apr-range`;
 
                         const rangeData = {
                             id: aprRangeId,
