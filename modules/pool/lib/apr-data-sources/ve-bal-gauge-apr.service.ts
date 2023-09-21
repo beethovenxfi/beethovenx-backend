@@ -1,6 +1,6 @@
 /**
  * This service calculates the APR for a pool based on the gauge rewards
- * 
+ *
  * Definitions:
  * The “working supply” of the gauge - the effective total LP token amount after all deposits have been boosted.
  * "Working balance" is 40% of a user balance in a gauge - used only for BAL rewards on v2 gauges on child gauges or on mainnet
@@ -9,7 +9,14 @@ import { PrismaPoolWithTokens } from '../../../../prisma/prisma-types';
 import { PoolAprService } from '../../pool-types';
 import { TokenService } from '../../../token/token.service';
 import { secondsPerYear } from '../../../common/time';
-import { PrismaPoolAprItem, PrismaPoolAprRange, PrismaPoolAprType, PrismaPoolStaking, PrismaPoolStakingGauge, PrismaPoolStakingGaugeReward } from '@prisma/client';
+import {
+    PrismaPoolAprItem,
+    PrismaPoolAprRange,
+    PrismaPoolAprType,
+    PrismaPoolStaking,
+    PrismaPoolStakingGauge,
+    PrismaPoolStakingGaugeReward,
+} from '@prisma/client';
 import { prisma } from '../../../../prisma/prisma-client';
 import { prismaBulkExecuteOperations } from '../../../../prisma/prisma-util';
 import { networkContext } from '../../../network/network-context.service';
@@ -17,10 +24,7 @@ import { networkContext } from '../../../network/network-context.service';
 export class GaugeAprService implements PoolAprService {
     private readonly MAX_VEBAL_BOOST = 2.5;
 
-    constructor(
-        private readonly tokenService: TokenService,
-        private readonly primaryTokens: string[],
-    ) {}
+    constructor(private readonly tokenService: TokenService, private readonly primaryTokens: string[]) {}
 
     public getAprServiceName(): string {
         return 'GaugeAprService';
@@ -36,15 +40,12 @@ export class GaugeAprService implements PoolAprService {
                 poolId: { in: pools.map((pool) => pool.id) },
                 type: 'GAUGE',
                 chain: networkContext.chain,
-                gauge: {
-                    status: 'PREFERRED'
-                }
             },
             include: {
                 gauge: {
                     include: {
                         rewards: true,
-                    }
+                    },
                 },
                 pool: {
                     include: {
@@ -57,7 +58,7 @@ export class GaugeAprService implements PoolAprService {
         for (const stake of stakings) {
             const { pool, gauge } = stake;
 
-            if (!gauge || !pool.dynamicData || !gauge || !gauge.rewards) {
+            if (!gauge || !pool.dynamicData || !gauge.rewards) {
                 continue;
             }
 
@@ -83,67 +84,70 @@ export class GaugeAprService implements PoolAprService {
                         address: tokenAddress,
                         symbol: definition.symbol,
                         rewardPerYear: parseFloat(rewardPerSecond) * secondsPerYear * price,
-                    }
-                })
+                    };
+                }),
             );
 
             // Calculate APRs
             const totalShares = parseFloat(pool.dynamicData.totalShares);
             const bptPrice = pool.dynamicData.totalLiquidity / totalShares;
-            const gaugeTvl =
-                totalShares > 0 ? parseFloat(gauge.totalSupply) * bptPrice : 0;
+            const gaugeTvl = totalShares > 0 ? parseFloat(gauge.totalSupply) * bptPrice : 0;
             const workingSupply = parseFloat(gauge.workingSupply);
-            const workingSupplyTvl =  ((workingSupply + 0.4) / 0.4) * bptPrice;
+            const workingSupplyTvl = ((workingSupply + 0.4) / 0.4) * bptPrice;
 
-            const aprItems = rewards.map((reward) => {
-                if (reward.status === 'rejected') {
-                    return null;
-                }
-
-                const { address, symbol, rewardPerYear } = reward.value;
-
-                const itemData: PrismaPoolAprItem = {
-                    id: `${pool.id}-${symbol}-apr`,
-                    chain: networkContext.chain,
-                    poolId: pool.id,
-                    title: `${symbol} reward APR`,
-                    group: null,
-                    apr: 0,
-                    type: this.primaryTokens.includes(address.toLowerCase()) ? PrismaPoolAprType.NATIVE_REWARD : PrismaPoolAprType.THIRD_PARTY_REWARD,
-                };
-
-                // veBAL rewards have a range associated with the item
-                if (
-                    address.toLowerCase() === networkContext.data.bal!.address.toLowerCase() &&
-                    (networkContext.chain === 'MAINNET' || gauge.version === 2)
-                ) {
-                    let minApr = 0;
-
-                    if (workingSupply > 0) {
-                        minApr = rewardPerYear / workingSupplyTvl;
+            const aprItems = rewards
+                .map((reward) => {
+                    if (reward.status === 'rejected') {
+                        return null;
                     }
 
-                    const aprRangeId = `${pool.id}-bal-apr-range`;
+                    const { address, symbol, rewardPerYear } = reward.value;
 
-                    itemData.apr = minApr;
-
-                    // TODO: Is this needed? Are there any other use-cases besides veBAL? If not, maybe we can remove this and just use the itemData
-                    const rangeData = {
-                        id: aprRangeId,
+                    const itemData: PrismaPoolAprItem = {
+                        id: `${pool.id}-${symbol}-apr`,
                         chain: networkContext.chain,
-                        aprItemId: itemData.id,
-                        min: minApr,
-                        max: minApr * this.MAX_VEBAL_BOOST,
+                        poolId: pool.id,
+                        title: `${symbol} reward APR`,
+                        group: null,
+                        apr: 0,
+                        type: this.primaryTokens.includes(address.toLowerCase())
+                            ? PrismaPoolAprType.NATIVE_REWARD
+                            : PrismaPoolAprType.THIRD_PARTY_REWARD,
                     };
 
-                    return [itemData, rangeData];
-                } else {
-                    itemData.apr = gaugeTvl > 0 ? rewardPerYear / gaugeTvl : 0;
+                    // veBAL rewards have a range associated with the item
+                    if (
+                        address.toLowerCase() === networkContext.data.bal!.address.toLowerCase() &&
+                        (networkContext.chain === 'MAINNET' || gauge.version === 2)
+                    ) {
+                        let minApr = 0;
 
-                    return itemData;
-                }
-            }).flat().filter((apr): apr is PrismaPoolAprItem | PrismaPoolAprRange => apr !== null);
+                        if (workingSupply > 0) {
+                            minApr = rewardPerYear / workingSupplyTvl;
+                        }
 
+                        const aprRangeId = `${pool.id}-bal-apr-range`;
+
+                        itemData.apr = minApr;
+
+                        // TODO: Is this needed? Are there any other use-cases besides veBAL? If not, maybe we can remove this and just use the itemData
+                        const rangeData = {
+                            id: aprRangeId,
+                            chain: networkContext.chain,
+                            aprItemId: itemData.id,
+                            min: minApr,
+                            max: minApr * this.MAX_VEBAL_BOOST,
+                        };
+
+                        return [itemData, rangeData];
+                    } else {
+                        itemData.apr = gaugeTvl > 0 ? rewardPerYear / gaugeTvl : 0;
+
+                        return itemData;
+                    }
+                })
+                .flat()
+                .filter((apr): apr is PrismaPoolAprItem | PrismaPoolAprRange => apr !== null);
 
             // Prepare DB operations
             for (const item of aprItems) {
@@ -156,7 +160,7 @@ export class GaugeAprService implements PoolAprService {
                             update: item,
                             create: item as PrismaPoolAprRange,
                         }),
-                    );    
+                    );
                 } else {
                     operations.push(
                         prisma.prismaPoolAprItem.upsert({

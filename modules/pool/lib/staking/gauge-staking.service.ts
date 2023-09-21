@@ -1,11 +1,11 @@
 /**
  * Supports calculation of BAL and token rewards sent to gauges.
  * Balancer has 3 types of gauges:
- * 
+ *
  * 1. Mainnet gauges with working supply and relative weight
  * 2. Old L2 gauges with BAL rewards sent as a reward token
  * 3. New L2 gauges (aka child chain gauges) with direct BAL rewards through a streamer.
- * 
+ *
  * Reward data is fetched onchain and stored in the DB as a token rate per second.
  */
 import { PoolStakingService } from '../../pool-types';
@@ -40,20 +40,20 @@ interface GaugeRewardData {
     [address: string]: {
         rewardData: {
             [address: string]: {
-                period_finish?: BigNumber,
-                rate?: BigNumber
-            }
-        }
-    }
+                period_finish?: BigNumber;
+                rate?: BigNumber;
+            };
+        };
+    };
 }
 
 interface GaugeBalDistributionData {
     [address: string]: {
-        rate?: BigNumber,
-        weight?: BigNumber,
-        workingSupply?: BigNumber
-        totalSupply?: BigNumber
-    }
+        rate?: BigNumber;
+        weight?: BigNumber;
+        workingSupply?: BigNumber;
+        totalSupply?: BigNumber;
+    };
 }
 
 export class GaugeStakingService implements PoolStakingService {
@@ -98,19 +98,18 @@ export class GaugeStakingService implements PoolStakingService {
             .filter((pool) => pool.preferentialGauge)
             .map((pool) => pool.preferentialGauge!.id);
 
-        const dbGauges = subgraphGauges
-            .map((gauge) => ({
-                id: gauge.id,
-                poolId: gauge.poolId!,
-                // we need to set the status based on the preferentialGauge entity on the gaugePool. If it's set there, it's preferential, otherwise it's active (or killed)
-                status: gauge.isKilled
-                    ? 'KILLED'
-                    : !uniquePreferentialIds.includes(gauge.id)
-                    ? 'ACTIVE'
-                    : 'PREFERRED' as LiquidityGaugeStatus,
-                version: gauge.streamer || networkContext.chain == 'MAINNET' ? 1 : 2 as 1 | 2,
-                tokens: gauge.tokens || [],
-            }));
+        const dbGauges = subgraphGauges.map((gauge) => ({
+            id: gauge.id,
+            poolId: gauge.poolId!,
+            // we need to set the status based on the preferentialGauge entity on the gaugePool. If it's set there, it's preferential, otherwise it's active (or killed)
+            status: gauge.isKilled
+                ? 'KILLED'
+                : !uniquePreferentialIds.includes(gauge.id)
+                ? 'ACTIVE'
+                : ('PREFERRED' as LiquidityGaugeStatus),
+            version: gauge.streamer || networkContext.chain == 'MAINNET' ? 1 : (2 as 1 | 2),
+            tokens: gauge.tokens || [],
+        }));
 
         // Get tokens used for all reward tokens including native BAL address, which might not be on the list of tokens stored in the gauge
         const prismaTokens = await prisma.prismaToken.findMany({
@@ -121,8 +120,8 @@ export class GaugeStakingService implements PoolStakingService {
                         ...subgraphGauges
                             .map((gauge) => gauge.tokens?.map((token) => token.id.split('-')[0].toLowerCase()))
                             .flat()
-                            .filter((address): address is string => !!address)
-                    ]
+                            .filter((address): address is string => !!address),
+                    ],
                 },
                 chain: networkContext.chain,
             },
@@ -159,13 +158,15 @@ export class GaugeStakingService implements PoolStakingService {
                         chain: networkContext.chain,
                         status: gauge.status,
                         version: gauge.version,
-                        workingSupply: onchainRates.find(({ id }) => `${this.balAddress}-${gauge.id}` === id)?.workingSupply,
+                        workingSupply: onchainRates.find(({ id }) => `${this.balAddress}-${gauge.id}` === id)
+                            ?.workingSupply,
                         totalSupply: onchainRates.find(({ id }) => id.includes(gauge.id))?.totalSupply,
                     },
                     update: {
                         status: gauge.status,
                         version: gauge.version,
-                        workingSupply: onchainRates.find(({ id }) => `${this.balAddress}-${gauge.id}` === id)?.workingSupply,
+                        workingSupply: onchainRates.find(({ id }) => `${this.balAddress}-${gauge.id}` === id)
+                            ?.workingSupply,
                         totalSupply: onchainRates.find(({ id }) => id.includes(gauge.id))?.totalSupply,
                     },
                 }),
@@ -191,10 +192,10 @@ export class GaugeStakingService implements PoolStakingService {
                         chain: networkContext.chain,
                         gaugeId,
                         tokenAddress,
-                        rewardPerSecond
+                        rewardPerSecond,
                     },
                     update: {
-                        rewardPerSecond
+                        rewardPerSecond,
                     },
                     where: { id_chain: { id, chain: networkContext.chain } },
                 }),
@@ -204,7 +205,7 @@ export class GaugeStakingService implements PoolStakingService {
         await prismaBulkExecuteOperations(operations, true, undefined);
     }
 
-    private async getOnchainRewardTokensData(gauges: { id: string, version: 1 | 2, tokens: { id: string }[] }[]) {
+    private async getOnchainRewardTokensData(gauges: { id: string; version: 1 | 2; tokens: { id: string }[] }[]) {
         // Get onchain data for BAL rewards
         const currentWeek = Math.floor(Date.now() / 1000 / 604800);
         for (const gauge of gauges) {
@@ -213,25 +214,43 @@ export class GaugeStakingService implements PoolStakingService {
                 this.balMulticaller.call(`${gauge.id}.rate`, gauge.id, 'inflation_rate', [currentWeek], true);
                 this.balMulticaller.call(`${gauge.id}.workingSupply`, gauge.id, 'working_supply', [], true);
             } else if (networkContext.chain === Chain.MAINNET) {
-                this.balMulticaller.call(`${gauge.id}.weight`, networkContext.data.gaugeControllerAddress!, 'gauge_relative_weight', [gauge.id], true);
+                this.balMulticaller.call(
+                    `${gauge.id}.weight`,
+                    networkContext.data.gaugeControllerAddress!,
+                    'gauge_relative_weight',
+                    [gauge.id],
+                    true,
+                );
                 this.balMulticaller.call(`${gauge.id}.workingSupply`, gauge.id, 'working_supply', [], true);
             }
         }
-        const balData = await this.balMulticaller.execute() as GaugeBalDistributionData;
+        const balData = (await this.balMulticaller.execute()) as GaugeBalDistributionData;
 
         // Get onchain data for reward tokens
         for (const gauge of gauges) {
             for (const token of gauge.tokens ?? []) {
                 const [address] = token.id.toLowerCase().split('-');
                 if (gauge.version === 1) {
-                    this.rewardsMulticallerV1.call(`${gauge.id}.rewardData.${address}`, gauge.id, 'reward_data', [address], true);
+                    this.rewardsMulticallerV1.call(
+                        `${gauge.id}.rewardData.${address}`,
+                        gauge.id,
+                        'reward_data',
+                        [address],
+                        true,
+                    );
                 } else {
-                    this.rewardsMulticallerV2.call(`${gauge.id}.rewardData.${address}`, gauge.id, 'reward_data', [address], true);
+                    this.rewardsMulticallerV2.call(
+                        `${gauge.id}.rewardData.${address}`,
+                        gauge.id,
+                        'reward_data',
+                        [address],
+                        true,
+                    );
                 }
             }
         }
-        const rewardsDataV1 = await this.rewardsMulticallerV1.execute() as GaugeRewardData;
-        const rewardsDataV2 = await this.rewardsMulticallerV2.execute() as GaugeRewardData;
+        const rewardsDataV1 = (await this.rewardsMulticallerV1.execute()) as GaugeRewardData;
+        const rewardsDataV2 = (await this.rewardsMulticallerV2.execute()) as GaugeRewardData;
         const rewardsData = { ...rewardsDataV1, ...rewardsDataV2 };
 
         const totalBalRate = parseFloat(formatUnits(await getInflationRate()));
@@ -244,7 +263,8 @@ export class GaugeStakingService implements PoolStakingService {
                 const { rate, weight, workingSupply, totalSupply } = balData[gaugeAddress];
                 const rewardPerSecond = rate
                     ? formatUnits(rate) // L2 V2 case
-                    : weight ? (parseFloat(formatUnits(weight!)) * totalBalRate).toFixed(18) // mainnet case
+                    : weight
+                    ? (parseFloat(formatUnits(weight!)) * totalBalRate).toFixed(18) // mainnet case
                     : '0';
 
                 return {
@@ -252,70 +272,35 @@ export class GaugeStakingService implements PoolStakingService {
                     rewardPerSecond,
                     workingSupply: workingSupply ? formatUnits(workingSupply) : '0',
                     totalSupply: totalSupply ? formatUnits(totalSupply) : '0',
-                }
+                };
             }),
-            ...Object.keys(rewardsData).map((gaugeAddress) => [ // L2 V1 case, includes tokens other than BAL
-                ...Object.keys(rewardsData[gaugeAddress].rewardData).map((tokenAddress) => {
-                    const id = `${tokenAddress}-${gaugeAddress}`.toLowerCase();
-                    const { rate, period_finish } = rewardsData[gaugeAddress].rewardData[tokenAddress];
-                    const rewardPerSecond = (period_finish && period_finish.toNumber() > now) ? formatUnits(rate!) : '0.0';
-                    const { totalSupply } = balData[gaugeAddress];
+            ...Object.keys(rewardsData)
+                .map((gaugeAddress) => [
+                    // L2 V1 case, includes tokens other than BAL
+                    ...Object.keys(rewardsData[gaugeAddress].rewardData).map((tokenAddress) => {
+                        const id = `${tokenAddress}-${gaugeAddress}`.toLowerCase();
+                        const { rate, period_finish } = rewardsData[gaugeAddress].rewardData[tokenAddress];
+                        const rewardPerSecond =
+                            period_finish && period_finish.toNumber() > now ? formatUnits(rate!) : '0.0';
+                        const { totalSupply } = balData[gaugeAddress];
 
-                    return {
-                        id,
-                        rewardPerSecond,
-                        workingSupply: '0',
-                        totalSupply: totalSupply ? formatUnits(totalSupply) : '0'
-                    };
-                }),
-            ]).flat(),
+                        return {
+                            id,
+                            rewardPerSecond,
+                            workingSupply: '0',
+                            totalSupply: totalSupply ? formatUnits(totalSupply) : '0',
+                        };
+                    }),
+                ])
+                .flat(),
         ].filter(({ rewardPerSecond }) => parseFloat(rewardPerSecond) > 0) as {
-            id: string
-            rewardPerSecond: string
-            workingSupply: string
-            totalSupply: string
+            id: string;
+            rewardPerSecond: string;
+            workingSupply: string;
+            totalSupply: string;
         }[];
 
         return onchainRates;
-    }
-
-    // Handle preferential gauges edge cases where the preferential gauge is not set, but pool has gauges,
-    // or there are multiple preferential gauges set for a pool
-    private selectPreferentialIds(subgraphGauges: LiquidityGauge[]): string[] {
-        const poolIdsWithPreferentialGauges = subgraphGauges
-            .filter((gauge) => gauge.isPreferentialGauge)
-            .map((gauge) => gauge.poolId);
-        const poolIdsWithoutPreferentialGauge = subgraphGauges
-            .filter((gauge) => !poolIdsWithPreferentialGauges.includes(gauge.poolId))
-            .map((gauge) => gauge.poolId);
-        const missingGauges = subgraphGauges
-            .filter((gauge) => poolIdsWithoutPreferentialGauge.includes(gauge.poolId));
-        const missingIds = _
-            .uniqBy(missingGauges, (gauge) => gauge.poolId)
-            .map((gauge) => gauge.id);
-
-        // Remove duplicated preferential gauges for pools that have multiple preferential gauges
-        const preferentialGaugesCount = _.countBy(
-            subgraphGauges.filter((gauge) => gauge.isPreferentialGauge),
-            (gauge) => gauge.poolId
-        );
-        const multiple = Object.keys(preferentialGaugesCount)
-            .filter((poolId) => preferentialGaugesCount[poolId] > 1);
-        const singleIds = subgraphGauges
-            .filter((gauge) => gauge.isPreferentialGauge && !multiple.includes(gauge.poolId!))
-            .map((gauge) => gauge.id);
-        const multipleGauges = subgraphGauges
-            .filter((gauge) => multiple.includes(gauge.poolId!));
-        const multipleIds = _
-            .uniqBy(multipleGauges, (gauge) => gauge.poolId)
-            .map((gauge) => gauge.id);
-        const preferentialIds = [
-            ...singleIds,
-            ...missingIds,
-            ...multipleIds,
-        ];
-
-        return preferentialIds;
     }
 
     public async reloadStakingForAllPools(stakingTypes: PrismaPoolStakingType[]): Promise<void> {
