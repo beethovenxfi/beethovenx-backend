@@ -51,7 +51,7 @@ export class GaugeAprService implements PoolAprService {
         for (const stake of stakings) {
             const { pool, gauge } = stake;
 
-            if (!gauge || !gauge.rewards || !pool.dynamicData || pool.dynamicData.totalShares === '0') {
+            if (!gauge || gauge.status !== 'PREFERRED' || !gauge.rewards || !pool.dynamicData || pool.dynamicData.totalShares === '0') {
                 continue;
             }
 
