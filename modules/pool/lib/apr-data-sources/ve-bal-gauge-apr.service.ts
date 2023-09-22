@@ -23,7 +23,7 @@ export class GaugeAprService implements PoolAprService {
         return 'GaugeAprService';
     }
 
-    public async updateAprForPools(pools: PrismaPoolWithTokens[]): Promise<void> {
+    public async updateAprForPools(pools: { id: string }[]): Promise<void> {
         const operations: any[] = [];
 
         // Get the data
@@ -114,11 +114,13 @@ export class GaugeAprService implements PoolAprService {
                         (networkContext.chain === 'MAINNET' || gauge.version === 2)
                     ) {
                         let minApr = 0;
-                        if (rewardPerYear > 0 && workingSupplyTvl > 0) {
+                        if (networkContext.chain === 'MAINNET' && workingSupplyTvl > 0) {
                             minApr = rewardPerYear / workingSupplyTvl;
+                        } else if (gaugeTvl > 0) {
+                            minApr = rewardPerYear / gaugeTvl;
                         }
 
-                        const aprRangeId = `${pool.id}-${symbol}-apr-range`;
+                        const aprRangeId = `${itemData.id}-range`;
 
                         const rangeData = {
                             id: aprRangeId,

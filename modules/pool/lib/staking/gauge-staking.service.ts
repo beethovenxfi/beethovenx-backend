@@ -81,12 +81,12 @@ export class GaugeStakingService implements PoolStakingService {
         ]);
     }
 
-    async syncStakingForPools(): Promise<void> {
+    async syncStakingForPools(pools?: { id: string }[]): Promise<void> {
         // Getting data from the DB and subgraph
-        const pools = await prisma.prismaPool.findMany({
+        const poolIds = (pools ?? await prisma.prismaPool.findMany({
+            select: { id: true },
             where: { chain: networkContext.chain },
-        });
-        const poolIds = pools.map((pool) => pool.id);
+        })).map((pool) => pool.id);
         const { pools: subgraphPoolsWithGauges } = await this.gaugeSubgraphService.getPoolsWithGauges(poolIds);
 
         const subgraphGauges = subgraphPoolsWithGauges
@@ -158,14 +158,14 @@ export class GaugeStakingService implements PoolStakingService {
                         chain: networkContext.chain,
                         status: gauge.status,
                         version: gauge.version,
-                        workingSupply: onchainRates.find(({ id }) => `${this.balAddress}-${gauge.id}` === id)
+                        workingSupply: onchainRates.find(({ id }) => `${gauge.id}-${this.balAddress}` === id)
                             ?.workingSupply,
                         totalSupply: onchainRates.find(({ id }) => id.includes(gauge.id))?.totalSupply,
                     },
                     update: {
                         status: gauge.status,
                         version: gauge.version,
-                        workingSupply: onchainRates.find(({ id }) => `${this.balAddress}-${gauge.id}` === id)
+                        workingSupply: onchainRates.find(({ id }) => `${gauge.id}-${this.balAddress}` === id)
                             ?.workingSupply,
                         totalSupply: onchainRates.find(({ id }) => id.includes(gauge.id))?.totalSupply,
                     },
@@ -259,7 +259,7 @@ export class GaugeStakingService implements PoolStakingService {
         // Format onchain rates for all the rewards
         const onchainRates = [
             ...Object.keys(balData).map((gaugeAddress) => {
-                const id = `${gaugeAddress}-${this.balAddress}-`.toLowerCase();
+                const id = `${gaugeAddress}-${this.balAddress}`.toLowerCase();
                 const { rate, weight, workingSupply, totalSupply } = balData[gaugeAddress];
                 const rewardPerSecond = rate
                     ? formatUnits(rate) // L2 V2 case
