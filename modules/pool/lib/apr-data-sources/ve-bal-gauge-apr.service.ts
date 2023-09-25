@@ -51,7 +51,7 @@ export class GaugeAprService implements PoolAprService {
         for (const stake of stakings) {
             const { pool, gauge } = stake;
 
-            if (!gauge || gauge.status !== 'PREFERRED' || !gauge.rewards || !pool.dynamicData || pool.dynamicData.totalShares === '0') {
+            if (!gauge || !gauge.rewards || !pool.dynamicData || pool.dynamicData.totalShares === '0') {
                 continue;
             }
 
@@ -97,7 +97,7 @@ export class GaugeAprService implements PoolAprService {
                     const { address, symbol, rewardPerYear } = reward.value;
 
                     const itemData: PrismaPoolAprItem = {
-                        id: `${pool.id}-${symbol}-apr`,
+                        id: `${gauge.id}-${symbol}-apr`,
                         chain: networkContext.chain,
                         poolId: pool.id,
                         title: `${symbol} reward APR`,
