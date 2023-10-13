@@ -276,10 +276,6 @@ export class SorV2Service implements SwapService {
             const tIn = await this.getToken(tokenIn as Address, chainId);
             const tOut = await this.getToken(tokenOut as Address, chainId);
             const swapKind = this.mapSwapType(swapType);
-            console.log('!!!!mmmmhhh');
-            console.log(tIn.chainId);
-            console.log(tOut.chainId);
-            console.log(swapAmount.token.chainId);
             // Constructing a Swap mutates the pools so I used cloneDeep
             const swap = await sorGetSwapsWithPools(
                 tIn,

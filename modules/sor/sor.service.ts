@@ -80,9 +80,6 @@ export class SorService {
             },${v1End - v1Start},${v2End - v2Start},${swapDiff},${swapDiff > 0}`,
         );
 
-        console.log(`!!!!!!!!! input`, swapV1.inputAmount.toString(), swapV2.inputAmount.toString());
-        console.log(`!!!!!!!!! output`, swapV1.outputAmount.toString(), swapV2.outputAmount.toString());
-
         if (!swapV1.isValid && !swapV2.isValid)
             return sorV1BeetsService.zeroResponse(input.swapType, input.tokenIn, input.tokenOut, input.swapAmount);
 
