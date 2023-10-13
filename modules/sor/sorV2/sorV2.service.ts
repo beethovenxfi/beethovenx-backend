@@ -486,9 +486,8 @@ export class SorV2Service implements SwapService {
                 return 'ComposableStable';
             case PrismaPoolType.GYRO:
                 return 'Gyro2';
-            // TODO - Needs a package update, see: https://github.com/balancer/b-sdk/pull/92
-            // case PrismaPoolType.GYRO3:
-            //     return 'Gyro3';
+            case PrismaPoolType.GYRO3:
+                return 'Gyro3';
             case PrismaPoolType.GYROE:
                 return 'GyroE';
             default:
