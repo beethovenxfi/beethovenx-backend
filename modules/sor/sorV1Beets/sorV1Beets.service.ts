@@ -1,7 +1,9 @@
+import { formatEther } from 'viem';
 import { GqlSorSwapType, GqlCowSwapApiResponse, GqlSorGetSwapsResponse, GqlSorSwapOptionsInput } from '../../../schema';
 import { GetSwapsInput, SwapService, SwapResult } from '../types';
 import { BalancerSorService } from '../../beethoven/balancer-sor.service';
 import { tokenService } from '../../token/token.service';
+import { TokenAmount } from '@balancer/sdk';
 
 class SwapResultV1 implements SwapResult {
     public inputAmount: bigint = BigInt(0);
@@ -13,7 +15,8 @@ class SwapResultV1 implements SwapResult {
             this.isValid = false;
             this.swap = null;
         } else {
-            this.inputAmount = swapType === 'EXACT_IN' ? BigInt(swap.swapAmountScaled) : BigInt(swap.returnAmountScaled);
+            this.inputAmount =
+                swapType === 'EXACT_IN' ? BigInt(swap.swapAmountScaled) : BigInt(swap.returnAmountScaled);
             this.outputAmount =
                 swapType === 'EXACT_IN' ? BigInt(swap.returnAmountScaled) : BigInt(swap.swapAmountScaled);
             this.isValid = swap.swaps.length === 0 ? false : true;
@@ -51,16 +54,16 @@ export class SorV1BeetsService implements SwapService {
         swapType: GqlSorSwapType,
         tokenIn: string,
         tokenOut: string,
-        swapAmount: string,
+        swapAmount: TokenAmount,
     ): GqlSorGetSwapsResponse {
-        return this.sorService.zeroResponse(swapType, tokenIn, tokenOut, swapAmount);
+        return this.sorService.zeroResponse(swapType, tokenIn, tokenOut, formatEther(swapAmount.scale18));
     }
 
     private async querySorBeets(
         input: GetSwapsInput & { swapOptions: GqlSorSwapOptionsInput },
     ): Promise<GqlSorGetSwapsResponse> {
         const tokens = await tokenService.getTokens();
-        return await this.sorService.getSwaps({ ...input, tokens });
+        return await this.sorService.getSwaps({ ...input, tokens, swapAmount: formatEther(input.swapAmount.scale18) });
     }
 }
 

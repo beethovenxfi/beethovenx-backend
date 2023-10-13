@@ -2,11 +2,16 @@ import { Resolvers } from '../../schema';
 import { balancerSorService } from './balancer-sor.service';
 import { tokenService } from '../token/token.service';
 import { sorService } from '../sor/sor.service';
+import { getTokenAmount } from '../sor/utils';
 
 const balancerSdkResolvers: Resolvers = {
     Query: {
         sorGetSwaps: async (parent, args, context) => {
-            const swaps = await sorService.getBeetsSwaps({ ...args });
+            const amountToken = args.swapType === 'EXACT_IN' ? args.tokenIn : args.tokenOut;
+            // Use TokenAmount to help follow scaling requirements in later logic
+            // args.swapAmount is HumanScale
+            const amount = await getTokenAmount(amountToken, args.swapAmount);
+            const swaps = await sorService.getBeetsSwaps({ ...args, swapAmount: amount });
             return { ...swaps, __typename: 'GqlSorGetSwapsResponse' };
         },
         sorGetBatchSwapForTokensIn: async (parent, args, context) => {

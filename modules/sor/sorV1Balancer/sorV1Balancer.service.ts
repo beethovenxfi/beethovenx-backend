@@ -10,6 +10,7 @@ import { DeploymentEnv } from '../../network/network-config-types';
 
 import VaultAbi from '../../pool/abi/Vault.json';
 import { BigNumber } from 'ethers';
+import { TokenAmount } from '@balancer/sdk';
 
 type CowSwapSwapType = 'buy' | 'sell';
 
@@ -91,7 +92,7 @@ export class SorV1BalancerService implements SwapService {
         swapType: GqlSorSwapType,
         tokenIn: string,
         tokenOut: string,
-        swapAmountScaled: string,
+        swapAmount: TokenAmount,
     ): Promise<GqlCowSwapApiResponse> {
         const endPoint = `https://api.balancer.fi/sor/${networkContext.chainId}`;
         const gasPrice = networkContext.data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].gasPrice.toString();
@@ -99,7 +100,7 @@ export class SorV1BalancerService implements SwapService {
             orderKind: this.mapSwapType(swapType),
             sellToken: tokenIn,
             buyToken: tokenOut,
-            amount: swapAmountScaled,
+            amount: swapAmount.amount.toString(),
             gasPrice,
         };
 

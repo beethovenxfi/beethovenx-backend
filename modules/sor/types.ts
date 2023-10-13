@@ -1,9 +1,10 @@
 import { GqlCowSwapApiResponse, GqlSorSwapType, GqlSorGetSwapsResponse } from '../../schema';
+import { TokenAmount } from '@balancer/sdk';
 export interface GetSwapsInput {
     tokenIn: string;
     tokenOut: string;
     swapType: GqlSorSwapType;
-    swapAmount: string;
+    swapAmount: TokenAmount;
 }
 
 export interface SwapResult {
