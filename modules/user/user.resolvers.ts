@@ -5,7 +5,7 @@ import { tokenService } from '../token/token.service';
 
 const resolvers: Resolvers = {
     Query: {
-        userGetPoolBalances: async (parent, {}, context) => {
+        userGetPoolBalances: async (parent, { chains }, context) => {
             const accountAddress = getRequiredAccountAddress(context);
             const tokenPrices = await tokenService.getTokenPrices();
             const balances = await userService.getUserPoolBalances(accountAddress);

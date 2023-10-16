@@ -14,10 +14,10 @@ export class UserBalanceService {
             where: { address: address.toLowerCase() },
             include: {
                 walletBalances: {
-                    where: { chain: networkContext.chain, poolId: { not: null }, balanceNum: { gt: 0 } },
+                    where: { poolId: { not: null }, balanceNum: { gt: 0 } },
                 },
                 stakedBalances: {
-                    where: { chain: networkContext.chain, poolId: { not: null }, balanceNum: { gt: 0 } },
+                    where: { poolId: { not: null }, balanceNum: { gt: 0 } },
                 },
             },
         });
@@ -43,6 +43,8 @@ export class UserBalanceService {
                 totalBalance: formatFixed(stakedNum.add(walletNum), 18),
                 stakedBalance: stakedBalance?.balance || '0',
                 walletBalance: walletBalance?.balance || '0',
+                // the prisma query above ensures that one of these balances exists
+                chain: (stakedBalance?.chain || walletBalance?.chain)!,
             };
         });
     }
@@ -68,6 +70,7 @@ export class UserBalanceService {
             totalBalance: formatFixed(stakedNum.add(walletNum), 18),
             stakedBalance: stakedBalance?.balance || '0',
             walletBalance: walletBalance?.balance || '0',
+            chain: networkContext.chain,
         };
     }
 
