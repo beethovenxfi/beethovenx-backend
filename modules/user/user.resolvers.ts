@@ -8,7 +8,7 @@ const resolvers: Resolvers = {
         userGetPoolBalances: async (parent, { chains }, context) => {
             const accountAddress = getRequiredAccountAddress(context);
             const tokenPrices = await tokenService.getTokenPrices();
-            const balances = await userService.getUserPoolBalances(accountAddress);
+            const balances = await userService.getUserPoolBalances(accountAddress, chains);
 
             return balances.map((balance) => ({
                 ...balance,

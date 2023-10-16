@@ -3,21 +3,21 @@ import { prisma } from '../../../prisma/prisma-client';
 import _ from 'lodash';
 import { parseUnits } from 'ethers/lib/utils';
 import { formatFixed } from '@ethersproject/bignumber';
-import { PrismaPoolStaking } from '@prisma/client';
+import { Chain, PrismaPoolStaking } from '@prisma/client';
 import { networkContext } from '../../network/network-context.service';
 
 export class UserBalanceService {
     constructor() {}
 
-    public async getUserPoolBalances(address: string): Promise<UserPoolBalance[]> {
+    public async getUserPoolBalances(address: string, chains: Chain[]): Promise<UserPoolBalance[]> {
         const user = await prisma.prismaUser.findUnique({
             where: { address: address.toLowerCase() },
             include: {
                 walletBalances: {
-                    where: { poolId: { not: null }, balanceNum: { gt: 0 } },
+                    where: { chain: { in: chains }, poolId: { not: null }, balanceNum: { gt: 0 } },
                 },
                 stakedBalances: {
-                    where: { poolId: { not: null }, balanceNum: { gt: 0 } },
+                    where: { chain: { in: chains }, poolId: { not: null }, balanceNum: { gt: 0 } },
                 },
             },
         });
