@@ -7,12 +7,12 @@ const resolvers: Resolvers = {
     Query: {
         userGetPoolBalances: async (parent, { chains }, context) => {
             const accountAddress = getRequiredAccountAddress(context);
-            const tokenPrices = await tokenService.getTokenPrices();
+            const tokenPrices = await tokenService.getTokenPricesForChains(chains);
             const balances = await userService.getUserPoolBalances(accountAddress, chains);
 
             return balances.map((balance) => ({
                 ...balance,
-                tokenPrice: tokenService.getPriceForToken(tokenPrices, balance.tokenAddress),
+                tokenPrice: tokenService.getPriceForToken(tokenPrices[balance.chain] || [], balance.tokenAddress),
             }));
         },
         userGetPoolJoinExits: async (parent, { first, skip, poolId }, context) => {
