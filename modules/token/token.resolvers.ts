@@ -5,15 +5,16 @@ import { tokenService } from './token.service';
 
 const resolvers: Resolvers = {
     Query: {
-        tokenGetTokens: async () => {
-            return tokenService.getTokenDefinitions();
+        tokenGetTokens: async (parent, { chains }, context) => {
+            return tokenService.getTokenDefinitions(chains);
         },
-        tokenGetCurrentPrices: async (parent, {}, context) => {
-            const prices = await tokenService.getWhiteListedTokenPrices();
+        tokenGetCurrentPrices: async (parent, { chains }, context) => {
+            const prices = await tokenService.getWhiteListedTokenPrices(chains);
 
             return prices.map((price) => ({
                 address: price.tokenAddress,
                 price: price.price,
+                chain: price.chain,
             }));
         },
         tokenGetHistoricalPrices: async (parent, { addresses }, context) => {
