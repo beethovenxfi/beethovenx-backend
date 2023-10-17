@@ -84,7 +84,7 @@ export class TokenService {
     public async getTokenPrices(chain = networkContext.chain): Promise<PrismaTokenCurrentPrice[]> {
         let tokenPrices = this.cache.get(`${TOKEN_PRICES_CACHE_KEY}:${chain}`);
         if (!tokenPrices) {
-            tokenPrices = await this.tokenPriceService.getCurrentTokenPrices();
+            tokenPrices = await this.tokenPriceService.getCurrentTokenPrices(chain);
             this.cache.put(`${TOKEN_PRICES_CACHE_KEY}:${chain}`, tokenPrices, 30 * 1000);
         }
         return tokenPrices;
