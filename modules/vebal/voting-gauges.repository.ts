@@ -4,7 +4,7 @@ import { keyBy, mapValues } from 'lodash';
 import { formatFixed } from '@ethersproject/bignumber';
 import { BigNumber, Contract } from 'ethers';
 import { formatEther } from 'ethers/lib/utils';
-import { mainnetNetworkConfig } from '../network/mainnet';
+import { MainnetNetworkConfig } from '../network/mainnet';
 import gaugeControllerAbi from './abi/gaugeController.json';
 import gaugeControllerHelperAbi from './abi/gaugeControllerHelper.json';
 import rootGaugeAbi from './abi/rootGauge.json';
@@ -15,9 +15,9 @@ import { v1RootGaugeRecipients } from './special-pools/streamer-v1-gauges';
 import { Multicaller3 } from '../web3/multicaller3';
 import { networkContext } from '../network/network-context.service';
 
-const gaugeControllerAddress = mainnetNetworkConfig.data.gaugeControllerAddress!;
+const gaugeControllerAddress = MainnetNetworkConfig.data.gaugeControllerAddress!;
 // Helper contract that wraps gaugeControllerAddress contract to allow checkpointing and getting the updated relative weight
-const gaugeControllerHelperAddress = mainnetNetworkConfig.data.gaugeControllerHelperAddress!;
+const gaugeControllerHelperAddress = MainnetNetworkConfig.data.gaugeControllerHelperAddress!;
 
 export type VotingGauge = {
     gaugeAddress: string;
@@ -236,7 +236,7 @@ export class VotingGaugesRepository {
     }
 
     getGaugeControllerContract() {
-        return new Contract(gaugeControllerAddress, gaugeControllerAbi, mainnetNetworkConfig.provider);
+        return new Contract(gaugeControllerAddress, gaugeControllerAbi, MainnetNetworkConfig.provider);
     }
 
     async fetchGaugeAddresses(totalGauges: number) {
