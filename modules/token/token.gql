@@ -1,6 +1,6 @@
 extend type Query {
-    tokenGetTokens(chains: [GqlChain!]!): [GqlToken!]!
-    tokenGetCurrentPrices(chains: [GqlChain!]!): [GqlTokenPrice!]!
+    tokenGetTokens(chains: [GqlChain!]): [GqlToken!]!
+    tokenGetCurrentPrices(chains: [GqlChain!]): [GqlTokenPrice!]!
     tokenGetHistoricalPrices(addresses: [String!]!): [GqlHistoricalTokenPrice!]!
     tokenGetTokensDynamicData(addresses: [String!]!): [GqlTokenDynamicData!]!
     tokenGetTokenDynamicData(address: String!): GqlTokenDynamicData

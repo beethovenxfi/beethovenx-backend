@@ -2,13 +2,18 @@ import { Resolvers } from '../../schema';
 import _ from 'lodash';
 import { isAdminRoute } from '../auth/auth-context';
 import { tokenService } from './token.service';
+import { $Enums } from '@prisma/client';
+
+const allChains = Object.values($Enums.Chain);
 
 const resolvers: Resolvers = {
     Query: {
         tokenGetTokens: async (parent, { chains }, context) => {
+            chains = chains && chains.length > 0 ? chains : allChains;
             return tokenService.getTokenDefinitions(chains);
         },
         tokenGetCurrentPrices: async (parent, { chains }, context) => {
+            chains = chains && chains.length > 0 ? chains : allChains;
             const prices = await tokenService.getWhiteListedTokenPrices(chains);
 
             return prices.map((price) => ({
