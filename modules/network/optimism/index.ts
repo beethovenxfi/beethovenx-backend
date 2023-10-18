@@ -1,11 +1,11 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { data } from './data';
-import { workerJobs } from './workers';
-import { createServices } from './services';
+import { optimismNetworkData as data } from './data';
+import { optimismWorkerJobs as workerJobs } from './workers';
+import { createOptimismServices as createServices } from './services';
 
 let services: ReturnType<typeof createServices>;
 
-export class optimismNetworkConfig {
+export class OptimismNetworkConfig {
     static data = data;
     static workerJobs = workerJobs;
     static provider = new JsonRpcProvider({ url: data.rpcUrl, timeout: 60000 })

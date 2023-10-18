@@ -13,9 +13,9 @@ import { GaugeAprService } from '../../pool/lib/apr-data-sources/ve-bal-gauge-ap
 import { GaugeStakingService } from '../../pool/lib/staking/gauge-staking.service';
 import { gaugeSubgraphService } from '../../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import { UserSyncGaugeBalanceService } from '../../user/lib/user-sync-gauge-balance.service';
-import { data } from './data';
+import { polygonNetworkData as data } from './data';
 
-export const createServices = () => ({
+export const createPolygonServices = () => ({
     contentService: new GithubContentService(),
     poolAprServices: [
         new IbTokensAprService(data.ibAprConfig),
@@ -31,4 +31,5 @@ export const createServices = () => ({
         new LinearWrappedTokenPriceHandlerService(),
         new SwapsPriceHandlerService(),
     ],
-    userStakedBalanceServices: [new UserSyncGaugeBalanceService()],});
+    userStakedBalanceServices: [new UserSyncGaugeBalanceService()],
+});

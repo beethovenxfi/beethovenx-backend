@@ -2,7 +2,7 @@ import { BigNumber } from '@ethersproject/bignumber';
 import { NetworkData } from "../network-config-types";
 import { env } from '../../../app/env';
 
-export const data: NetworkData = {
+export const polygonNetworkData: NetworkData = {
     chain: {
         slug: 'polygon',
         id: 137,

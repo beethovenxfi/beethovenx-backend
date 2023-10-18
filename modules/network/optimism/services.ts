@@ -14,9 +14,9 @@ import { gaugeSubgraphService } from '../../subgraphs/gauge-subgraph/gauge-subgr
 import { UserSyncGaugeBalanceService } from '../../user/lib/user-sync-gauge-balance.service';
 import { BeetsPriceHandlerService } from '../../token/lib/token-price-handlers/beets-price-handler.service';
 import { SanityContentService } from '../../content/sanity-content.service';
-import { data } from './data';
+import { optimismNetworkData as data } from './data';
 
-export const createServices = () => ({
+export const createOptimismServices = () => ({
     contentService: new SanityContentService(),
     poolAprServices: [
         new IbTokensAprService(data.ibAprConfig),

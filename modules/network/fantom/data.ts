@@ -1,7 +1,7 @@
 import { BigNumber } from '@ethersproject/bignumber';
 import { NetworkData } from "../network-config-types";
 
-export const data: NetworkData = {
+export const fantomNetworkData: NetworkData = {
     chain: {
         slug: 'fantom',
         id: 250,

@@ -1,38 +1,37 @@
-import { fantomNetworkConfig } from './fantom';
-import { optimismNetworkConfig } from './optimism';
+import { FantomNetworkConfig } from './fantom';
+import { OptimismNetworkConfig } from './optimism';
 import { NetworkConfig } from './network-config-types';
-import { mainnetNetworkConfig } from './mainnet';
-import { arbitrumNetworkConfig } from './arbitrum';
-import { polygonNetworkConfig } from './polygon';
-import { gnosisNetworkConfig } from './gnosis';
-import { zkevmNetworkConfig } from './zkevm';
-import { avalancheNetworkConfig } from './avalanche';
-import { baseNetworkConfig } from './base';
+import { MainnetNetworkConfig } from './mainnet';
+import { ArbitrumNetworkConfig } from './arbitrum';
+import { PolygonNetworkConfig } from './polygon';
+import { GnosisNetworkConfig } from './gnosis';
+import { ZkevmNetworkConfig } from './zkevm';
+import { AvalancheNetworkConfig } from './avalanche';
+import { BaseNetworkConfig } from './base';
 import { Chain } from '@prisma/client';
-import { keyBy, pickBy } from 'lodash';
 
 export const AllNetworkConfigs: { [chainId: string]: NetworkConfig } = {
-    '250': fantomNetworkConfig,
-    '10': optimismNetworkConfig,
-    '1': mainnetNetworkConfig,
-    '42161': arbitrumNetworkConfig,
-    '137': polygonNetworkConfig,
-    '100': gnosisNetworkConfig,
-    '1101': zkevmNetworkConfig,
-    '43114': avalancheNetworkConfig,
-    '8453': baseNetworkConfig,
+    '250': FantomNetworkConfig,
+    '10': OptimismNetworkConfig,
+    '1': MainnetNetworkConfig,
+    '42161': ArbitrumNetworkConfig,
+    '137': PolygonNetworkConfig,
+    '100': GnosisNetworkConfig,
+    '1101': ZkevmNetworkConfig,
+    '43114': AvalancheNetworkConfig,
+    '8453': BaseNetworkConfig,
 };
 
 export const AllNetworkConfigsKeyedOnChain: { [chain in Chain]: NetworkConfig } = {
-    FANTOM: fantomNetworkConfig,
-    OPTIMISM: optimismNetworkConfig,
-    MAINNET: mainnetNetworkConfig,
-    ARBITRUM: arbitrumNetworkConfig,
-    POLYGON: polygonNetworkConfig,
-    GNOSIS: gnosisNetworkConfig,
-    ZKEVM: zkevmNetworkConfig,
-    AVALANCHE: avalancheNetworkConfig,
-    BASE: baseNetworkConfig,
+    FANTOM: FantomNetworkConfig,
+    OPTIMISM: OptimismNetworkConfig,
+    MAINNET: MainnetNetworkConfig,
+    ARBITRUM: ArbitrumNetworkConfig,
+    POLYGON: PolygonNetworkConfig,
+    GNOSIS: GnosisNetworkConfig,
+    ZKEVM: ZkevmNetworkConfig,
+    AVALANCHE: AvalancheNetworkConfig,
+    BASE: BaseNetworkConfig,
 };
 
 export const BalancerChainIds = ['1', '137', '42161', '100', '1101', '43114', '8453'];

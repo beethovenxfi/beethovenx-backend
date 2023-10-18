@@ -13,9 +13,9 @@ import { GaugeAprService } from '../../pool/lib/apr-data-sources/ve-bal-gauge-ap
 import { GaugeStakingService } from '../../pool/lib/staking/gauge-staking.service';
 import { gaugeSubgraphService } from '../../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import { UserSyncGaugeBalanceService } from '../../user/lib/user-sync-gauge-balance.service';
-import { data } from './data';
+import { mainnetNetworkData as data } from './data';
 
-export const createServices = () => ({
+export const createMainnetServices = () => ({
     contentService: new GithubContentService(),
     poolAprServices: [
         new IbTokensAprService(data.ibAprConfig),

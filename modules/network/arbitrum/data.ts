@@ -2,7 +2,7 @@ import { BigNumber } from '@ethersproject/bignumber';
 import { env } from '../../../app/env';
 import { DeploymentEnv, NetworkData } from "../network-config-types";
 
-export const data: NetworkData = {
+export const arbitrumNetworkData: NetworkData = {
     chain: {
         slug: 'arbitrum',
         id: 42161,

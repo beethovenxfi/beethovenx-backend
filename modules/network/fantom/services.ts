@@ -22,9 +22,9 @@ import { CoingeckoPriceHandlerService } from '../../token/lib/token-price-handle
 import { coingeckoService } from '../../coingecko/coingecko.service';
 import { IbTokensAprService } from '../../pool/lib/apr-data-sources/ib-tokens-apr.service';
 import { BeetswarsGaugeVotingAprService } from '../../pool/lib/apr-data-sources/fantom/beetswars-gauge-voting-apr';
-import { data } from './data';
+import { fantomNetworkData as data } from './data';
 
-export const createServices = () => ({
+export const createFantomServices = () => ({
     contentService: new SanityContentService(),
     poolAprServices: [
         new IbTokensAprService(data.ibAprConfig),

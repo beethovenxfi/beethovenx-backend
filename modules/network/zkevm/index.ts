@@ -1,11 +1,11 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
-import { data } from './data';
-import { workerJobs } from './workers';
-import { createServices } from './services';
+import { zkevmNetworkData as data } from './data';
+import { zkevmWorkerJobs as workerJobs } from './workers';
+import { createZkevmServices as createServices } from './services';
 
 let services: ReturnType<typeof createServices>;
 
-export class zkevmNetworkConfig {
+export class ZkevmNetworkConfig {
     static data = data;
     static workerJobs = workerJobs;
     static provider = new JsonRpcProvider({ url: data.rpcUrl, timeout: 60000 })

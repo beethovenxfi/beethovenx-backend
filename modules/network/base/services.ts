@@ -12,9 +12,9 @@ import { gaugeSubgraphService } from '../../subgraphs/gauge-subgraph/gauge-subgr
 import { CoingeckoPriceHandlerService } from '../../token/lib/token-price-handlers/coingecko-price-handler.service';
 import { coingeckoService } from '../../coingecko/coingecko.service';
 import { IbTokensAprService } from '../../pool/lib/apr-data-sources/ib-tokens-apr.service';
-import { data } from './data';
+import { baseNetworkData as data } from './data';
 
-export const createServices = () => ({
+export const createBaseServices = () => ({
     contentService: new GithubContentService(),
     poolAprServices: [
         new IbTokensAprService(data.ibAprConfig),
