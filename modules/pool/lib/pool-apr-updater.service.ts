@@ -10,7 +10,7 @@ export class PoolAprUpdaterService {
     constructor() {}
 
     private get aprServices(): PoolAprService[] {
-        return networkContext.config.poolAprServices;
+        return networkContext.services.poolAprServices;
     }
 
     public async updatePoolAprs() {

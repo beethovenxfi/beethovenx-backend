@@ -4,7 +4,7 @@ import { networkContext } from '../network/network-context.service';
 const contentResolvers: Resolvers = {
     Query: {
         contentGetNewsItems: async () => {
-            return await networkContext.config.contentService.getNewsItems();
+            return await networkContext.services.contentService.getNewsItems();
         },
     },
 };

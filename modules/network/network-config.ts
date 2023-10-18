@@ -1,6 +1,6 @@
 import { FantomNetworkConfig } from './fantom';
 import { OptimismNetworkConfig } from './optimism';
-import { NetworkConfig } from './network-config-types';
+import type { NetworkConfig } from './network-config-types';
 import { MainnetNetworkConfig } from './mainnet';
 import { ArbitrumNetworkConfig } from './arbitrum';
 import { PolygonNetworkConfig } from './polygon';
@@ -34,5 +34,8 @@ export const AllNetworkConfigsKeyedOnChain: { [chain in Chain]: NetworkConfig } 
     BASE: BaseNetworkConfig,
 };
 
-export const BalancerChainIds = ['1', '137', '42161', '100', '1101', '43114', '8453'];
-export const BeethovenChainIds = ['250', '10'];
+export const BalancerChainIds = ['1', '137', '42161', '100', '1101', '43114', '8453'] as const;
+export const BeethovenChainIds = ['250', '10'] as const;
+const allChains = [...BalancerChainIds, ...BeethovenChainIds] as const;
+
+export type ChainIDs = typeof allChains[number];

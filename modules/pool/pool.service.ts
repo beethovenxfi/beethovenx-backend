@@ -54,11 +54,11 @@ export class PoolService {
     ) {}
 
     private get poolStakingServices(): PoolStakingService[] {
-        return networkContext.config.poolStakingServices;
+        return networkContext.services.poolStakingServices;
     }
 
     private get contentService(): ContentService {
-        return networkContext.config.contentService;
+        return networkContext.services.contentService;
     }
 
     public async getGqlPool(id: string): Promise<GqlPoolUnion> {

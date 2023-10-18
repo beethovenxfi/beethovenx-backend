@@ -24,7 +24,7 @@ export class UserService {
     ) {}
 
     private get stakedSyncServices(): UserStakedBalanceService[] {
-        return networkContext.config.userStakedBalanceServices;
+        return networkContext.services.userStakedBalanceServices;
     }
 
     public async getUserPoolBalances(address: string, chains: Chain[]): Promise<UserPoolBalance[]> {

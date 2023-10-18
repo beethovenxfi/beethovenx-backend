@@ -92,7 +92,7 @@ export class PoolGqlLoaderService {
     }
 
     public async getFeaturedPoolGroups(): Promise<GqlPoolFeaturedPoolGroup[]> {
-        const featuredPoolGroups = await networkContext.config.contentService.getFeaturedPoolGroups();
+        const featuredPoolGroups = await networkContext.services.contentService.getFeaturedPoolGroups();
         const poolIds = featuredPoolGroups
             .map((group) =>
                 group.items

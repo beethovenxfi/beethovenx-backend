@@ -3,14 +3,15 @@ import { setMainnetRpcProviderForTesting } from '../../test/utils';
 import { VotingGaugesRepository } from './voting-gauges.repository';
 import { VeBalVotingListService } from './vebal-voting-list.service';
 import { initRequestScopedContext, setRequestScopedContextValue } from '../context/request-scoped-context';
-import { AllNetworkConfigs } from '../network/network-config';
-import { MainnetNetworkConfig } from '../network/mainnet';
 
 const defaultAnvilRpcUrl = 'http://127.0.0.1:8555';
 setMainnetRpcProviderForTesting(defaultAnvilRpcUrl);
 
 // TODO: understand why mainnetConfig is undefined in test context
-AllNetworkConfigs['1'] = MainnetNetworkConfig;
+// AllNetworkConfigs are undefined when creating networkContext instance
+// not sure exactly where, but moving services away from the config object fixes the issue
+// 
+// AllNetworkConfigs['1'] = MainnetNetworkConfig;
 
 beforeEach(() => {
     initRequestScopedContext();

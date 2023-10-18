@@ -24,7 +24,7 @@ export class TokenService {
     }
 
     public async syncTokenContentData() {
-        await networkContext.config.contentService.syncTokenContentData();
+        await networkContext.services.contentService.syncTokenContentData();
     }
 
     public async getToken(address: string): Promise<PrismaToken | null> {
@@ -239,7 +239,7 @@ export class TokenService {
         await prisma.prismaTokenType.deleteMany({
             where: { chain: networkContext.chain },
         });
-        await networkContext.config.contentService.syncTokenContentData();
+        await networkContext.services.contentService.syncTokenContentData();
     }
 }
 

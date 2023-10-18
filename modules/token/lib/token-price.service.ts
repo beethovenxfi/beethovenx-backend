@@ -20,7 +20,7 @@ export class TokenPriceService {
     constructor() {}
 
     private get handlers(): TokenPriceHandler[] {
-        return networkContext.config.tokenPriceHandlers;
+        return networkContext.services.tokenPriceHandlers;
     }
 
     public async getWhiteListedCurrentTokenPrices(chains: Chain[]): Promise<PrismaTokenCurrentPrice[]> {

@@ -1,33 +1,44 @@
-import { AllNetworkConfigs, BalancerChainIds, BeethovenChainIds } from './network-config';
+import { AllNetworkConfigs, BalancerChainIds, BeethovenChainIds, ChainIDs } from './network-config';
 import { env } from '../../app/env';
 import { Chain } from '@prisma/client';
-import { NetworkConfig, NetworkData } from './network-config-types';
+import type { NetworkConfig, NetworkData, NetworkServices } from './network-config-types';
 import { BaseProvider } from '@ethersproject/providers';
 import { getRequestScopeContextValue } from '../context/request-scoped-context';
+import { networkServiceFactories } from './network-service-factories';
 
-export class NetworkContextService {
-    constructor(private readonly defaultChainId: string) {}
+const services: Map<ChainIDs, NetworkServices> = new Map();
 
-    public isValidChainId(chainId: string) {
-        return !!AllNetworkConfigs[chainId];
+class NetworkContextService {
+    constructor(
+        private readonly defaultChainId: ChainIDs = env.DEFAULT_CHAIN_ID as ChainIDs,
+        private configs = AllNetworkConfigs
+    ) {}
+
+    public isValidChainId(chainId: ChainIDs) {
+        return !!this.configs[chainId];
+    }
+
+    get chainId(): ChainIDs {
+        const chainId = getRequestScopeContextValue<ChainIDs>('chainId');
+
+        return chainId ?? this.defaultChainId;
     }
 
     public get config(): NetworkConfig {
-        const chainId = getRequestScopeContextValue<string>('chainId');
-
-        if (chainId) {
-            return AllNetworkConfigs[chainId];
-        }
-
-        return AllNetworkConfigs[this.defaultChainId];
+        return this.configs[this.chainId];
     }
 
     public get data(): NetworkData {
         return this.config.data;
     }
 
-    public get chainId(): string {
-        return `${this.data.chain.id}`;
+    public get services(): NetworkServices {
+        if (!services.get(this.chainId)) {
+            // TODO: We might need to start passing all the configuration data down to the service factories
+            services.set(this.chainId, networkServiceFactories[this.chainId]());
+        }
+
+        return services.get(this.chainId)!;
     }
 
     public get chain(): Chain {
@@ -47,16 +58,16 @@ export class NetworkContextService {
     }
 
     public get isBalancerChain(): boolean {
-        return BalancerChainIds.includes(this.chainId);
+        return BalancerChainIds.includes(this.chainId as any);
     }
 
     public get isBeethovenChain(): boolean {
-        return BeethovenChainIds.includes(this.chainId);
+        return BeethovenChainIds.includes(this.chainId as any);
     }
 
-    public get protocolSupportedChainIds(): string[] {
+    public get protocolSupportedChainIds(): typeof BalancerChainIds | typeof BeethovenChainIds {
         return this.isBalancerChain ? BalancerChainIds : BeethovenChainIds;
     }
 }
 
-export const networkContext = new NetworkContextService(env.DEFAULT_CHAIN_ID);
+export const networkContext = new NetworkContextService(env.DEFAULT_CHAIN_ID as ChainIDs, AllNetworkConfigs);

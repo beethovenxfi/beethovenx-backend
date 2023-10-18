@@ -10,14 +10,18 @@ import { AaveAprConfig, IbAprConfig } from './apr-config-types';
 
 export interface NetworkConfig {
     data: NetworkData;
+    provider: BaseProvider;
+    workerJobs: WorkerJob[];
+}
+
+export interface NetworkServices {
     contentService: ContentService;
     poolStakingServices: PoolStakingService[];
     poolAprServices: PoolAprService[];
     userStakedBalanceServices: UserStakedBalanceService[];
     tokenPriceHandlers: TokenPriceHandler[];
-    provider: BaseProvider;
-    workerJobs: WorkerJob[];
 }
+
 export interface WorkerJob {
     name: string;
     interval: number;

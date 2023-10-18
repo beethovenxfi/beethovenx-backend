@@ -31,7 +31,7 @@ export async function sessionMiddleware(req: Request, res: Response, next: NextF
 
     Sentry.setUser({ id: accountAddress?.toLowerCase() });
 
-    if (chainId && networkContext.isValidChainId(chainId)) {
+    if (chainId && networkContext.isValidChainId(chainId as any)) {
         initRequestScopedContext();
         setRequestScopedContextValue('chainId', chainId);
 
