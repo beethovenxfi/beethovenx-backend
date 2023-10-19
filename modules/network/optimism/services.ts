@@ -16,28 +16,22 @@ import { BeetsPriceHandlerService } from '../../token/lib/token-price-handlers/b
 import { SanityContentService } from '../../content/sanity-content.service';
 import { optimismNetworkData as data } from './data';
 
-export const createOptimismServices = () => ({
+export const optimismCreateServices = () => ({
     contentService: new SanityContentService(),
     poolAprServices: [
         new IbTokensAprService(data.ibAprConfig),
         new PhantomStableAprService(),
         new BoostedPoolAprService(),
         new SwapFeeAprService(data.balancer.swapProtocolFeePercentage),
-        new GaugeAprService(tokenService, [
-            data.beets!.address,
-            data.bal!.address,
-        ]),
+        new GaugeAprService(tokenService, [data.beets!.address, data.bal!.address]),
     ],
     poolStakingServices: [new GaugeStakingService(gaugeSubgraphService, data.bal!.address)],
     tokenPriceHandlers: [
-        new BeetsPriceHandlerService(
-            data.beets!.address,
-            data.beets!.beetsPriceProviderRpcUrl,
-        ),
+        new BeetsPriceHandlerService(data.beets!.address, data.beets!.beetsPriceProviderRpcUrl),
         new CoingeckoPriceHandlerService(coingeckoService),
         new BptPriceHandlerService(),
         new LinearWrappedTokenPriceHandlerService(),
         new SwapsPriceHandlerService(),
     ],
-    userStakedBalanceServices: [new UserSyncGaugeBalanceService()]
+    userStakedBalanceServices: [new UserSyncGaugeBalanceService()],
 });

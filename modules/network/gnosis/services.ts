@@ -15,7 +15,7 @@ import { gaugeSubgraphService } from '../../subgraphs/gauge-subgraph/gauge-subgr
 import { UserSyncGaugeBalanceService } from '../../user/lib/user-sync-gauge-balance.service';
 import { gnosisNetworkData as data } from './data';
 
-export const createGnosisServices = () => ({
+export const gnosisCreateServices = () => ({
     contentService: new GithubContentService(),
     poolAprServices: [
         new IbTokensAprService(data.ibAprConfig),

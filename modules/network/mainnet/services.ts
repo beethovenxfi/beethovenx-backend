@@ -15,7 +15,7 @@ import { gaugeSubgraphService } from '../../subgraphs/gauge-subgraph/gauge-subgr
 import { UserSyncGaugeBalanceService } from '../../user/lib/user-sync-gauge-balance.service';
 import { mainnetNetworkData as data } from './data';
 
-export const createMainnetServices = () => ({
+export const mainnetCreateServices = () => ({
     contentService: new GithubContentService(),
     poolAprServices: [
         new IbTokensAprService(data.ibAprConfig),
@@ -31,5 +31,5 @@ export const createMainnetServices = () => ({
         new LinearWrappedTokenPriceHandlerService(),
         new SwapsPriceHandlerService(),
     ],
-    userStakedBalanceServices: [new UserSyncGaugeBalanceService()]
+    userStakedBalanceServices: [new UserSyncGaugeBalanceService()],
 });

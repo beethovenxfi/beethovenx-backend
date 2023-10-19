@@ -24,7 +24,7 @@ import { IbTokensAprService } from '../../pool/lib/apr-data-sources/ib-tokens-ap
 import { BeetswarsGaugeVotingAprService } from '../../pool/lib/apr-data-sources/fantom/beetswars-gauge-voting-apr';
 import { fantomNetworkData as data } from './data';
 
-export const createFantomServices = () => ({
+export const fantomCreateServices = () => ({
     contentService: new SanityContentService(),
     poolAprServices: [
         new IbTokensAprService(data.ibAprConfig),
@@ -41,10 +41,7 @@ export const createFantomServices = () => ({
         new ReliquaryStakingService(data.reliquary!.address, reliquarySubgraphService),
     ],
     tokenPriceHandlers: [
-        new BeetsPriceHandlerService(
-            data.beets!.address,
-            data.beets!.beetsPriceProviderRpcUrl,
-        ),
+        new BeetsPriceHandlerService(data.beets!.address, data.beets!.beetsPriceProviderRpcUrl),
         new FbeetsPriceHandlerService(data.fbeets!.address, data.fbeets!.poolId),
         new ClqdrPriceHandlerService(),
         new CoingeckoPriceHandlerService(coingeckoService),

@@ -15,7 +15,7 @@ import { gaugeSubgraphService } from '../../subgraphs/gauge-subgraph/gauge-subgr
 import { UserSyncGaugeBalanceService } from '../../user/lib/user-sync-gauge-balance.service';
 import { polygonNetworkData as data } from './data';
 
-export const createPolygonServices = () => ({
+export const polygonCreateServices = () => ({
     contentService: new GithubContentService(),
     poolAprServices: [
         new IbTokensAprService(data.ibAprConfig),

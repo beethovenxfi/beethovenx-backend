@@ -15,7 +15,7 @@ import { coingeckoService } from '../../coingecko/coingecko.service';
 import { IbTokensAprService } from '../../pool/lib/apr-data-sources/ib-tokens-apr.service';
 import { arbitrumNetworkData as data } from './data';
 
-export const createArbitrumServices = () => ({
+export const arbitrumCreateServices = () => ({
     contentService: new GithubContentService(),
     poolAprServices: [
         new IbTokensAprService(data.ibAprConfig),
