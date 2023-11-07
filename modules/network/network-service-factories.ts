@@ -1,12 +1,12 @@
-import { fantomCreateServices } from './fantom';
-import { optimismCreateServices } from './optimism';
+import { fantomCreateServices } from './fantom/services';
+import { optimismCreateServices } from './optimism/services';
 import { mainnetCreateServices } from './mainnet/services';
-import { arbitrumCreateServices } from './arbitrum';
-import { polygonCreateServices } from './polygon';
-import { gnosisCreateServices } from './gnosis';
-import { zkevmCreateServices } from './zkevm';
-import { avalancheCreateServices } from './avalanche';
-import { baseCreateServices } from './base';
+import { arbitrumCreateServices } from './arbitrum/services';
+import { polygonCreateServices } from './polygon/services';
+import { gnosisCreateServices } from './gnosis/services';
+import { zkevmCreateServices } from './zkevm/services';
+import { avalancheCreateServices } from './avalanche/services';
+import { baseCreateServices } from './base/services';
 
 export const networkServiceFactories = {
     '250': fantomCreateServices,
