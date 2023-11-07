@@ -19,8 +19,16 @@ import { optimismNetworkData as data } from './data';
 export const optimismCreateServices = () => ({
     contentService: new SanityContentService(),
     poolAprServices: [
-        new IbTokensAprService(data.ibAprConfig),
-        new PhantomStableAprService(),
+        new IbTokensAprService(
+            data.ibAprConfig,
+            data.chain.prismaId,
+            data.balancer.yieldProtocolFeePercentage,
+            data.balancer.swapProtocolFeePercentage,
+        ),
+        new PhantomStableAprService(
+            data.chain.prismaId,
+            data.balancer.yieldProtocolFeePercentage,
+        ),
         new BoostedPoolAprService(),
         new SwapFeeAprService(data.balancer.swapProtocolFeePercentage),
         new GaugeAprService(tokenService, [data.beets!.address, data.bal!.address]),

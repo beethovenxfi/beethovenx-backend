@@ -17,7 +17,12 @@ import { baseNetworkData as data } from './data';
 export const baseCreateServices = () => ({
     contentService: new GithubContentService(),
     poolAprServices: [
-        new IbTokensAprService(data.ibAprConfig),
+        new IbTokensAprService(
+            data.ibAprConfig,
+            data.chain.prismaId,
+            data.balancer.yieldProtocolFeePercentage,
+            data.balancer.swapProtocolFeePercentage,
+        ),
         new BoostedPoolAprService(),
         new SwapFeeAprService(data.balancer.swapProtocolFeePercentage),
         new GaugeAprService(tokenService, [data.bal!.address]),

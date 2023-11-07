@@ -18,8 +18,16 @@ import { mainnetNetworkData as data } from './data';
 export const mainnetCreateServices = () => ({
     contentService: new GithubContentService(),
     poolAprServices: [
-        new IbTokensAprService(data.ibAprConfig),
-        new PhantomStableAprService(),
+        new IbTokensAprService(
+            data.ibAprConfig,
+            data.chain.prismaId,
+            data.balancer.yieldProtocolFeePercentage,
+            data.balancer.swapProtocolFeePercentage,
+        ),
+        new PhantomStableAprService(
+            data.chain.prismaId,
+            data.balancer.yieldProtocolFeePercentage,
+        ),
         new BoostedPoolAprService(),
         new SwapFeeAprService(data.balancer.swapProtocolFeePercentage),
         new GaugeAprService(tokenService, [data.bal!.address]),
