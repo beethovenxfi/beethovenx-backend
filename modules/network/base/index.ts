@@ -1,7 +1,6 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { baseNetworkData as data } from './data';
 import { baseWorkerJobs as workerJobs } from './workers';
-export * from './services';
 
 export class BaseNetworkConfig {
     static data = data;

@@ -1,7 +1,6 @@
 import { JsonRpcProvider } from '@ethersproject/providers';
 import { optimismNetworkData as data } from './data';
 import { optimismWorkerJobs as workerJobs } from './workers';
-export * from './services';
 
 export class OptimismNetworkConfig {
     static data = data;

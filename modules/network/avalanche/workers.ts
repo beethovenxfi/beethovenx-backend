@@ -1,6 +1,6 @@
 import { every } from '../../../worker/intervals';
 import { env } from '../../../app/env';
-import { DeploymentEnv } from '../network-config-types';
+import { DeploymentEnv, WorkerJob } from '../network-config-types';
 
 /*
 For sub-minute jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3. 
@@ -9,7 +9,7 @@ This is needed because the minimum alarm period is 1 minute and we want the alar
 For every 1 days jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3. 
 This is needed because the maximum alarm evaluation period is 1 day (period * evaluationPeriod).
 */
-export const avalancheWorkerJobs = [
+export const avalancheWorkerJobs: WorkerJob[] = [
     {
         name: 'update-token-prices',
         interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(10, 'minutes') : every(2, 'minutes'),
