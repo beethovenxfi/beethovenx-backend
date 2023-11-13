@@ -3,6 +3,7 @@ import { balancerSorService } from './balancer-sor.service';
 import { tokenService } from '../token/token.service';
 import { sorService } from '../sor/sor.service';
 import { getTokenAmountHuman } from '../sor/utils';
+import { chainToIdMap } from '../network/network-config';
 
 const balancerSdkResolvers: Resolvers = {
     Query: {

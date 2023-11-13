@@ -4,6 +4,7 @@ extend type Mutation {
 
 extend type Query {
     sorGetCowSwaps(
+        chain: GqlChain!
         tokenIn: String!
         tokenOut: String!
         swapType: GqlSorSwapType!

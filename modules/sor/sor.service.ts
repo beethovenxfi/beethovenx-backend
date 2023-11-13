@@ -7,38 +7,42 @@ import { GetSwapsInput, SwapResult } from './types';
 import { EMPTY_COWSWAP_RESPONSE } from './constants';
 import { getSorMetricsPublisher } from '../metrics/sor.metric';
 import moment from 'moment';
+import { Chain } from '@prisma/client';
 
 export class SorService {
     public async getCowSwaps({
+        chain,
         tokenIn,
         tokenOut,
         swapType,
         swapAmount,
     }: GetSwapsInput): Promise<GqlCowSwapApiResponse> {
-        console.time(`sorV1-${networkContext.chain}`);
+        console.time(`sorV1-${chain}`);
         const swapV1 = await sorV1BalancerService.getSwapResult({
+            chain,
             tokenIn,
             tokenOut,
             swapType,
             swapAmount,
         });
-        console.timeEnd(`sorV1-${networkContext.chain}`);
-        console.time(`sorV2-${networkContext.chain}`);
+        console.timeEnd(`sorV1-${chain}`);
+        console.time(`sorV2-${chain}`);
         const swapV2 = await sorV2Service.getSwapResult({
+            chain,
             tokenIn,
             tokenOut,
             swapType,
             swapAmount,
         });
-        console.timeEnd(`sorV2-${networkContext.chain}`);
+        console.timeEnd(`sorV2-${chain}`);
 
         if (!swapV1.isValid && !swapV2.isValid) return EMPTY_COWSWAP_RESPONSE(tokenIn, tokenOut, swapAmount);
 
-        const bestSwap = await this.getBestSwap(swapV1, swapV2, swapType, tokenIn, tokenOut);
+        const bestSwap = await this.getBestSwap(swapV1, swapV2, swapType, tokenIn, tokenOut, chain);
 
         try {
             // Updates with latest onchain data before returning
-            return await bestSwap.getCowSwapResponse(true);
+            return await bestSwap.getCowSwapResponse(chain, true);
         } catch (err) {
             console.log(`Error Retrieving QuerySwap`);
             console.log(err);
@@ -49,19 +53,19 @@ export class SorService {
     public async getBeetsSwaps(
         input: GetSwapsInput & { swapOptions: GqlSorSwapOptionsInput },
     ): Promise<GqlSorGetSwapsResponse> {
-        console.time(`sorV1-${networkContext.chain}`);
+        console.time(`sorV1-${input.chain}`);
         const v1Start = moment().unix();
         const swapV1 = await sorV1BeetsService.getSwapResult(input);
         const v1End = moment().unix();
-        console.timeEnd(`sorV1-${networkContext.chain}`);
+        console.timeEnd(`sorV1-${input.chain}`);
 
-        console.time(`sorV2-${networkContext.chain}`);
+        console.time(`sorV2-${input.chain}`);
         const v2Start = moment().unix();
         const swapV2 = await sorV2Service.getSwapResult(input);
         const v2End = moment().unix();
-        console.timeEnd(`sorV2-${networkContext.chain}`);
+        console.timeEnd(`sorV2-${input.chain}`);
 
-        const sorMetricsPublisher = await getSorMetricsPublisher(networkContext.chain);
+        const sorMetricsPublisher = getSorMetricsPublisher(input.chain);
 
         sorMetricsPublisher.publish(`SOR_TIME_V1`, v1End - v1Start);
         sorMetricsPublisher.publish(`SOR_TIME_V2`, v2End - v2Start);
@@ -83,7 +87,7 @@ export class SorService {
         if (!swapV1.isValid && !swapV2.isValid)
             return sorV1BeetsService.zeroResponse(input.swapType, input.tokenIn, input.tokenOut, input.swapAmount);
 
-        const bestSwap = await this.getBestSwap(swapV1, swapV2, input.swapType, input.tokenIn, input.tokenOut);
+        const bestSwap = await this.getBestSwap(swapV1, swapV2, input.swapType, input.tokenIn, input.tokenOut, input.chain);
 
         try {
             // Updates with latest onchain data before returning
@@ -108,6 +112,7 @@ export class SorService {
         swapType: GqlSorSwapType,
         assetIn: string,
         assetOut: string,
+        chain: Chain,
         debugOut = false,
     ): Promise<SwapResult> {
         // Useful for comparing
@@ -131,10 +136,10 @@ export class SorService {
         }
 
         if (isV1 === true) {
-            await this.logResult(`V1`, v1, v2, swapType, assetIn, assetOut);
+            await this.logResult(`V1`, v1, v2, swapType, assetIn, assetOut, chain);
             return v1;
         } else {
-            await this.logResult(`V2`, v1, v2, swapType, assetIn, assetOut);
+            await this.logResult(`V2`, v1, v2, swapType, assetIn, assetOut, chain);
         }
         return v2;
     }
@@ -146,12 +151,13 @@ export class SorService {
         swapType: GqlSorSwapType,
         assetIn: string,
         assetOut: string,
+        chain: Chain
     ) {
         // console.log() will log to cloudwatch
         if (swapType === 'EXACT_IN') {
-            await console.log(
+            console.log(
                 'SOR Service',
-                networkContext.chain,
+                chain,
                 logType,
                 swapType,
                 assetIn,
@@ -165,7 +171,7 @@ export class SorService {
         } else {
             console.log(
                 'SOR Service',
-                networkContext.chain,
+                chain,
                 logType,
                 swapType,
                 assetIn,

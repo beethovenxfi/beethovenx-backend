@@ -1,6 +1,5 @@
 import {
     BasePool,
-    ChainId,
     sorGetSwapsWithPools,
     Token,
     Address,
@@ -16,9 +15,8 @@ import {
     RawGyro3Pool,
     RawGyroEPool,
 } from '@balancer/sdk';
-import cloneDeep from 'lodash/cloneDeep';
 import { GqlSorSwapType, GqlSwap, GqlSorGetSwapsResponse, GqlPoolMinimal, GqlSorSwapRoute } from '../../../schema';
-import { PrismaPoolType, PrismaToken } from '@prisma/client';
+import { Chain, PrismaPoolType } from '@prisma/client';
 import { GetSwapsInput, SwapResult, SwapService } from '../types';
 import { tokenService } from '../../token/token.service';
 import { networkContext } from '../../network/network-context.service';
@@ -38,6 +36,7 @@ import { BigNumber } from 'ethers';
 import { oldBnumScale } from '../../big-number/old-big-number';
 import { mapRoutes } from './beetsHelpers';
 import { poolsToIgnore } from '../constants';
+import { AllNetworkConfigsKeyedOnChain, chainToIdMap } from '../../network/network-config';
 
 const ALL_BASEPOOLS_CACHE_KEY = `basePools:all`;
 
@@ -59,13 +58,14 @@ class SwapResultV2 implements SwapResult {
         }
     }
 
-    async getCowSwapResponse(queryFirst = false): Promise<GqlCowSwapApiResponse> {
+    async getCowSwapResponse(chain = networkContext.chain, queryFirst = false): Promise<GqlCowSwapApiResponse> {
         if (!this.isValid || this.swap === null) throw new Error('No Response - Invalid Swap');
 
         if (!queryFirst) return this.mapResultToCowSwap(this.swap, this.swap.inputAmount, this.swap.outputAmount);
         else {
+            const rpcUrl = AllNetworkConfigsKeyedOnChain[chain].data.rpcUrl;
             // Needs node >= 18 (https://github.com/wagmi-dev/viem/discussions/147)
-            const updatedResult = await this.swap.query(networkContext.data.rpcUrl);
+            const updatedResult = await this.swap.query(rpcUrl);
             // console.log(`UPDATE:`, this.swap.quote.amount.toString(), updatedResult.amount.toString());
 
             const ip = this.swap.swapKind === SwapKind.GivenIn ? this.swap.inputAmount : updatedResult;
@@ -269,20 +269,19 @@ export class SorV2Service implements SwapService {
         this.cache = new Cache<string, BasePool[]>();
     }
 
-    public async getSwapResult({ tokenIn, tokenOut, swapType, swapAmount }: GetSwapsInput): Promise<SwapResult> {
+    public async getSwapResult({ chain, tokenIn, tokenOut, swapType, swapAmount }: GetSwapsInput): Promise<SwapResult> {
         try {
-            const poolsFromDb = await this.getBasePools();
-            const chainId = networkContext.chainId as unknown as ChainId;
-            const tIn = await this.getToken(tokenIn as Address, chainId);
-            const tOut = await this.getToken(tokenOut as Address, chainId);
+            const poolsFromDb = await this.getBasePools(chain);
+            console.log(`Got ${poolsFromDb.length} pools from DB`);
+            const tIn = await this.getToken(tokenIn as Address, chain);
+            const tOut = await this.getToken(tokenOut as Address, chain);
             const swapKind = this.mapSwapType(swapType);
-            // Constructing a Swap mutates the pools so I used cloneDeep
             const swap = await sorGetSwapsWithPools(
                 tIn,
                 tOut,
                 swapKind,
                 swapAmount,
-                cloneDeep(poolsFromDb),
+                poolsFromDb,
                 // swapOptions, // I don't think we need specific swapOptions for this?
             );
             return new SwapResultV2(swap);
@@ -294,35 +293,28 @@ export class SorV2Service implements SwapService {
 
     /**
      * Gets a b-sdk Token based off tokenAddr.
-     * @param tokenAddr
-     * @param chainId
+     * @param address
+     * @param chain
      * @returns
      */
-    private async getToken(tokenAddr: Address, chainId: ChainId): Promise<Token> {
-        const tokens = await tokenService.getTokens();
-        const prismaToken = this.getPrismaToken(tokenAddr, tokens);
-        return new Token(chainId, tokenAddr, prismaToken.decimals, prismaToken.symbol);
-    }
-
-    private getPrismaToken(tokenAddress: string, tokens: PrismaToken[]): PrismaToken {
-        tokenAddress = tokenAddress.toLowerCase();
-        const match = tokens.find((token) => token.address === tokenAddress);
-
-        if (!match) {
-            throw new Error('Unknown token: ' + tokenAddress);
+    private async getToken(address: Address, chain: Chain): Promise<Token> {
+        const token = await tokenService.getToken(address, chain);
+        if (!token) {
+            throw new Error('Unknown token: ' + address);
         }
-        return match;
+        const chainId = Number(chainToIdMap[chain]);
+        return new Token(chainId, address, token.decimals, token.symbol);
     }
 
     private mapSwapType(swapType: GqlSorSwapType): SwapKind {
         return swapType === 'EXACT_IN' ? SwapKind.GivenIn : SwapKind.GivenOut;
     }
 
-    private async getBasePools(): Promise<BasePool[]> {
-        let basePools: BasePool[] | null = this.cache.get(`${ALL_BASEPOOLS_CACHE_KEY}:${networkContext.chainId}`);
+    private async getBasePools(chain: Chain): Promise<BasePool[]> {
+        let basePools: BasePool[] | null = this.cache.get(`${ALL_BASEPOOLS_CACHE_KEY}:${chain}`);
         if (!basePools) {
-            basePools = await this.getBasePoolsFromDb();
-            this.cache.put(`${ALL_BASEPOOLS_CACHE_KEY}:${networkContext.chainId}`, basePools, 5 * 60 * 1000);
+            basePools = await this.getBasePoolsFromDb(chain);
+            this.cache.put(`${ALL_BASEPOOLS_CACHE_KEY}:${chain}`, basePools, 5 * 60 * 1000);
         }
         return basePools;
     }
@@ -331,10 +323,12 @@ export class SorV2Service implements SwapService {
      * Fetch pools from Prisma and map to b-sdk BasePool.
      * @returns
      */
-    private async getBasePoolsFromDb(): Promise<BasePool[]> {
+    private async getBasePoolsFromDb(chain: Chain): Promise<BasePool[]> {
+        console.log(`Fetching pools from DB`, chain)
+        const { poolIdsToExclude } = AllNetworkConfigsKeyedOnChain[chain].data.sor[env.DEPLOYMENT_ENV as DeploymentEnv];
         const pools = await prisma.prismaPool.findMany({
             where: {
-                chain: networkContext.chain,
+                chain,
                 dynamicData: {
                     totalSharesNum: {
                         gt: 0.000000000001,
@@ -344,7 +338,7 @@ export class SorV2Service implements SwapService {
                 NOT: {
                     id: {
                         in: [
-                            ...networkContext.data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].poolIdsToExclude,
+                            ...poolIdsToExclude,
                             ...poolsToIgnore,
                         ],
                     },
@@ -353,8 +347,9 @@ export class SorV2Service implements SwapService {
             },
             include: prismaPoolWithDynamic.include,
         });
+        console.log(`Got ${pools.length} pools from DB`)
         const rawPools = this.mapToRawPools(pools);
-        return this.mapToBasePools(rawPools);
+        return this.mapToBasePools(rawPools, chain);
     }
 
     /**
@@ -456,8 +451,8 @@ export class SorV2Service implements SwapService {
      * @param pools
      * @returns
      */
-    private mapToBasePools(pools: RawPool[]): BasePool[] {
-        const chainId = networkContext.chainId as unknown as ChainId;
+    private mapToBasePools(pools: RawPool[], chain: Chain): BasePool[] {
+        const chainId = Number(chainToIdMap[chain]);
         return sorParseRawPools(chainId, pools);
     }
 

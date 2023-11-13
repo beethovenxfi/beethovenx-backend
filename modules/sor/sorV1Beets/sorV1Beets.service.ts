@@ -23,7 +23,7 @@ class SwapResultV1 implements SwapResult {
         }
     }
 
-    async getCowSwapResponse(queryFirst = false): Promise<GqlCowSwapApiResponse> {
+    async getCowSwapResponse(chain = 'MAINNET', queryFirst = false): Promise<GqlCowSwapApiResponse> {
         throw new Error('Use Balancer Service');
     }
 

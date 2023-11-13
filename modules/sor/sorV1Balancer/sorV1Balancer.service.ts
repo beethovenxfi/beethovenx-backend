@@ -6,11 +6,13 @@ import { GetSwapsInput, SwapService, SwapResult } from '../types';
 import { FundManagement, SwapTypes, SwapV2 } from '@balancer-labs/sdk';
 import { env } from '../../../app/env';
 import { networkContext } from '../../network/network-context.service';
+import { AllNetworkConfigs, AllNetworkConfigsKeyedOnChain, chainToIdMap } from '../../network/network-config';
 import { DeploymentEnv } from '../../network/network-config-types';
 
 import VaultAbi from '../../pool/abi/Vault.json';
 import { BigNumber } from 'ethers';
 import { TokenAmount } from '@balancer/sdk';
+import { Chain } from '@prisma/client';
 
 type CowSwapSwapType = 'buy' | 'sell';
 
@@ -30,12 +32,12 @@ class SwapResultV1 implements SwapResult {
         }
     }
 
-    async getCowSwapResponse(queryFirst = false): Promise<GqlCowSwapApiResponse> {
+    async getCowSwapResponse(chain = networkContext.chain, queryFirst = false): Promise<GqlCowSwapApiResponse> {
         if (!this.isValid || this.swap === null) throw new Error('No Response - Invalid Swap');
 
         if (queryFirst) {
             const swapType = this.mapSwapType(this.swapType);
-            const deltas = await this.queryBatchSwap(swapType, this.swap.swaps, this.swap.tokenAddresses);
+            const deltas = await this.queryBatchSwap(swapType, this.swap.swaps, this.swap.tokenAddresses, chain);
             const tokenInAmount = deltas[this.swap.tokenAddresses.indexOf(this.swap.tokenIn)].toString();
             const tokenOutAmount = deltas[this.swap.tokenAddresses.indexOf(this.swap.tokenOut)].abs().toString();
             // console.log(`UPDATE:`, this.inputAmount, this.outputAmount, tokenInAmount, tokenOutAmount, deltas.toString());
@@ -52,8 +54,11 @@ class SwapResultV1 implements SwapResult {
         throw new Error('Use Beets service.');
     }
 
-    private queryBatchSwap(swapType: SwapTypes, swaps: SwapV2[], assets: string[]): Promise<BigNumber[]> {
-        const vaultContract = new Contract(networkContext.data.balancer.vault, VaultAbi, networkContext.provider);
+    private queryBatchSwap(swapType: SwapTypes, swaps: SwapV2[], assets: string[], chain: Chain): Promise<BigNumber[]> {
+        const vault = AllNetworkConfigsKeyedOnChain[chain].data.balancer.vault;
+        const provider = AllNetworkConfigsKeyedOnChain[chain].provider;
+
+        const vaultContract = new Contract(vault, VaultAbi, provider);
         const funds: FundManagement = {
             sender: AddressZero,
             recipient: AddressZero,
@@ -69,9 +74,9 @@ class SwapResultV1 implements SwapResult {
     }
 }
 export class SorV1BalancerService implements SwapService {
-    public async getSwapResult({ tokenIn, tokenOut, swapType, swapAmount }: GetSwapsInput): Promise<SwapResult> {
+    public async getSwapResult({ chain, tokenIn, tokenOut, swapType, swapAmount }: GetSwapsInput): Promise<SwapResult> {
         try {
-            const swap = await this.querySorBalancer(swapType, tokenIn, tokenOut, swapAmount);
+            const swap = await this.querySorBalancer(chain, swapType, tokenIn, tokenOut, swapAmount);
             return new SwapResultV1(swap, swapType);
         } catch (err) {
             console.log(`sorV1 Service Error`, err);
@@ -89,13 +94,15 @@ export class SorV1BalancerService implements SwapService {
      * @returns
      */
     private async querySorBalancer(
+        chain: Chain,
         swapType: GqlSorSwapType,
         tokenIn: string,
         tokenOut: string,
         swapAmount: TokenAmount,
     ): Promise<GqlCowSwapApiResponse> {
-        const endPoint = `https://api.balancer.fi/sor/${networkContext.chainId}`;
-        const gasPrice = networkContext.data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].gasPrice.toString();
+        const chainId = chainToIdMap[chain];
+        const endPoint = `https://api.balancer.fi/sor/${chainId}`;
+        const gasPrice = AllNetworkConfigs[chainId].data.sor[env.DEPLOYMENT_ENV as DeploymentEnv].gasPrice.toString();
         const swapData = {
             orderKind: this.mapSwapType(swapType),
             sellToken: tokenIn,

@@ -455,10 +455,6 @@ export class PoolService {
             where: { chain: this.chain, poolId: poolId },
         });
 
-        await prisma.prismaPoolGyroData.deleteMany({
-            where: { chain: networkContext.chain, poolId: poolId },
-        });
-
         await prisma.prismaPoolExpandedTokens.deleteMany({
             where: { chain: this.chain, poolId: poolId },
         });
