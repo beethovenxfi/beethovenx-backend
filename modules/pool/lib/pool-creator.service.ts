@@ -32,6 +32,39 @@ export class PoolCreatorService {
                 await this.createPoolRecord(subgraphPool, blockNumber);
 
                 poolIds.push(subgraphPool.id);
+            } else if (subgraphPool.poolType?.includes('Gyro')) {
+                await prisma.prismaPool.update({
+                    data: {
+                        gyroData: {
+                            update: {
+                                id: subgraphPool.id,
+                                alpha: subgraphPool.alpha || '',
+                                beta: subgraphPool.beta || '',
+                                sqrtAlpha: subgraphPool.sqrtAlpha || '',
+                                sqrtBeta: subgraphPool.sqrtBeta || '',
+                                root3Alpha: subgraphPool.root3Alpha || '',
+                                c: subgraphPool.c || '',
+                                s: subgraphPool.s || '',
+                                lambda: subgraphPool.lambda || '',
+                                tauAlphaX: subgraphPool.tauAlphaX || '',
+                                tauAlphaY: subgraphPool.tauAlphaY || '',
+                                tauBetaX: subgraphPool.tauBetaX || '',
+                                tauBetaY: subgraphPool.tauBetaY || '',
+                                u: subgraphPool.u || '',
+                                v: subgraphPool.v || '',
+                                w: subgraphPool.w || '',
+                                z: subgraphPool.z || '',
+                                dSq: subgraphPool.dSq || '',
+                            },
+                        }
+                    },
+                    where: {
+                        id_chain: {
+                            id: subgraphPool.id,
+                            chain: networkContext.chain
+                        }
+                    }
+                })
             }
         }
 
