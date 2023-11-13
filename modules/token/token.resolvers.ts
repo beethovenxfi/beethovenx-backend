@@ -2,18 +2,32 @@ import { Resolvers } from '../../schema';
 import _ from 'lodash';
 import { isAdminRoute } from '../auth/auth-context';
 import { tokenService } from './token.service';
+import { headerChain } from '../context/header-chain';
 
 const resolvers: Resolvers = {
     Query: {
-        tokenGetTokens: async () => {
-            return tokenService.getTokenDefinitions();
+        tokenGetTokens: async (parent, { chains }, context) => {
+            const currentChain = headerChain();
+            if (!chains && currentChain) {
+                chains = [currentChain];
+            } else if (!chains) {
+                throw new Error('Chain is required');
+            }
+            return tokenService.getTokenDefinitions(chains);
         },
-        tokenGetCurrentPrices: async (parent, {}, context) => {
-            const prices = await tokenService.getWhiteListedTokenPrices();
+        tokenGetCurrentPrices: async (parent, { chains }, context) => {
+            const currentChain = headerChain();
+            if (!chains && currentChain) {
+                chains = [currentChain];
+            } else if (!chains) {
+                throw new Error('Chain is required');
+            }
+            const prices = await tokenService.getWhiteListedTokenPrices(chains);
 
             return prices.map((price) => ({
                 address: price.tokenAddress,
                 price: price.price,
+                chain: price.chain,
             }));
         },
         tokenGetHistoricalPrices: async (parent, { addresses }, context) => {

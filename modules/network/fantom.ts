@@ -25,6 +25,8 @@ import { CoingeckoPriceHandlerService } from '../token/lib/token-price-handlers/
 import { coingeckoService } from '../coingecko/coingecko.service';
 import { env } from '../../app/env';
 import { IbTokensAprService } from '../pool/lib/apr-data-sources/ib-tokens-apr.service';
+import { BeetswarsGaugeVotingAprService } from '../pool/lib/apr-data-sources/fantom/beetswars-gauge-voting-apr';
+import { BalancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer-subgraph.service';
 
 const fantomNetworkData: NetworkData = {
     chain: {
@@ -92,7 +94,10 @@ const fantomNetworkData: NetworkData = {
     tokenPrices: {
         maxHourlyPriceHistoryNumDays: 100,
     },
-    rpcUrl: 'https://rpc.fantom.network',
+    rpcUrl:
+        (env.DEPLOYMENT_ENV as DeploymentEnv) === 'main'
+            ? `https://rpc.fantom.gateway.fm`
+            : `https://rpc.fantom.network`,
     rpcMaxBlockRange: 1000,
     sanity: {
         projectId: '1g2ag2hb',
@@ -244,7 +249,7 @@ const fantomNetworkData: NetworkData = {
             },
         },
         yearn: {
-            sourceUrl: 'https://d28fcsszptni1s.cloudfront.net/v1/chains/250/vaults/all',
+            sourceUrl: 'https://api.yexporter.io/v1/chains/250/vaults/all',
         },
         fixedAprHandler: {
             sFTMx: {
@@ -301,13 +306,22 @@ export const fantomNetworkConfig: NetworkConfig = {
     contentService: new SanityContentService(),
     provider: new ethers.providers.JsonRpcProvider({ url: fantomNetworkData.rpcUrl, timeout: 60000 }),
     poolAprServices: [
-        new IbTokensAprService(fantomNetworkData.ibAprConfig),
+        new IbTokensAprService(
+            fantomNetworkData.ibAprConfig,
+            fantomNetworkData.chain.prismaId,
+            fantomNetworkData.balancer.yieldProtocolFeePercentage,
+            fantomNetworkData.balancer.swapProtocolFeePercentage,
+        ),
         // new SpookySwapAprService(tokenService, fantomNetworkData.spooky!.xBooContract),
-        new PhantomStableAprService(),
+        new PhantomStableAprService(
+            fantomNetworkData.chain.prismaId,
+            fantomNetworkData.balancer.yieldProtocolFeePercentage,
+        ),
         new BoostedPoolAprService(),
         new SwapFeeAprService(fantomNetworkData.balancer.swapProtocolFeePercentage),
         new MasterchefFarmAprService(fantomNetworkData.beets!.address),
         new ReliquaryFarmAprService(fantomNetworkData.beets!.address),
+        new BeetswarsGaugeVotingAprService(),
     ],
     poolStakingServices: [
         new MasterChefStakingService(masterchefService, fantomNetworkData.masterchef!.excludedFarmIds),
@@ -334,6 +348,9 @@ export const fantomNetworkConfig: NetworkConfig = {
         ),
         new UserSyncReliquaryFarmBalanceService(fantomNetworkData.reliquary!.address),
     ],
+    services: {
+        balancerSubgraphService: new BalancerSubgraphService(fantomNetworkData.subgraphs.balancer, fantomNetworkData.chain.id),
+    },
     /*
     For sub-minute jobs we set the alarmEvaluationPeriod and alarmDatapointsToAlarm to 1 instead of the default 3. 
     This is needed because the minimum alarm period is 1 minute and we want the alarm to trigger already after 1 minute instead of 3.
@@ -394,33 +411,29 @@ export const fantomNetworkConfig: NetworkConfig = {
         },
         {
             name: 'sync-latest-snapshots-for-all-pools',
-            interval: every(1, 'hours'),
+            interval: every(90, 'minutes'),
         },
         {
             name: 'update-lifetime-values-for-all-pools',
-            interval: every(30, 'minutes'),
+            interval: every(50, 'minutes'),
         },
         {
             name: 'sync-changed-pools',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(20, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(2, 'minutes') : every(30, 'seconds'),
             alarmEvaluationPeriod: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? 3 : 1,
             alarmDatapointsToAlarm: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? 3 : 1,
         },
         {
             name: 'user-sync-wallet-balances-for-all-pools',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(5, 'minutes') : every(15, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(5, 'minutes') : every(20, 'seconds'),
             alarmEvaluationPeriod: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? 3 : 1,
             alarmDatapointsToAlarm: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? 3 : 1,
         },
         {
             name: 'user-sync-staked-balances',
-            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(5, 'minutes') : every(15, 'seconds'),
+            interval: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? every(5, 'minutes') : every(20, 'seconds'),
             alarmEvaluationPeriod: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? 3 : 1,
             alarmDatapointsToAlarm: (env.DEPLOYMENT_ENV as DeploymentEnv) === 'canary' ? 3 : 1,
-        },
-        {
-            name: 'sync-user-snapshots',
-            interval: every(1, 'hours'),
         },
         {
             name: 'sync-latest-reliquary-snapshots',

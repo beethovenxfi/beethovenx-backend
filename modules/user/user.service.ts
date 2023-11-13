@@ -1,11 +1,9 @@
-import { PrismaPoolStaking, PrismaPoolStakingType } from '@prisma/client';
+import { Chain, PrismaPoolStaking, PrismaPoolStakingType } from '@prisma/client';
 import { prisma } from '../../prisma/prisma-client';
 import { GqlPoolJoinExit, GqlPoolSwap, GqlUserSnapshotDataRange } from '../../schema';
 import { coingeckoService } from '../coingecko/coingecko.service';
 import { PoolSnapshotService } from '../pool/lib/pool-snapshot.service';
 import { PoolSwapService } from '../pool/lib/pool-swap.service';
-import { balancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer-subgraph.service';
-import { gaugeSubgraphService } from '../subgraphs/gauge-subgraph/gauge-subgraph.service';
 import { reliquarySubgraphService } from '../subgraphs/reliquary-subgraph/reliquary.service';
 import { userSnapshotSubgraphService } from '../subgraphs/user-snapshot-subgraph/user-snapshot-subgraph.service';
 import { tokenService } from '../token/token.service';
@@ -27,37 +25,45 @@ export class UserService {
         return networkContext.config.userStakedBalanceServices;
     }
 
-    public async getUserPoolBalances(address: string): Promise<UserPoolBalance[]> {
-        return this.userBalanceService.getUserPoolBalances(address);
+    public async getUserPoolBalances(address: string, chains: Chain[]): Promise<UserPoolBalance[]> {
+        return this.userBalanceService.getUserPoolBalances(address, chains);
     }
 
     public async getUserPoolInvestments(
         address: string,
         poolId: string,
+        chain: Chain,
         first?: number,
         skip?: number,
     ): Promise<GqlPoolJoinExit[]> {
-        return this.poolSwapService.getUserJoinExitsForPool(address, poolId, first, skip);
+        return this.poolSwapService.getUserJoinExitsForPool(address, poolId, chain, first, skip);
     }
 
-    public async getUserSwaps(address: string, poolId: string, first?: number, skip?: number): Promise<GqlPoolSwap[]> {
-        return this.poolSwapService.getUserSwapsForPool(address, poolId, first, skip);
+    public async getUserSwaps(
+        address: string,
+        poolId: string,
+        chain: Chain,
+        first?: number,
+        skip?: number,
+    ): Promise<GqlPoolSwap[]> {
+        return this.poolSwapService.getUserSwapsForPool(address, poolId, chain, first, skip);
     }
 
     public async getUserFbeetsBalance(address: string): Promise<Omit<UserPoolBalance, 'poolId'>> {
         return this.userBalanceService.getUserFbeetsBalance(address);
     }
 
-    public async getUserStaking(address: string): Promise<PrismaPoolStaking[]> {
-        return this.userBalanceService.getUserStaking(address);
+    public async getUserStaking(address: string, chains: Chain[]): Promise<PrismaPoolStaking[]> {
+        return this.userBalanceService.getUserStaking(address, chains);
     }
 
     public async getUserBalanceSnapshotsForPool(
         accountAddress: string,
         poolId: string,
+        chain: Chain,
         days: GqlUserSnapshotDataRange,
     ): Promise<UserPoolSnapshot[]> {
-        return this.userSnapshotService.getUserPoolBalanceSnapshotsForPool(accountAddress, poolId, days);
+        return this.userSnapshotService.getUserPoolBalanceSnapshotsForPool(accountAddress, poolId, chain, days);
     }
 
     public async getUserRelicSnapshots(accountAddress: string, farmId: string, days: GqlUserSnapshotDataRange) {
@@ -85,7 +91,7 @@ export class UserService {
     }
 
     public async syncUserBalanceAllPools(userAddress: string) {
-        const allBalances = await this.userBalanceService.getUserPoolBalances(userAddress);
+        const allBalances = await this.userBalanceService.getUserPoolBalances(userAddress, [networkContext.chain]);
         for (const userPoolBalance of allBalances) {
             await this.syncUserBalance(userAddress, userPoolBalance.poolId);
         }
@@ -136,10 +142,10 @@ export class UserService {
 export const userService = new UserService(
     new UserBalanceService(),
     new UserSyncWalletBalanceService(),
-    new PoolSwapService(tokenService, balancerSubgraphService),
+    new PoolSwapService(tokenService),
     new UserSnapshotService(
         userSnapshotSubgraphService,
         reliquarySubgraphService,
-        new PoolSnapshotService(balancerSubgraphService, coingeckoService),
+        new PoolSnapshotService(coingeckoService),
     ),
 );

@@ -1,8 +1,14 @@
 extend type Query {
-    userGetPoolBalances: [GqlUserPoolBalance!]!
-    userGetStaking: [GqlPoolStaking!]!
-    userGetPoolJoinExits(first: Int = 10, skip: Int = 0, poolId: String!): [GqlPoolJoinExit!]!
-    userGetSwaps(first: Int = 10, skip: Int = 0, poolId: String!): [GqlPoolSwap!]!
+    userGetPoolBalances(chains: [GqlChain!], address: String): [GqlUserPoolBalance!]!
+    userGetStaking(chains: [GqlChain!], address: String): [GqlPoolStaking!]!
+    userGetPoolJoinExits(
+        first: Int = 10
+        skip: Int = 0
+        poolId: String!
+        chain: GqlChain
+        address: String
+    ): [GqlPoolJoinExit!]!
+    userGetSwaps(first: Int = 10, skip: Int = 0, poolId: String!, chain: GqlChain, address: String): [GqlPoolSwap!]!
 }
 
 extend type Mutation {
@@ -24,4 +30,5 @@ type GqlUserPoolBalance {
     totalBalance: AmountHumanReadable!
     walletBalance: AmountHumanReadable!
     stakedBalance: AmountHumanReadable!
+    chain: GqlChain!
 }

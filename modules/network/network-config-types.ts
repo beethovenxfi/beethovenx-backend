@@ -7,6 +7,7 @@ import { BaseProvider } from '@ethersproject/providers';
 import { GqlChain } from '../../schema';
 import { ContentService } from '../content/content-types';
 import { AaveAprConfig, IbAprConfig } from './apr-config-types';
+import { BalancerSubgraphService } from '../subgraphs/balancer-subgraph/balancer-subgraph.service';
 
 export interface NetworkConfig {
     data: NetworkData;
@@ -17,7 +18,13 @@ export interface NetworkConfig {
     tokenPriceHandlers: TokenPriceHandler[];
     provider: BaseProvider;
     workerJobs: WorkerJob[];
+    services: NetworkServices;
 }
+
+interface NetworkServices {
+    balancerSubgraphService: BalancerSubgraphService;
+}
+
 export interface WorkerJob {
     name: string;
     interval: number;
@@ -91,8 +98,12 @@ export interface NetworkData {
     };
     gaugeControllerAddress?: string;
     gaugeControllerHelperAddress?: string;
+    gyro?: {
+        config: string;
+    };
     balancer: {
         vault: string;
+        tokenAdmin?: string;
         weightedPoolV2Factories: string[];
         composableStablePoolFactories: string[];
         yieldProtocolFeePercentage: number;
