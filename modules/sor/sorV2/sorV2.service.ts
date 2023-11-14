@@ -272,7 +272,6 @@ export class SorV2Service implements SwapService {
     public async getSwapResult({ chain, tokenIn, tokenOut, swapType, swapAmount }: GetSwapsInput): Promise<SwapResult> {
         try {
             const poolsFromDb = await this.getBasePools(chain);
-            console.log(`Got ${poolsFromDb.length} pools from DB`);
             const tIn = await this.getToken(tokenIn as Address, chain);
             const tOut = await this.getToken(tokenOut as Address, chain);
             const swapKind = this.mapSwapType(swapType);
@@ -324,7 +323,6 @@ export class SorV2Service implements SwapService {
      * @returns
      */
     private async getBasePoolsFromDb(chain: Chain): Promise<BasePool[]> {
-        console.log(`Fetching pools from DB`, chain)
         const { poolIdsToExclude } = AllNetworkConfigsKeyedOnChain[chain].data.sor[env.DEPLOYMENT_ENV as DeploymentEnv];
         const pools = await prisma.prismaPool.findMany({
             where: {
@@ -335,19 +333,32 @@ export class SorV2Service implements SwapService {
                     },
                     swapEnabled: true,
                 },
-                NOT: {
-                    id: {
-                        in: [
-                            ...poolIdsToExclude,
-                            ...poolsToIgnore,
-                        ],
-                    },
-                    type: 'LINEAR', // Linear pools are sunset so ignore to avoid issues related to lack of support
+                id: {
+                    notIn: [
+                        ...poolIdsToExclude,
+                        ...poolsToIgnore,
+                    ],
                 },
+                type: {
+                    notIn: [
+                        'LINEAR', // Linear pools are sunset so ignore to avoid issues related to lack of support
+                        'LIQUIDITY_BOOTSTRAPPING', // not supported by b-sdk
+                        'ELEMENT', // not supported by b-sdk
+                        'UNKNOWN', // not supported by b-sdk
+                        'INVESTMENT', // not supported by b-sdk
+                    ]
+                },
+                AND: {
+                    NOT: { // not supported by b-sdk
+                        type: 'STABLE',
+                        version: {
+                            in: [1,2]
+                        }
+                    },
+                }
             },
             include: prismaPoolWithDynamic.include,
         });
-        console.log(`Got ${pools.length} pools from DB`)
         const rawPools = this.mapToRawPools(pools);
         return this.mapToBasePools(rawPools, chain);
     }
