@@ -9,7 +9,7 @@ const balancerResolvers: Resolvers = {
             // Use TokenAmount to help follow scaling requirements in later logic
             // args.swapAmount is RawScale, e.g. 1USDC should be passed as 1000000
             const amount = await getTokenAmountRaw(amountToken, args.swapAmount, args.chain);
-            const swaps = await sorService.getCowSwaps({ ...args, swapAmount: amount });
+            const swaps = await sorService.getCowSwaps({ ...args, swapAmount: amount, swapOptions: {} });
             return { ...swaps, __typename: 'GqlCowSwapApiResponse' };
         },
     },

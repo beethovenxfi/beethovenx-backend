@@ -1,5 +1,5 @@
 import { Chain } from '@prisma/client';
-import { GqlCowSwapApiResponse, GqlSorSwapType, GqlSorGetSwapsResponse } from '../../schema';
+import { GqlCowSwapApiResponse, GqlSorSwapType, GqlSorGetSwapsResponse, GqlSorSwapOptionsInput } from '../../schema';
 import { TokenAmount } from '@balancer/sdk';
 export interface GetSwapsInput {
     chain: Chain;
@@ -7,6 +7,7 @@ export interface GetSwapsInput {
     tokenOut: string;
     swapType: GqlSorSwapType;
     swapAmount: TokenAmount;
+    swapOptions: GqlSorSwapOptionsInput;
 }
 
 export interface SwapResult {

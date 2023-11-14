@@ -3,7 +3,6 @@ import { balancerSorService } from './balancer-sor.service';
 import { tokenService } from '../token/token.service';
 import { sorService } from '../sor/sor.service';
 import { getTokenAmountHuman } from '../sor/utils';
-import { chainToIdMap } from '../network/network-config';
 
 const balancerSdkResolvers: Resolvers = {
     Query: {
@@ -11,7 +10,7 @@ const balancerSdkResolvers: Resolvers = {
             const amountToken = args.swapType === 'EXACT_IN' ? args.tokenIn : args.tokenOut;
             // Use TokenAmount to help follow scaling requirements in later logic
             // args.swapAmount is HumanScale
-            const amount = await getTokenAmountHuman(amountToken, args.swapAmount);
+            const amount = await getTokenAmountHuman(amountToken, args.swapAmount, args.chain);
             const swaps = await sorService.getBeetsSwaps({ ...args, swapAmount: amount });
             return { ...swaps, __typename: 'GqlSorGetSwapsResponse' };
         },
