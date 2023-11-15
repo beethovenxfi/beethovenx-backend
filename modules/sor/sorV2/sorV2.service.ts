@@ -37,6 +37,7 @@ import { oldBnumScale } from '../../big-number/old-big-number';
 import { mapRoutes } from './beetsHelpers';
 import { poolsToIgnore } from '../constants';
 import { AllNetworkConfigsKeyedOnChain, chainToIdMap } from '../../network/network-config';
+import * as Sentry from '@sentry/node'
 
 const ALL_BASEPOOLS_CACHE_KEY = `basePools:all`;
 
@@ -284,8 +285,18 @@ export class SorV2Service implements SwapService {
                 // swapOptions, // I don't think we need specific swapOptions for this?
             );
             return new SwapResultV2(swap);
-        } catch (err) {
-            console.log(`sorV2 Service Error`, err);
+        } catch (err: any) {
+            console.error(`SOR_V2_ERROR ${err.message} - tokenIn: ${tokenIn} - tokenOut: ${tokenOut} - swapAmount: ${swapAmount.amount} - swapType: ${swapType} - chain: ${chain}`);
+            Sentry.captureException(err.message, {
+                tags: {
+                    service: 'sorV2',
+                    tokenIn,
+                    tokenOut,
+                    swapAmount: swapAmount.amount,
+                    swapType,
+                    chain,
+                }
+            })
             return new SwapResultV2(null);
         }
     }

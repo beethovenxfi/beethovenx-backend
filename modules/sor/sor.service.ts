@@ -6,7 +6,7 @@ import { GetSwapsInput, SwapResult, SwapService } from './types';
 import { EMPTY_COWSWAP_RESPONSE } from './constants';
 import { getSorMetricsPublisher } from '../metrics/sor.metric';
 import { Chain } from '@prisma/client';
-import { parseUnits } from '@ethersproject/units';
+import { parseUnits, formatUnits } from '@ethersproject/units';
 import { tokenService } from '../token/token.service';
 
 export class SorService {
@@ -122,36 +122,37 @@ export class SorService {
         if (!version)
             return;
 
-        // console.log() will log to cloudwatch
-        let diff = v1.inputAmount - v2.inputAmount;
-        let tradeAmount = v1.outputAmount;
         let v1ResultAmount = v1.inputAmount;
-        let v2ResultAmount = v2.inputAmount;
-        let bestResultAmount = version === 'V1' ? v1ResultAmount : v2ResultAmount;
+        let v2ResultAmount = v2.inputAmount < 0 ? -v2.inputAmount : v2.inputAmount;
+        let tradeAmount = v1.outputAmount;
         let userToken = assetOut;
         let resultToken = assetIn;
         if (swapType === 'EXACT_IN') {
-            diff = v1.outputAmount - v2.outputAmount;
-            tradeAmount = v1.inputAmount;
             v1ResultAmount = v1.outputAmount;
-            v2ResultAmount = v2.outputAmount;
-            bestResultAmount = version === 'V1' ? v1ResultAmount : v2ResultAmount;
+            v2ResultAmount = v2.outputAmount < 0 ? -v2.outputAmount : v2.outputAmount;
+            tradeAmount = v1.inputAmount;
             userToken = assetIn;
             resultToken = assetOut;
         }
 
-        const fp = (a: bigint, d: number) => Number(parseUnits(String(a), d));
+        const fp = (a: bigint, d: number) => Number(formatUnits(String(a), d));
+        const bn = (a: string, d: number) => BigInt(String(parseUnits(a, d)));
         const prismaToken = await tokenService.getToken(resultToken, chain);
         const decimals = prismaToken!.decimals;
-        const v2Perf = version === 'V1'
+        let v2Perf = version === 'V1'
             ? 1 - (fp(v1ResultAmount, decimals) / fp(v2ResultAmount, decimals)) // negative perf means V1 is better
             : (fp(v2ResultAmount, decimals) / fp(v1ResultAmount, decimals)) - 1; // positive perf means V2 is better
+
+        v2Perf = Math.max(-1, Math.min(1, v2Perf));
+        let diffN = fp(v2ResultAmount, decimals) - fp(v1ResultAmount, decimals)
+        let diff = bn(diffN.toFixed(decimals), decimals)
+        let bestResultAmount = version === 'V1' ? v1ResultAmount : v2ResultAmount;
 
         await sorMetricsPublisher.publish(`SOR_TIME_V1`, v1Time);
         await sorMetricsPublisher.publish(`SOR_TIME_V2`, v2Time);
         await sorMetricsPublisher.publish(`SOR_V2_PERFORMACE`, v2Perf);
 
-        console.log(
+        console.log([
             'SOR_RESULT',
             v1Time,
             v2Time,
@@ -160,11 +161,11 @@ export class SorService {
             swapType,
             userToken,
             resultToken,
-            tradeAmount,
-            bestResultAmount,
-            diff,
-            v2Perf
-        );
+            String(tradeAmount),
+            String(bestResultAmount),
+            String(diff),
+            v2Perf.toFixed(8),
+        ].join(','));
     }
 }
 
