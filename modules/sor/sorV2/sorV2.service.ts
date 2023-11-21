@@ -37,7 +37,7 @@ import { oldBnumScale } from '../../big-number/old-big-number';
 import { mapRoutes } from './beetsHelpers';
 import { poolsToIgnore } from '../constants';
 import { AllNetworkConfigsKeyedOnChain, chainToIdMap } from '../../network/network-config';
-import * as Sentry from '@sentry/node'
+import * as Sentry from '@sentry/node';
 
 const ALL_BASEPOOLS_CACHE_KEY = `basePools:all`;
 
@@ -286,7 +286,9 @@ export class SorV2Service implements SwapService {
             );
             return new SwapResultV2(swap);
         } catch (err: any) {
-            console.error(`SOR_V2_ERROR ${err.message} - tokenIn: ${tokenIn} - tokenOut: ${tokenOut} - swapAmount: ${swapAmount.amount} - swapType: ${swapType} - chain: ${chain}`);
+            console.error(
+                `SOR_V2_ERROR ${err.message} - tokenIn: ${tokenIn} - tokenOut: ${tokenOut} - swapAmount: ${swapAmount.amount} - swapType: ${swapType} - chain: ${chain}`,
+            );
             Sentry.captureException(err.message, {
                 tags: {
                     service: 'sorV2',
@@ -295,8 +297,8 @@ export class SorV2Service implements SwapService {
                     swapAmount: swapAmount.amount,
                     swapType,
                     chain,
-                }
-            })
+                },
+            });
             return new SwapResultV2(null);
         }
     }
@@ -345,10 +347,7 @@ export class SorV2Service implements SwapService {
                     swapEnabled: true,
                 },
                 id: {
-                    notIn: [
-                        ...poolIdsToExclude,
-                        ...poolsToIgnore,
-                    ],
+                    notIn: [...poolIdsToExclude, ...poolsToIgnore],
                 },
                 type: {
                     notIn: [
@@ -357,16 +356,17 @@ export class SorV2Service implements SwapService {
                         'ELEMENT', // not supported by b-sdk
                         'UNKNOWN', // not supported by b-sdk
                         'INVESTMENT', // not supported by b-sdk
-                    ]
+                    ],
                 },
                 AND: {
-                    NOT: { // not supported by b-sdk
+                    NOT: {
+                        // not supported by b-sdk
                         type: 'STABLE',
                         version: {
-                            in: [1,2]
-                        }
+                            in: [1, 2],
+                        },
                     },
-                }
+                },
             },
             include: prismaPoolWithDynamic.include,
         });

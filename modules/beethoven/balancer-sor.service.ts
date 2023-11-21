@@ -218,28 +218,33 @@ export class BalancerSorService {
         };
     }
 
-    zeroResponse(swapType: GqlSorSwapType, tokenIn: string, tokenOut: string, swapAmount: string): GqlSorGetSwapsResponse {
-            return {
-                marketSp: '0',
-                tokenAddresses: [],
-                swaps: [],
-                tokenIn: replaceZeroAddressWithEth(tokenIn),
-                tokenOut: replaceZeroAddressWithEth(tokenOut),
-                swapType,
-                tokenInAmount: swapType === 'EXACT_IN' ? swapAmount : '0',
-                tokenOutAmount: swapType === 'EXACT_IN' ? '0' : swapAmount,
-                swapAmount: swapType === 'EXACT_IN' ? '0' : swapAmount,
-                swapAmountScaled: '0',
-                swapAmountForSwaps: '0',
-                returnAmount: '0',
-                returnAmountScaled: '0',
-                returnAmountConsideringFees: '0',
-                returnAmountFromSwaps: '0',
-                routes: [],
-                effectivePrice:'0',
-                effectivePriceReversed: '0',
-                priceImpact: '0',
-            };
+    zeroResponse(
+        swapType: GqlSorSwapType,
+        tokenIn: string,
+        tokenOut: string,
+        swapAmount: string,
+    ): GqlSorGetSwapsResponse {
+        return {
+            marketSp: '0',
+            tokenAddresses: [],
+            swaps: [],
+            tokenIn: replaceZeroAddressWithEth(tokenIn),
+            tokenOut: replaceZeroAddressWithEth(tokenOut),
+            swapType,
+            tokenInAmount: swapType === 'EXACT_IN' ? swapAmount : '0',
+            tokenOutAmount: swapType === 'EXACT_IN' ? '0' : swapAmount,
+            swapAmount: swapType === 'EXACT_IN' ? '0' : swapAmount,
+            swapAmountScaled: '0',
+            swapAmountForSwaps: '0',
+            returnAmount: '0',
+            returnAmountScaled: '0',
+            returnAmountConsideringFees: '0',
+            returnAmountFromSwaps: '0',
+            routes: [],
+            effectivePrice: '0',
+            effectivePriceReversed: '0',
+            priceImpact: '0',
+        };
     }
 
     private async querySor(
@@ -331,11 +336,13 @@ export class BalancerSorService {
         tokenAddress = tokenAddress.toLowerCase();
         const match = tokens.find((token) => token.address === tokenAddress);
 
-        if (!match) {
-            throw new Error('Unknown token: ' + tokenAddress);
+        let decimals = match?.decimals;
+        if (!decimals) {
+            console.error(`Unknown token: ${tokenAddress}`);
+            decimals = 18;
         }
 
-        return match.decimals;
+        return decimals;
     }
 
     private batchSwaps(assetArray: string[][], swaps: SwapV2[][]): { swaps: SwapV2[]; assets: string[] } {

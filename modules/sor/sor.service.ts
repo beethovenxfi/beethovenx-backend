@@ -27,7 +27,12 @@ export class SorService {
 
     async getBeetsSwaps(input: GetSwapsInput): Promise<GqlSorGetSwapsResponse> {
         const swap = await this.getSwap(input, sorV1BeetsService);
-        const emptyResponse = sorV1BeetsService.zeroResponse(input.swapType, input.tokenIn, input.tokenOut, input.swapAmount);
+        const emptyResponse = sorV1BeetsService.zeroResponse(
+            input.swapType,
+            input.tokenIn,
+            input.tokenOut,
+            input.swapAmount,
+        );
 
         if (!swap) return emptyResponse;
 
@@ -41,24 +46,32 @@ export class SorService {
     }
 
     private async getSwap(input: GetSwapsInput, v1Service: SwapService = sorV1BalancerService) {
-        const v1Start = +(new Date())
+        const v1Start = +new Date();
         const swapV1 = await v1Service.getSwapResult(input);
-        const v1Time = +(new Date()) - v1Start;
+        const v1Time = +new Date() - v1Start;
 
-        const v2Start = +(new Date());
+        const v2Start = +new Date();
         const swapV2 = await sorV2Service.getSwapResult(input);
-        const v2Time = +(new Date()) - v2Start;
+        const v2Time = +new Date() - v2Start;
 
         const version = this.getBestSwap(swapV1, swapV2, input.swapType);
 
-        await this.logResult(version, swapV1, swapV2, input.swapType, input.tokenIn, input.tokenOut, input.chain, v1Time, v2Time);
+        await this.logResult(
+            version,
+            swapV1,
+            swapV2,
+            input.swapType,
+            input.tokenIn,
+            input.tokenOut,
+            input.chain,
+            v1Time,
+            v2Time,
+        );
 
-        if (!version)
-            return null;
+        if (!version) return null;
 
         return version === 'V1' ? swapV1 : swapV2;
     }
-
 
     /**
      * Find best swap result for V1 vs V2 and return in CowSwap API format. Log if V1 wins.
@@ -67,12 +80,7 @@ export class SorService {
      * @param swapType
      * @returns
      */
-    private getBestSwap(
-        v1: SwapResult,
-        v2: SwapResult,
-        swapType: GqlSorSwapType,
-        debugOut = false,
-     ) {
+    private getBestSwap(v1: SwapResult, v2: SwapResult, swapType: GqlSorSwapType, debugOut = false) {
         // Useful for comparing
         if (debugOut) {
             console.log(`------ DEBUG`);
@@ -80,8 +88,7 @@ export class SorService {
             console.log(v2);
         }
 
-        if (!v1.isValid && !v2.isValid)
-            return null;
+        if (!v1.isValid && !v2.isValid) return null;
 
         let isV1 = false;
         if (!v1.isValid || !v2.isValid) {
@@ -119,8 +126,7 @@ export class SorService {
         await sorMetricsPublisher.publish(`SOR_VALID_V1`, v1.isValid ? 10 : 1);
         await sorMetricsPublisher.publish(`SOR_VALID_V2`, v2.isValid ? 10 : 1);
 
-        if (!version)
-            return;
+        if (!version) return;
 
         let v1ResultAmount = v1.inputAmount;
         let v2ResultAmount = v2.inputAmount < 0 ? -v2.inputAmount : v2.inputAmount;
@@ -139,33 +145,36 @@ export class SorService {
         const bn = (a: string, d: number) => BigInt(String(parseUnits(a, d)));
         const prismaToken = await tokenService.getToken(resultToken, chain);
         const decimals = prismaToken!.decimals;
-        let v2Perf = version === 'V1'
-            ? 1 - (fp(v1ResultAmount, decimals) / fp(v2ResultAmount, decimals)) // negative perf means V1 is better
-            : (fp(v2ResultAmount, decimals) / fp(v1ResultAmount, decimals)) - 1; // positive perf means V2 is better
+        let v2Perf =
+            version === 'V1'
+                ? 1 - fp(v1ResultAmount, decimals) / fp(v2ResultAmount, decimals) // negative perf means V1 is better
+                : fp(v2ResultAmount, decimals) / fp(v1ResultAmount, decimals) - 1; // positive perf means V2 is better
 
         v2Perf = Math.max(-1, Math.min(1, v2Perf));
-        let diffN = fp(v2ResultAmount, decimals) - fp(v1ResultAmount, decimals)
-        let diff = bn(diffN.toFixed(decimals), decimals)
+        let diffN = fp(v2ResultAmount, decimals) - fp(v1ResultAmount, decimals);
+        let diff = bn(diffN.toFixed(decimals), decimals);
         let bestResultAmount = version === 'V1' ? v1ResultAmount : v2ResultAmount;
 
         await sorMetricsPublisher.publish(`SOR_TIME_V1`, v1Time);
         await sorMetricsPublisher.publish(`SOR_TIME_V2`, v2Time);
         await sorMetricsPublisher.publish(`SOR_V2_PERFORMACE`, v2Perf);
 
-        console.log([
-            'SOR_RESULT',
-            v1Time,
-            v2Time,
-            chain,
-            version,
-            swapType,
-            userToken,
-            resultToken,
-            String(tradeAmount),
-            String(bestResultAmount),
-            String(diff),
-            v2Perf.toFixed(8),
-        ].join(','));
+        console.log(
+            [
+                'SOR_RESULT',
+                v1Time,
+                v2Time,
+                chain,
+                version,
+                swapType,
+                userToken,
+                resultToken,
+                String(tradeAmount),
+                String(bestResultAmount),
+                String(diff),
+                v2Perf.toFixed(8),
+            ].join(','),
+        );
     }
 }
 

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import * as Sentry from '@sentry/node'
+import * as Sentry from '@sentry/node';
 import { AddressZero } from '@ethersproject/constants';
 import { Contract } from '@ethersproject/contracts';
 import { GqlSorSwapType, GqlCowSwapApiResponse, GqlSorGetSwapsResponse } from '../../../schema';
@@ -80,7 +80,9 @@ export class SorV1BalancerService implements SwapService {
             const swap = await this.querySorBalancer(chain, swapType, tokenIn, tokenOut, swapAmount);
             return new SwapResultV1(swap, swapType);
         } catch (err: any) {
-            console.error(`SOR_V1_ERROR ${err.message} - tokenIn: ${tokenIn} - tokenOut: ${tokenOut} - swapAmount: ${swapAmount.amount} - swapType: ${swapType} - chain: ${chain}`);
+            console.error(
+                `SOR_V1_ERROR ${err.message} - tokenIn: ${tokenIn} - tokenOut: ${tokenOut} - swapAmount: ${swapAmount.amount} - swapType: ${swapType} - chain: ${chain}`,
+            );
             Sentry.captureException(err.message, {
                 tags: {
                     service: 'sorV1',
@@ -89,8 +91,8 @@ export class SorV1BalancerService implements SwapService {
                     swapAmount: swapAmount.amount,
                     swapType,
                     chain,
-                }
-            })
+                },
+            });
             return new SwapResultV1(null, swapType);
         }
     }
