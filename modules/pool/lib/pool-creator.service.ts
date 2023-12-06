@@ -15,8 +15,12 @@ export class PoolCreatorService {
         return networkContext.services.balancerSubgraphService;
     }
 
+    private get chain() {
+        return networkContext.chain
+    }
+
     public async syncAllPoolsFromSubgraph(blockNumber: number): Promise<string[]> {
-        const existingPools = await prisma.prismaPool.findMany({ where: { chain: networkContext.chain } });
+        const existingPools = await prisma.prismaPool.findMany({ where: { chain: this.chain } });
         const subgraphPools = await this.balancerSubgraphService.getAllPools({}, false);
         const sortedSubgraphPools = this.sortSubgraphPools(subgraphPools);
 
@@ -72,11 +76,11 @@ export class PoolCreatorService {
     }
 
     public async syncNewPoolsFromSubgraph(blockNumber: number): Promise<string[]> {
-        const existingPools = await prisma.prismaPool.findMany({ where: { chain: networkContext.chain } });
+        const existingPools = await prisma.prismaPool.findMany({ where: { chain: this.chain } });
         const latest = await prisma.prismaPool.findFirst({
             orderBy: { createTime: 'desc' },
             select: { createTime: true },
-            where: { chain: networkContext.chain },
+            where: { chain: this.chain },
         });
 
         const subgraphPools = await this.balancerSubgraphService.getAllPools(
@@ -126,7 +130,7 @@ export class PoolCreatorService {
 
             if (nestedPool) {
                 await prisma.prismaPoolToken.update({
-                    where: { id_chain: { id: token.id, chain: networkContext.chain } },
+                    where: { id_chain: { id: token.id, chain: this.chain } },
                     data: { nestedPoolId: nestedPool.id },
                 });
             }
@@ -139,12 +143,12 @@ export class PoolCreatorService {
         let operations: any[] = [];
         const pools = await prisma.prismaPool.findMany({
             ...prismaPoolWithExpandedNesting,
-            where: { chain: networkContext.chain },
+            where: { chain: this.chain },
         });
 
         //clear any existing
         await prisma.prismaPoolExpandedTokens.updateMany({
-            where: { chain: networkContext.chain },
+            where: { chain: this.chain },
             data: { nestedPoolId: null },
         });
 
@@ -174,7 +178,7 @@ export class PoolCreatorService {
                             tokenAddress_poolId_chain: {
                                 tokenAddress: token.address,
                                 poolId: pool.id,
-                                chain: networkContext.chain,
+                                chain: this.chain,
                             },
                         },
                         data: { nestedPoolId: token.nestedPoolId },
@@ -192,7 +196,7 @@ export class PoolCreatorService {
 
         const allNestedTypePools = await prisma.prismaPool.findMany({
             where: {
-                chain: networkContext.chain,
+                chain: this.chain,
                 type: { in: [PrismaPoolType.LINEAR, PrismaPoolType.PHANTOM_STABLE] },
             },
             select: { id: true, address: true },
@@ -206,14 +210,14 @@ export class PoolCreatorService {
                     symbol: token.symbol,
                     name: token.name,
                     decimals: token.decimals,
-                    chain: networkContext.chain,
+                    chain: this.chain,
                 })),
                 {
                     address: pool.address,
                     symbol: pool.symbol || '',
                     name: pool.name || '',
                     decimals: 18,
-                    chain: networkContext.chain,
+                    chain: this.chain,
                 },
             ],
         });
@@ -221,7 +225,7 @@ export class PoolCreatorService {
         await prisma.prismaPool.create({
             data: {
                 id: pool.id,
-                chain: networkContext.chain,
+                chain: this.chain,
                 createTime: pool.createTime,
                 address: pool.address,
                 symbol: pool.symbol || '',
@@ -334,7 +338,7 @@ export class PoolCreatorService {
         await prisma.prismaPoolTokenDynamicData.createMany({
             data: poolTokens.map((token) => ({
                 id: token.id,
-                chain: networkContext.chain,
+                chain: this.chain,
                 poolTokenId: token.id,
                 blockNumber,
                 priceRate: token.priceRate || '1.0',
@@ -351,7 +355,7 @@ export class PoolCreatorService {
     public async createAllTokensRelationshipForPool(poolId: string): Promise<void> {
         const pool = await prisma.prismaPool.findUnique({
             ...prismaPoolWithExpandedNesting,
-            where: { id_chain: { id: poolId, chain: networkContext.chain } },
+            where: { id_chain: { id: poolId, chain: this.chain } },
         });
 
         if (!pool) {
@@ -378,7 +382,7 @@ export class PoolCreatorService {
             skipDuplicates: true,
             data: allTokens.map((token) => ({
                 poolId,
-                chain: networkContext.chain,
+                chain: this.chain,
                 tokenAddress: token.address,
                 nestedPoolId: token.nestedPoolId || null,
             })),
@@ -398,7 +402,7 @@ export class PoolCreatorService {
             const token = poolTokens[i];
 
             await prisma.prismaPoolToken.update({
-                where: { id_chain: { id: token.id, chain: networkContext.chain } },
+                where: { id_chain: { id: token.id, chain: this.chain } },
                 data: {
                     index: token.index || subgraphPool.tokensList.findIndex((address) => address === token.address),
                 },

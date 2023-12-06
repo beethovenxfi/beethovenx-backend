@@ -11,7 +11,6 @@ import {
 import {
     GqlBalancePoolAprItem,
     GqlBalancePoolAprSubItem,
-    GqlChain,
     GqlPoolDynamicData,
     GqlPoolFeaturedPoolGroup,
     GqlPoolGyro,
@@ -28,6 +27,7 @@ import {
     GqlPoolTokenExpanded,
     GqlPoolTokenUnion,
     GqlPoolUnion,
+    GqlPoolUserBalance,
     GqlPoolWithdrawConfig,
     GqlPoolWithdrawOption,
     QueryPoolGetPoolsArgs,
@@ -35,11 +35,13 @@ import {
 import { isSameAddress } from '@balancer-labs/sdk';
 import _ from 'lodash';
 import { prisma } from '../../../prisma/prisma-client';
-import { Chain, Prisma, PrismaPoolAprType } from '@prisma/client';
+import { Chain, Prisma, PrismaPoolAprType, PrismaUserStakedBalance, PrismaUserWalletBalance } from '@prisma/client';
 import { isWeightedPoolV2 } from './pool-utils';
 import { oldBnum } from '../../big-number/old-big-number';
 import { networkContext } from '../../network/network-context.service';
 import { fixedNumber } from '../../view-helpers/fixed-number';
+import { parseUnits } from 'ethers/lib/utils';
+import { formatFixed } from '@ethersproject/bignumber';
 
 export class PoolGqlLoaderService {
     public async getPool(id: string, chain: Chain): Promise<GqlPoolUnion> {
@@ -60,6 +62,39 @@ export class PoolGqlLoaderService {
     }
 
     public async getPools(args: QueryPoolGetPoolsArgs): Promise<GqlPoolMinimal[]> {
+        // only include wallet and staked balances if the query requests it
+        // this makes sure that we don't load ALL user balances when we don't filter on userAddress
+        if (args.where?.userAddress) {
+            const pools = await prisma.prismaPool.findMany({
+                ...this.mapQueryArgsToPoolQuery(args),
+                include: {
+                    ...prismaPoolMinimal.include,
+                    userWalletBalances: {
+                        where: {
+                            userAddress: {
+                                equals: args.where?.userAddress,
+                                mode: 'insensitive' as const,
+                            },
+                            balanceNum: { gt: 0 },
+                        },
+                    },
+                    userStakedBalances: {
+                        where: {
+                            userAddress: {
+                                equals: args.where?.userAddress,
+                                mode: 'insensitive' as const,
+                            },
+                            balanceNum: { gt: 0 },
+                        },
+                    },
+                },
+            });
+
+            return pools.map((pool) =>
+                this.mapToMinimalGqlPool(pool, pool.userWalletBalances, pool.userStakedBalances),
+            );
+        }
+
         const pools = await prisma.prismaPool.findMany({
             ...this.mapQueryArgsToPoolQuery(args),
             include: prismaPoolMinimal.include,
@@ -80,7 +115,7 @@ export class PoolGqlLoaderService {
 
     public async getGyroPools(): Promise<GqlPoolGyro[]> {
         const pools = await prisma.prismaPool.findMany({
-            where: { type: {in: ["GYRO", "GYRO3", "GYROE"]}, chain: networkContext.chain },
+            where: { type: { in: ['GYRO', 'GYRO3', 'GYROE'] }, chain: networkContext.chain },
             orderBy: { dynamicData: { totalLiquidity: 'desc' } },
             include: prismaPoolWithExpandedNesting.include,
         });
@@ -88,7 +123,11 @@ export class PoolGqlLoaderService {
         return pools.map((pool) => this.mapPoolToGqlPool(pool)) as GqlPoolGyro[];
     }
 
-    public mapToMinimalGqlPool(pool: PrismaPoolMinimal): GqlPoolMinimal {
+    public mapToMinimalGqlPool(
+        pool: PrismaPoolMinimal,
+        userWalletbalances: PrismaUserWalletBalance[] = [],
+        userStakedBalances: PrismaUserStakedBalance[] = [],
+    ): GqlPoolMinimal {
         return {
             ...pool,
             decimals: 18,
@@ -96,6 +135,7 @@ export class PoolGqlLoaderService {
             allTokens: this.mapAllTokens(pool),
             displayTokens: this.mapDisplayTokens(pool),
             staking: this.getStakingData(pool),
+            userBalance: this.getUserBalance(userWalletbalances, userStakedBalances),
         };
     }
 
@@ -143,6 +183,7 @@ export class PoolGqlLoaderService {
     private mapQueryArgsToPoolQuery(args: QueryPoolGetPoolsArgs): Prisma.PrismaPoolFindManyArgs {
         let orderBy: Prisma.PrismaPoolOrderByWithRelationInput = {};
         const orderDirection = args.orderDirection || undefined;
+        const userAddress = args.where?.userAddress;
 
         switch (args.orderBy) {
             case 'totalLiquidity':
@@ -218,6 +259,35 @@ export class PoolGqlLoaderService {
             });
         }
 
+        const userArgs: Prisma.PrismaPoolWhereInput = userAddress
+            ? {
+                  OR: [
+                      {
+                          userWalletBalances: {
+                              some: {
+                                  userAddress: {
+                                      equals: userAddress,
+                                      mode: 'insensitive' as const,
+                                  },
+                                  balanceNum: { gt: 0 },
+                              },
+                          },
+                      },
+                      {
+                          userStakedBalances: {
+                              some: {
+                                  userAddress: {
+                                      equals: userAddress,
+                                      mode: 'insensitive' as const,
+                                  },
+                                  balanceNum: { gt: 0 },
+                              },
+                          },
+                      },
+                  ],
+              }
+            : {};
+
         const filterArgs: Prisma.PrismaPoolWhereInput = {
             dynamicData: {
                 totalSharesNum: {
@@ -243,11 +313,15 @@ export class PoolGqlLoaderService {
                 mode: 'insensitive',
             },
             categories: {
-                every: {
-                    category: {
-                        notIn: ['BLACK_LISTED', ...(where?.categoryNotIn || [])],
-                    },
-                },
+                ...(where?.categoryNotIn
+                    ? {
+                          every: {
+                              category: {
+                                  notIn: where.categoryNotIn,
+                              },
+                          },
+                      }
+                    : {}),
                 ...(where?.categoryIn
                     ? {
                           some: {
@@ -283,7 +357,10 @@ export class PoolGqlLoaderService {
         if (!textSearch) {
             return {
                 ...baseQuery,
-                where: filterArgs,
+                where: {
+                    ...filterArgs,
+                    ...userArgs,
+                },
             };
         }
 
@@ -291,10 +368,11 @@ export class PoolGqlLoaderService {
             ...baseQuery,
             where: {
                 OR: [
-                    { name: textSearch, ...filterArgs },
-                    { symbol: textSearch, ...filterArgs },
+                    { name: textSearch, ...filterArgs, ...userArgs },
+                    { symbol: textSearch, ...filterArgs, ...userArgs },
                     {
                         ...filterArgs,
+                        ...userArgs,
                         allTokens: {
                             some: {
                                 OR: [
@@ -330,9 +408,7 @@ export class PoolGqlLoaderService {
             investConfig: this.getPoolInvestConfig(pool),
             withdrawConfig: this.getPoolWithdrawConfig(pool),
             nestingType: this.getPoolNestingType(pool),
-            tokens: pool.tokens
-                .filter((token) => token.address !== pool.address)
-                .map((token) => this.mapPoolTokenToGqlUnion(token)),
+            tokens: pool.tokens.map((token) => this.mapPoolTokenToGqlUnion(token)),
             allTokens: this.mapAllTokens(pool),
             displayTokens: this.mapDisplayTokens(pool),
         };
@@ -590,6 +666,20 @@ export class PoolGqlLoaderService {
         };
     }
 
+    private getUserBalance(
+        userWalletBalances: PrismaUserWalletBalance[],
+        userStakedBalances: PrismaUserStakedBalance[],
+    ): GqlPoolUserBalance {
+        const stakedNum = parseUnits(userWalletBalances.at(0)?.balance || '0', 18);
+        const walletNum = parseUnits(userStakedBalances.at(0)?.balance || '0', 18);
+
+        return {
+            walletBalance: userWalletBalances.at(0)?.balance || '0',
+            stakedBalance: userStakedBalances.at(0)?.balance || '0',
+            totalBalance: formatFixed(stakedNum.add(walletNum), 18),
+        };
+    }
+
     private getPoolDynamicData(pool: PrismaPoolMinimal): GqlPoolDynamicData {
         const {
             fees24h,
@@ -807,18 +897,7 @@ export class PoolGqlLoaderService {
                             }),
                         );
                         const apr = _.sumBy(items, 'apr');
-                        let title = '';
-
-                        switch (group) {
-                            case 'YEARN':
-                                title = 'Yearn boosted APR';
-                                break;
-                            case 'REAPER':
-                                title = 'Reaper boosted APR';
-                                break;
-                            case 'OVERNIGHT':
-                                title = 'Overnight boosted APR';
-                        }
+                        const title = `${group.charAt(0) + group.slice(1).toLowerCase()} boosted APR`;
 
                         return {
                             id: `${pool.id}-${group}`,
