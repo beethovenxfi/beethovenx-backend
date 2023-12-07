@@ -1,9 +1,7 @@
-import { TokenAmount, Token, Address, ChainId } from '@balancer/sdk';
+import { TokenAmount, Token, Address } from '@balancer/sdk';
 import { tokenService } from '../token/token.service';
-import { networkContext } from '../network/network-context.service';
 import { Chain } from '@prisma/client';
 import { chainToIdMap } from '../network/network-config';
-
 
 export async function getTokenAmountHuman(tokenAddr: string, humanAmount: string, chain: Chain): Promise<TokenAmount> {
     const chainId = Number(chainToIdMap[chain]);

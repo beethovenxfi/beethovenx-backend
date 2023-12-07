@@ -16,7 +16,7 @@ export class PoolCreatorService {
     }
 
     private get chain() {
-        return networkContext.chain
+        return networkContext.chain;
     }
 
     public async syncAllPoolsFromSubgraph(blockNumber: number): Promise<string[]> {
@@ -60,15 +60,15 @@ export class PoolCreatorService {
                                 z: subgraphPool.z || '',
                                 dSq: subgraphPool.dSq || '',
                             },
-                        }
+                        },
                     },
                     where: {
                         id_chain: {
                             id: subgraphPool.id,
-                            chain: networkContext.chain
-                        }
-                    }
-                })
+                            chain: this.chain,
+                        },
+                    },
+                });
             }
         }
 
