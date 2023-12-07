@@ -122,9 +122,8 @@ export class SorService {
         v2Time: number,
     ) {
         const sorMetricsPublisher = getSorMetricsPublisher(chain);
-
-        await sorMetricsPublisher.publish(`SOR_VALID_V1`, v1.isValid ? 10 : 1);
-        await sorMetricsPublisher.publish(`SOR_VALID_V2`, v2.isValid ? 10 : 1);
+        await sorMetricsPublisher.publish(`SOR_VALID_V1`, v1.isValid ? 1 : 0);
+        await sorMetricsPublisher.publish(`SOR_VALID_V2`, v2.isValid ? 1 : 0);
 
         if (!version) return;
 

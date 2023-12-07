@@ -8,6 +8,14 @@ export interface GetSwapsInput {
     swapType: GqlSorSwapType;
     swapAmount: TokenAmount;
     swapOptions: GqlSorSwapOptionsInput;
+    graphTraversalConfig?: GraphTraversalConfig;
+}
+
+export interface GraphTraversalConfig {
+    approxPathsToReturn?: number;
+    maxDepth?: number;
+    maxNonBoostedHopTokensInBoostedPath?: number;
+    maxNonBoostedPathDepth?: number;
 }
 
 export interface SwapResult {

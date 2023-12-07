@@ -6,6 +6,7 @@ extend type Query {
         swapType: GqlSorSwapType!
         swapAmount: BigDecimal! #expected in human readable form
         swapOptions: GqlSorSwapOptionsInput!
+        graphTraversalConfig: GqlGraphTraversalConfigInput
     ): GqlSorGetSwapsResponse!
     sorGetBatchSwapForTokensIn(
         tokensIn: [GqlTokenAmountHumanReadable!]!
@@ -23,6 +24,14 @@ input GqlSorSwapOptionsInput {
     timestamp: Int #used for caching purposes
     maxPools: Int
     forceRefresh: Boolean #don't use any cached responses
+}
+
+input GqlGraphTraversalConfigInput {
+    maxDepth: Int # default 6
+    maxNonBoostedPathDepth: Int # default 3
+    maxNonBoostedHopTokensInBoostedPath: Int # default 2
+    approxPathsToReturn: Int # default 5
+    poolIdsToInclude: [String]
 }
 
 type GqlSorGetSwapsResponse {

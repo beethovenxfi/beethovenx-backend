@@ -270,20 +270,22 @@ export class SorV2Service implements SwapService {
         this.cache = new Cache<string, BasePool[]>();
     }
 
-    public async getSwapResult({ chain, tokenIn, tokenOut, swapType, swapAmount }: GetSwapsInput): Promise<SwapResult> {
+    public async getSwapResult({
+        chain,
+        tokenIn,
+        tokenOut,
+        swapType,
+        swapAmount,
+        graphTraversalConfig,
+    }: GetSwapsInput): Promise<SwapResult> {
         try {
             const poolsFromDb = await this.getBasePools(chain);
             const tIn = await this.getToken(tokenIn as Address, chain);
             const tOut = await this.getToken(tokenOut as Address, chain);
             const swapKind = this.mapSwapType(swapType);
-            const swap = await sorGetSwapsWithPools(
-                tIn,
-                tOut,
-                swapKind,
-                swapAmount,
-                poolsFromDb,
-                // swapOptions, // I don't think we need specific swapOptions for this?
-            );
+            const swap = await sorGetSwapsWithPools(tIn, tOut, swapKind, swapAmount, poolsFromDb, {
+                graphTraversalConfig,
+            });
             return new SwapResultV2(swap);
         } catch (err: any) {
             console.error(
