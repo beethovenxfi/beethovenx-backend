@@ -8,17 +8,22 @@ import { GraphTraversalConfig } from '../sor/types';
 const balancerSdkResolvers: Resolvers = {
     Query: {
         sorGetSwaps: async (parent, args, context) => {
-            const amountToken = args.swapType === 'EXACT_IN' ? args.tokenIn : args.tokenOut;
+            const tokenIn = args.tokenIn.toLowerCase();
+            const tokenOut = args.tokenOut.toLowerCase();
+            const amountToken = args.swapType === 'EXACT_IN' ? tokenIn : tokenOut;
             // Use TokenAmount to help follow scaling requirements in later logic
             // args.swapAmount is HumanScale
             const amount = await getTokenAmountHuman(amountToken, args.swapAmount, args.chain);
-            const { graphTraversalConfig, ...cleanArgs } = args;
+            const graphTraversalConfig = args.graphTraversalConfig as GraphTraversalConfig;
 
             const swaps = await sorService.getBeetsSwaps({
-                ...cleanArgs,
-                graphTraversalConfig: graphTraversalConfig as GraphTraversalConfig,
+                ...args,
+                tokenIn,
+                tokenOut,
+                graphTraversalConfig,
                 swapAmount: amount,
             });
+
             return { ...swaps, __typename: 'GqlSorGetSwapsResponse' };
         },
         sorGetBatchSwapForTokensIn: async (parent, args, context) => {
