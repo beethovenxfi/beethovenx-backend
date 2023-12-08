@@ -80,8 +80,11 @@ type GqlPoolMinimal {
 
 type GqlPoolUserBalance {
     totalBalance: AmountHumanReadable!
+    totalBalanceUsd: Float!
     walletBalance: AmountHumanReadable!
+    walletBalanceUsd: Float!
     stakedBalance: AmountHumanReadable!
+    stakedBalanceUsd: Float!
 }
 
 enum GqlPoolMinimalType {
@@ -602,6 +605,7 @@ enum GqlPoolOrderBy {
     volume24h
     fees24h
     apr
+    userbalanceUsd
 }
 
 enum GqlPoolOrderDirection {
