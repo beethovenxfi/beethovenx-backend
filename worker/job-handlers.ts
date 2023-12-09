@@ -14,6 +14,7 @@ import { veBalVotingListService } from '../modules/vebal/vebal-voting-list.servi
 import { cronsMetricPublisher } from '../modules/metrics/metrics.client';
 import moment from 'moment';
 import { cronsDurationMetricPublisher } from '../modules/metrics/cron-duration-metrics.client';
+import { UserSyncWalletBalanceService } from '../modules/user/lib/user-sync-wallet-balance.service';
 
 const runningJobs: Set<string> = new Set();
 
@@ -101,10 +102,11 @@ export function configureWorkerRoutes(app: Express) {
                 await runIfNotAlreadyRunning(job.name, chainId, () => poolService.syncChangedPools(), res, next);
                 break;
             case 'user-sync-wallet-balances-for-all-pools':
+                const service = new UserSyncWalletBalanceService(Number(chainId));
                 await runIfNotAlreadyRunning(
                     job.name,
                     chainId,
-                    () => userService.syncChangedWalletBalancesForAllPools(),
+                    service.syncChangedBalancesForAllPools.bind(service),
                     res,
                     next,
                 );
