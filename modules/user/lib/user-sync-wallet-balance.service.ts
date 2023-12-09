@@ -151,50 +151,69 @@ export class UserSyncWalletBalanceService {
         }
 
         const fromBlock = syncStatus.blockNumber + 1;
-        // as we use the erc20 transfer topic, we use a smaller block range than defined in the network context
-
-        const toBlock =
-            latestBlock - fromBlock > networkContext.data.rpcMaxBlockRange
-                ? fromBlock + networkContext.data.rpcMaxBlockRange
-                : latestBlock;
 
         // no new blocks have been minted, needed for slow networks
-        if (fromBlock > toBlock) {
+        if (fromBlock > latestBlock) {
             return;
         }
 
-        const events: ethers.providers.Log[] = [];
+        // Split the range into smaller chunks to avoid RPC limits, setting up to 50 times max block range
+        const toBlock = Math.min(fromBlock + 50 * this.rpcMaxBlockRange, latestBlock);
+        const range = toBlock - fromBlock;
+        console.log(`UserWalletBalanceService: syncing balances from ${fromBlock} to ${toBlock}`);
+        const events = await Promise.all(
+            // Getting logs in batches of max blocks allowed by RPC
+            Array.from({ length: Math.ceil(range / this.rpcMaxBlockRange) }, (_, i) => i).map(async (i) => {
+                const from = fromBlock + i * this.rpcMaxBlockRange;
+                const to = Math.min(fromBlock + (i + 1) * this.rpcMaxBlockRange, toBlock);
 
-        const logPromises: Promise<ethers.providers.Log[]>[] = [];
+                // Usually RPCs are handling any number of addresses, but it here batching just to be on the safe side
+                const logRequests: Promise<ethers.providers.Log[]>[] = _.chunk(poolAddresses, 500).map((addresses) => {
+                    // Fetch logs with a raw json request until we support Viem or Ethers6
+                    const payload = {
+                        jsonrpc: '2.0',
+                        id: 1,
+                        method: 'eth_getLogs',
+                        params: [
+                            {
+                                address: addresses,
+                                topics: [ethers.utils.id('Transfer(address,address,uint256)')],
+                                fromBlock: '0x' + BigInt(from).toString(16),
+                                toBlock: '0x' + BigInt(to).toString(16),
+                            },
+                        ],
+                    };
 
-        console.log(
-            `user-sync-wallet-balances-for-all-pools-${networkContext.chainId} getLogs of ${poolAddresses.length} pools`,
-        );
-        const chunks = _.chunk(poolAddresses, 400);
-        let i = 1;
-        for (const chunk of chunks) {
-            for (const poolAddress of poolAddresses) {
-                logPromises.push(
-                    networkContext.provider.getLogs({
-                        //ERC20 Transfer topic
-                        topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'],
-                        fromBlock,
-                        toBlock,
-                        address: poolAddress,
-                    }),
-                );
-            }
+                    return fetch(AllNetworkConfigs[this.chainId].data.rpcUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload),
+                    })
+                        .then((response) => response.json() as Promise<{ result: ethers.providers.Log[] }>)
+                        .then(({ result }) => result)
+                        .catch((error) => {
+                            console.error('Error fetching logs:', error);
+                            return [];
+                        });
 
-            const allResponses = await Promise.all(logPromises);
-            console.log(
-                `user-sync-wallet-balances-for-all-pools-${networkContext.chainId} getLogs of ${chunk.length} pools done.`,
-            );
+                    // Fetching logs with Viem
+                    // viemClient.getLogs({
+                    //     address: addresses,
+                    //     event: parseAbiItem('event Transfer(address indexed, address indexed, uint256)'),
+                    //     fromBlock: BigInt(from),
+                    //     toBlock: BigInt(to),
+                    // })
+                });
 
-            for (const response of allResponses) {
-                events.push(...response);
-            }
-            i++;
-        }
+                const events = await Promise.all(logRequests).then((res) => res.flat());
+
+                return events;
+            }),
+        ).then((res) => res.flat());
+
+        console.log(`user-sync-wallet-balances-for-all-pools-${this.chainId} getLogs of ${poolAddresses.length} pools`);
 
         const relevantERC20Addresses = poolAddresses;
 
