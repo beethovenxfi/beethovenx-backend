@@ -161,6 +161,7 @@ export class UserSyncWalletBalanceService {
         const toBlock = Math.min(fromBlock + 50 * this.rpcMaxBlockRange, latestBlock);
         const range = toBlock - fromBlock;
         console.log(`UserWalletBalanceService: syncing balances from ${fromBlock} to ${toBlock}`);
+        console.log(`user-sync-wallet-balances-for-all-pools-${this.chainId} getLogs of ${poolAddresses.length} pools`);
         const events = await Promise.all(
             // Getting logs in batches of max blocks allowed by RPC
             Array.from({ length: Math.ceil(range / this.rpcMaxBlockRange) }, (_, i) => i).map(async (i) => {
@@ -213,7 +214,9 @@ export class UserSyncWalletBalanceService {
             }),
         ).then((res) => res.flat());
 
-        console.log(`user-sync-wallet-balances-for-all-pools-${this.chainId} getLogs of ${poolAddresses.length} pools`);
+        console.log(
+            `user-sync-wallet-balances-for-all-pools-${this.chainId} getLogs of ${poolAddresses.length} pools done`,
+        );
 
         const relevantERC20Addresses = poolAddresses;
 
