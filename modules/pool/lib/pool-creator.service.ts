@@ -30,43 +30,72 @@ export class PoolCreatorService {
         for (const subgraphPool of sortedSubgraphPools) {
             console.log(`Syncing pool ${counter} of ${sortedSubgraphPools.length}`);
             counter = counter + 1;
-            const existsInDb = !!existingPools.find((pool) => pool.id === subgraphPool.id);
+            const pool = existingPools.find((pool) => pool.id === subgraphPool.id);
+            const existsInDb = !!pool;
 
             if (!existsInDb) {
                 await this.createPoolRecord(subgraphPool, blockNumber);
 
                 poolIds.push(subgraphPool.id);
             } else if (subgraphPool.poolType?.includes('Gyro')) {
-                await prisma.prismaPool.update({
-                    data: {
-                        gyroData: {
-                            update: {
-                                id: subgraphPool.id,
-                                alpha: subgraphPool.alpha || '',
-                                beta: subgraphPool.beta || '',
-                                sqrtAlpha: subgraphPool.sqrtAlpha || '',
-                                sqrtBeta: subgraphPool.sqrtBeta || '',
-                                root3Alpha: subgraphPool.root3Alpha || '',
-                                c: subgraphPool.c || '',
-                                s: subgraphPool.s || '',
-                                lambda: subgraphPool.lambda || '',
-                                tauAlphaX: subgraphPool.tauAlphaX || '',
-                                tauAlphaY: subgraphPool.tauAlphaY || '',
-                                tauBetaX: subgraphPool.tauBetaX || '',
-                                tauBetaY: subgraphPool.tauBetaY || '',
-                                u: subgraphPool.u || '',
-                                v: subgraphPool.v || '',
-                                w: subgraphPool.w || '',
-                                z: subgraphPool.z || '',
-                                dSq: subgraphPool.dSq || '',
+                if (pool.type === 'UNKNOWN') {
+                    const poolType = this.mapSubgraphPoolTypeToPoolType(subgraphPool.poolType);
+                    if (poolType) {
+                        await prisma.prismaPool.update({
+                            data: {
+                                type: poolType,
                             },
-                        },
-                    },
+                            where: {
+                                id_chain: {
+                                    id: subgraphPool.id,
+                                    chain: this.chain,
+                                },
+                            },
+                        });
+                    }
+                }
+
+                const gyroProps = {
+                    alpha: subgraphPool.alpha || '',
+                    beta: subgraphPool.beta || '',
+                    sqrtAlpha: subgraphPool.sqrtAlpha || '',
+                    sqrtBeta: subgraphPool.sqrtBeta || '',
+                    root3Alpha: subgraphPool.root3Alpha || '',
+                    c: subgraphPool.c || '',
+                    s: subgraphPool.s || '',
+                    lambda: subgraphPool.lambda || '',
+                    tauAlphaX: subgraphPool.tauAlphaX || '',
+                    tauAlphaY: subgraphPool.tauAlphaY || '',
+                    tauBetaX: subgraphPool.tauBetaX || '',
+                    tauBetaY: subgraphPool.tauBetaY || '',
+                    u: subgraphPool.u || '',
+                    v: subgraphPool.v || '',
+                    w: subgraphPool.w || '',
+                    z: subgraphPool.z || '',
+                    dSq: subgraphPool.dSq || '',
+                };
+
+                await prisma.prismaPoolGyroData.upsert({
                     where: {
                         id_chain: {
                             id: subgraphPool.id,
                             chain: this.chain,
                         },
+                    },
+                    create: {
+                        id: subgraphPool.id,
+                        pool: {
+                            connect: {
+                                id_chain: {
+                                    id: subgraphPool.id,
+                                    chain: this.chain,
+                                },
+                            },
+                        },
+                        ...gyroProps,
+                    },
+                    update: {
+                        ...gyroProps,
                     },
                 });
             }
