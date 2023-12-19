@@ -123,9 +123,7 @@ export class UserSyncGaugeBalanceService implements UserStakedBalanceService {
                 select: { gaugeAddress: true },
                 where: { chain: this.chain },
             })
-        )
-            .map((gauge) => gauge.gaugeAddress)
-            .filter((address, i, arr) => arr.indexOf(address) === i); // Make unique
+        ).map((gauge) => gauge.gaugeAddress);
 
         // we sync at most 10k blocks at a time
         const startBlock = status.blockNumber + 1;
