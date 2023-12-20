@@ -12,7 +12,7 @@ export const getEvents = async (
     abi?: any,
 ): Promise<Event[]> => {
     let iEvents: Interface;
-    if (abi) {
+    if (abi && abi.length > 0) {
         iEvents = new Interface(abi);
         // check if topics are event names
         const alreadyEncoded = topics.every((topic) => topic.startsWith('0x'));
