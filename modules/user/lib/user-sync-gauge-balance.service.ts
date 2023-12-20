@@ -139,8 +139,8 @@ export class UserSyncGaugeBalanceService implements UserStakedBalanceService {
             therefore we check all transfer events since the last synced block
          */
 
-        // Split the range into smaller chunks to avoid RPC limits, setting up to 50 times max block range
-        const toBlock = Math.min(startBlock + 50 * this.rpcMaxBlockRange, latestBlock);
+        // Split the range into smaller chunks to avoid RPC limits, setting up to 5 times max block range
+        const toBlock = Math.min(startBlock + 5 * this.rpcMaxBlockRange, latestBlock);
         console.log(`user-sync-staked-balances-${this.chainId} block range from ${startBlock} to ${toBlock}`);
         console.log(`user-sync-staked-balances-${this.chainId} getLogs for ${gaugeAddresses.length} gauges.`);
 

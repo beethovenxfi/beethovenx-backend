@@ -156,8 +156,8 @@ export class UserSyncWalletBalanceService {
             return;
         }
 
-        // Split the range into smaller chunks to avoid RPC limits, setting up to 50 times max block range
-        const toBlock = Math.min(fromBlock + 50 * this.rpcMaxBlockRange, latestBlock);
+        // Split the range into smaller chunks to avoid RPC limits, setting up to 5 times max block range
+        const toBlock = Math.min(fromBlock + 5 * this.rpcMaxBlockRange, latestBlock);
         console.log(`UserWalletBalanceService: syncing balances from ${fromBlock} to ${toBlock}`);
         console.log(`user-sync-wallet-balances-for-all-pools-${this.chainId} getLogs of ${poolAddresses.length} pools`);
 
