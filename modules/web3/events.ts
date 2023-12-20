@@ -48,6 +48,15 @@ export const getEvents = async (
                     return getEvents(from, to, addressChunk, topics, rpcUrl, range[1] - range[0]);
                 }
 
+                // Alchemy rate limit
+                if (e.includes('Your app has exceeded its compute units per second capacity')) {
+                    return new Promise<Event[]>((resolve) => {
+                        setTimeout(() => {
+                            resolve(getEvents(from, to, addressChunk, topics, rpcUrl, rpcMaxBlockRange));
+                        }, 1000);
+                    });
+                }
+
                 console.error('Error fetching logs:', e);
                 return Promise.reject(e);
             });
