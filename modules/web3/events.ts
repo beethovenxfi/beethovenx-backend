@@ -10,6 +10,7 @@ export const getEvents = async (
     rpcUrl: string,
     rpcMaxBlockRange: number,
     abi?: any,
+    maxAddresses = 500,
 ): Promise<Event[]> => {
     let iEvents: Interface;
     if (abi && abi.length > 0) {
@@ -28,7 +29,7 @@ export const getEvents = async (
         const from = fromBlock + (i > 0 ? 1 : 0) + i * rpcMaxBlockRange;
         const to = Math.min(fromBlock + (i + 1) * rpcMaxBlockRange, toBlock);
 
-        const addressChunks = chunk(addresses, 500);
+        const addressChunks = chunk(addresses, maxAddresses);
 
         for (const addressChunk of addressChunks) {
             const promise = fetchLogs(from, to, addressChunk, topics, rpcUrl).catch((e: any) => {
@@ -58,6 +59,26 @@ export const getEvents = async (
                     return new Promise<Event[]>((resolve) => {
                         setTimeout(() => {
                             resolve(getEvents(from, to, addressChunk, topics, rpcUrl, rpcMaxBlockRange));
+                        }, 1000);
+                    });
+                }
+
+                // Allnodes addresses size limit
+                if (e.includes && e.includes('specify less number of addresses')) {
+                    return new Promise<Event[]>((resolve) => {
+                        setTimeout(() => {
+                            resolve(
+                                getEvents(
+                                    from,
+                                    to,
+                                    addressChunk,
+                                    topics,
+                                    rpcUrl,
+                                    rpcMaxBlockRange,
+                                    undefined,
+                                    maxAddresses / 2,
+                                ),
+                            );
                         }, 1000);
                     });
                 }
