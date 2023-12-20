@@ -33,12 +33,13 @@ export const getEvents = async (
         for (const addressChunk of addressChunks) {
             const promise = fetchLogs(from, to, addressChunk, topics, rpcUrl).catch((e: any) => {
                 // Ankr RPC returns error if block range is too wide
-                if (e.includes('block range is too wide')) {
+                if (e.includes && e.includes('block range is too wide')) {
                     return getEvents(from, to, addressChunk, topics, rpcUrl, rpcMaxBlockRange / 2);
                 }
 
                 // Infura returns 'more than 10000 results' error if block range is too wide
-                if (e.includes('query returned more than 10000 results')) {
+                // in a format like this: [0x1a2b3c4d5e6f7, 0x1a2b3c4d5e6f7]
+                if (e.includes && e.includes('query returned more than 10000 results')) {
                     const range = e
                         .match(/\[([0-9a-fA-F, x]+)\]/)
                         .pop()
@@ -48,8 +49,12 @@ export const getEvents = async (
                     return getEvents(from, to, addressChunk, topics, rpcUrl, range[1] - range[0]);
                 }
 
-                // Alchemy rate limit
-                if (e.includes('Your app has exceeded its compute units per second capacity')) {
+                // Alchemy / tenderly rate limit
+                if (
+                    e.includes &&
+                    (e.includes('Your app has exceeded its compute units per second capacity') ||
+                        e.includes('rate limit exceeded'))
+                ) {
                     return new Promise<Event[]>((resolve) => {
                         setTimeout(() => {
                             resolve(getEvents(from, to, addressChunk, topics, rpcUrl, rpcMaxBlockRange));
