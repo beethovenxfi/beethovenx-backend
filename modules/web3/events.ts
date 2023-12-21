@@ -39,7 +39,8 @@ export const getEvents = async (
                 }
 
                 // Infura returns 'more than 10000 results' error if block range is too wide
-                // in a format like this: [0x1a2b3c4d5e6f7, 0x1a2b3c4d5e6f7]
+                // error format:
+                // "query returned more than 10000 results. Try with this block range [0x30CE171, 0x30CE1C9]."
                 if (e.includes && e.includes('query returned more than 10000 results')) {
                     const range = e
                         .match(/\[([0-9a-fA-F, x]+)\]/)
