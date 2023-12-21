@@ -31,6 +31,7 @@ import {
     GqlPoolWithdrawConfig,
     GqlPoolWithdrawOption,
     QueryPoolGetPoolsArgs,
+    GqlPoolFx,
 } from '../../../schema';
 import { isSameAddress } from '@balancer-labs/sdk';
 import _ from 'lodash';
@@ -46,6 +47,7 @@ import { BalancerChainIds, BeethovenChainIds, chainIdToChain, chainToIdMap } fro
 import { GithubContentService } from '../../content/github-content.service';
 import SanityClientConstructor from '@sanity/client';
 import { SanityContentService } from '../../content/sanity-content.service';
+import { FxData } from '../subgraph-mapper';
 
 export class PoolGqlLoaderService {
     public async getPool(id: string, chain: Chain, userAddress?: string): Promise<GqlPoolUnion> {
@@ -136,6 +138,16 @@ export class PoolGqlLoaderService {
         });
 
         return pools.map((pool) => this.mapPoolToGqlPool(pool)) as GqlPoolGyro[];
+    }
+
+    public async getFxPools(chains: Chain[]): Promise<GqlPoolFx[]> {
+        const pools = await prisma.prismaPool.findMany({
+            where: { type: { in: ['FX'] }, chain: { in: chains } },
+            orderBy: { dynamicData: { totalLiquidity: 'desc' } },
+            include: prismaPoolWithExpandedNesting.include,
+        });
+
+        return pools.map((pool) => this.mapPoolToGqlPool(pool)) as GqlPoolFx[];
     }
 
     public mapToMinimalGqlPool(
@@ -556,6 +568,18 @@ export class PoolGqlLoaderService {
                     w: pool.gyroData?.w || '',
                     z: pool.gyroData?.z || '',
                     dSq: pool.gyroData?.dSq || '',
+                };
+            case 'FX':
+                const data = pool.data as FxData;
+                return {
+                    __typename: 'GqlPoolFx',
+                    ...mappedData,
+                    type: mappedData.type,
+                    alpha: data.alpha || '',
+                    beta: data.beta || '',
+                    delta: data.delta || '',
+                    epsilon: data.epsilon || '',
+                    lambda: data.lambda || '',
                 };
         }
 
